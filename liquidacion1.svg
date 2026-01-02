@@ -5,32 +5,9 @@
    overflow="hidden"
    version="1.1"
    id="svg1015"
-   sodipodi:docname="liquidacion1.svg"
-   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview1017"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     showgrid="false"
-     inkscape:zoom="0.76704545"
-     inkscape:cx="337.00741"
-     inkscape:cy="634.25186"
-     inkscape:window-width="1920"
-     inkscape:window-height="995"
-     inkscape:window-x="-9"
-     inkscape:window-y="-9"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg1015" />
   <defs
      id="defs1003">
     <image
@@ -97,7 +74,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan804">[Ahora]</tspan></text>
+       id="tspan144">[Ahora]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -111,7 +88,7 @@
      xml:space="preserve"><tspan
        x="267.84598"
        y="333.75928"
-       id="tspan806">[Antes]</tspan></text>
+       id="tspan146">[Antes]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -129,6 +106,5 @@
      x="58.014824"
      y="134.93335"
      ry="88.195389"
-     rx="0"
-     inkscape:label="box_nombre_producto" />
+     rx="0" />
 </svg>
