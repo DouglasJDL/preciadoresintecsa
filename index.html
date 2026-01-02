@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Editor Etiqueta</title>
+  <style>
+    :root{
+      --bg:#f6f7f9;
+      --card:#fff;
+      --border:#e5e7eb;
+      --text:#111827;
+      --muted:#6b7280;
+      --blue:#2563eb;
+      --blue2:#1d4ed8;
+      --gray:#e5e7eb;
+      --radius:14px;
+      --shadow:0 10px 24px rgba(0,0,0,.06);
+      --danger:#b91c1c;
+      --dangerBorder:#fecaca;
+      --dangerBg:#fef2f2;
+    }
+    *{box-sizing:border-box}
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px;background:var(--bg);color:var(--text)}
+    h2{margin:0 0 14px;font-size:18px}
+
+    .wrap{
+      display:grid;
+      grid-template-columns: minmax(320px, 420px) 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){ .wrap{grid-template-columns: 1fr} }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .cardHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .cardHeader h3{margin:0;font-size:14px}
+    .subtle{font-size:12px;color:var(--muted)}
+
+    .form{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px 10px;
+    }
+    .field{min-width:0}
+    .span2{grid-column:1 / -1}
+
+    label{display:block;font-size:12px;color:#374151;margin:0 0 6px}
+    input,select{
+      width:100%;
+      padding:10px 12px;
+      border:1px solid #d1d5db;
+      border-radius:12px;
+      font-size:14px;
+      background:#fff;
+      outline:none;
+    }
+    input:focus,select:focus{border-color:#93c5fd; box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+    select:invalid{color:#9ca3af}
+    option{color:#111827}
+
+    /* UX: el nombre se ve en mayúsculas mientras escribes */
+    #fNombre{ text-transform: uppercase; }
+
+    .fieldError{
+      display:none;
+      margin-top:6px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid var(--dangerBorder);
+      background:var(--dangerBg);
+      color:var(--danger);
+      font-size:12px;
+      line-height:1.35;
+    }
+    .fieldError.show{display:block}
+    .isInvalid{border-color:#fca5a5 !important; box-shadow:0 0 0 3px rgba(239,68,68,.12) !important;}
+
+    .btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+    button{padding:10px 12px;border:0;border-radius:12px;cursor:pointer;font-weight:700}
+    .btnBlue{background:var(--blue);color:#fff}
+    .btnBlue:hover{background:var(--blue2)}
+    .btnBlue:disabled{opacity:.55;cursor:not-allowed}
+    .btn2{background:var(--gray);color:var(--text)}
+
+    .help{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.35}
+
+    /* ===== PREVIEW ===== */
+    #paperPreviewWrap{display:flex;justify-content:center;align-items:flex-start;overflow:auto;min-height:520px}
+    #paperPreview{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:center;
+      padding:0;
+      margin:0;
+    }
+
+    .emptyPreview{
+      width:100%;
+      border:1px dashed #cbd5e1;
+      border-radius:16px;
+      background:#fafafa;
+      padding:18px;
+      max-width:740px;
+      text-align:center;
+      color:#334155;
+    }
+    .emptyPreview h4{margin:0 0 6px;font-size:14px}
+    .emptyPreview p{margin:0;font-size:12px;color:#64748b;line-height:1.4}
+
+    /* Preview sin “mega-espacio” entre hojas */
+    .page-shell{
+      width: calc(215.9mm * var(--previewScale, 0.58));
+      height: calc(279.4mm * var(--previewScale, 0.58));
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:12px;
+      box-shadow:0 8px 20px rgba(0,0,0,.06);
+      overflow:hidden;
+    }
+    .page-inner{
+      width:215.9mm;
+      height:279.4mm;
+      transform: scale(var(--previewScale, 0.58));
+      transform-origin: top left;
+    }
+
+    .paper-page{
+      width:215.9mm;
+      height:279.4mm;
+      padding: var(--pagePad, 6mm);
+      display:grid;
+      grid-template-columns: repeat(var(--cols, 2), 1fr);
+      grid-template-rows: repeat(var(--rows, 2), 1fr);
+      gap: var(--gap, 6mm);
+      background:#fff;
+    }
+
+    .label-cell{display:flex;justify-content:center;align-items:center;overflow:hidden}
+    .label-img{
+      width: var(--labelW, 95mm);
+      height: var(--labelH, auto);
+      max-width: 100%;
+      max-height: 100%;
+      display:block;
+      object-fit: contain;
+    }
+
+    #workCanvas{display:none}
+
+    /* ===== IMPRESIÓN ===== */
+    @media print{
+      body *{visibility:hidden}
+      #printRoot, #printRoot *{visibility:visible}
+
+      #printRoot{
+        position:absolute;left:0;top:0;
+        width:215.9mm;margin:0;padding:0;
+        display:block !important;
+      }
+
+      *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
+
+      .print-page{ page-break-after: always; break-after: page; }
+      .print-page:last-child{ page-break-after: auto; break-after: auto; }
+
+      @page{ size: letter portrait; margin:0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Editor de etiqueta</h2>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="cardHeader">
+        <h3>Campos</h3>
+        <span class="subtle">Completa todo para imprimir</span>
+      </div>
+
+      <div class="form" id="formGrid">
+        <div class="field">
+          <label>Plantilla (SVG)</label>
+          <select id="fTemplate" required>
+            <option value="" selected disabled>Selecciona una plantilla…</option>
+            <option value="promocion1.SVG">Promoción</option>
+            <option value="normal1.SVG">Normal</option>
+            <option value="liquidacion1.SVG">Liquidación</option>
+            <option value="oferta1.svg">Oferta</option>
+          </select>
+          <div class="fieldError" id="eTemplate"></div>
+        </div>
+
+        <div class="field">
+          <label>Tamaño</label>
+          <select id="fSize" required>
+            <option value="" selected disabled>Selecciona un tamaño…</option>
+            <option value="quarter">1/4 (4 por hoja)</option>
+            <option value="half_h">Media hoja horizontal (2 por hoja)</option>
+            <option value="full">Carta completa (1 por hoja)</option>
+          </select>
+          <div class="fieldError" id="eSize"></div>
+        </div>
+
+        <div class="field span2">
+          <label>Nombre</label>
+          <input id="fNombre" placeholder="Ej: Laptop color rojo y verde" autocomplete="off">
+          <div class="fieldError" id="eNombre"></div>
+        </div>
+
+        <div class="field">
+          <label>Antes (entero, máx 6 dígitos)</label>
+          <input id="fAntes" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 3999" autocomplete="off">
+          <div class="fieldError" id="eAntes"></div>
+        </div>
+
+        <div class="field">
+          <label>Ahora (entero, máx 6 dígitos)</label>
+          <input id="fAhora" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 2999" autocomplete="off">
+          <div class="fieldError" id="eAhora"></div>
+        </div>
+
+        <div class="field span2">
+          <label>Cuota (entero, máx 6 dígitos)</label>
+          <input id="fCuota" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 199" autocomplete="off">
+          <div class="fieldError" id="eCuota"></div>
+        </div>
+
+        <div class="field span2">
+          <label>Cantidad</label>
+          <input id="fQty" type="number" min="1" step="1" value="1">
+          <div class="fieldError" id="eQty"></div>
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button class="btnBlue" id="btnPrint" type="button" disabled>Imprimir</button>
+        <button class="btn2" id="btnReset" type="button">Reset</button>
+      </div>
+
+      <p class="help">
+        Para que el nombre se adapte, en cada SVG crea un rect con ID: <b>box_nombre_producto</b>.
+      </p>
+    </div>
+
+    <div class="card" id="paperPreviewWrap">
+      <div id="paperPreview"></div>
+    </div>
+  </div>
+
+  <div id="printRoot" style="display:none"></div>
+  <canvas id="workCanvas"></canvas>
+
+<script>
+  const IDS = {
+    nombre: "nombre_producto",
+    antes:  "precio_antes",
+    ahora:  "precio_ahora",
+    cuota:  "cuota_semanal"
+  };
+
+  const MODES = {
+    quarter: { cols:2, rows:2, perPage:4, pagePad:"6mm", gap:"6mm", labelW:"98mm",  labelH:"auto", previewScale:0.58, useRotated:false },
+    half_h:  { cols:1, rows:2, perPage:2, pagePad:"6mm", gap:"6mm", labelW:"100%", labelH:"100%", previewScale:0.58, useRotated:true  },
+    full:    { cols:1, rows:1, perPage:1, pagePad:"6mm", gap:"0mm", labelW:"100%", labelH:"100%", previewScale:0.58, useRotated:false }
+  };
+
+  let svgEl = null;
+  let pngNormal = null;
+  let pngRotated = null;
+  let renderPromise = null;
+  let renderTimer = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function getModeKey(){ return $("fSize").value || ""; }
+  function getMode(){ return MODES[getModeKey()] || null; }
+
+  function applyModeVars(el) {
+    const m = getMode();
+    if (!m) return;
+    el.style.setProperty("--cols", m.cols);
+    el.style.setProperty("--rows", m.rows);
+    el.style.setProperty("--pagePad", m.pagePad);
+    el.style.setProperty("--gap", m.gap);
+    el.style.setProperty("--labelW", m.labelW);
+    el.style.setProperty("--labelH", m.labelH);
+    el.style.setProperty("--previewScale", m.previewScale);
+  }
+
+  function showEmptyPreview(title, body){
+    $("paperPreview").innerHTML = `
+      <div class="emptyPreview">
+        <h4>${title}</h4>
+        <p>${body}</p>
+      </div>
+    `;
+  }
+
+  function setFieldError(inputId, errorId, msg){
+    const input = $(inputId);
+    const err = $(errorId);
+    if (!input || !err) return;
+    const has = !!msg;
+    err.textContent = msg || "";
+    err.classList.toggle("show", has);
+    input.classList.toggle("isInvalid", has);
+  }
+
+  function clearAllErrors(){
+    setFieldError("fTemplate","eTemplate","");
+    setFieldError("fSize","eSize","");
+    setFieldError("fNombre","eNombre","");
+    setFieldError("fAntes","eAntes","");
+    setFieldError("fAhora","eAhora","");
+    setFieldError("fCuota","eCuota","");
+    setFieldError("fQty","eQty","");
+  }
+
+  async function loadSvgFrom(file) {
+    const res = await fetch(file, { cache: "no-store" });
+    if (!res.ok) throw new Error("No se pudo cargar " + file + ". Debe estar junto al HTML.");
+    const svgText = await res.text();
+
+    const oldHost = $("__svgHostHidden");
+    if (oldHost) oldHost.remove();
+
+    const host = document.createElement("div");
+    host.id = "__svgHostHidden";
+    host.style.position = "absolute";
+    host.style.left = "-99999px";
+    host.style.top = "-99999px";
+    host.innerHTML = svgText;
+    document.body.appendChild(host);
+
+    svgEl = host.querySelector("svg");
+    pngNormal = null;
+    pngRotated = null;
+    renderPromise = null;
+  }
+
+  /* ===== Enteros + max 6 dígitos + formato miles + Q ===== */
+  function onlyDigits(str){ return (str ?? "").toString().replace(/[^\d]/g, ""); }
+
+  function sanitizeIntInput(el){
+    // ✅ toma solo dígitos y recorta a 6
+    let cleaned = onlyDigits(el.value).slice(0, 6);
+
+    // ✅ evita números tipo 000123
+    if (cleaned.length > 1) cleaned = cleaned.replace(/^0+/, "") || "0";
+
+    el.value = cleaned;
+    return cleaned;
+  }
+
+  function formatThousands(num){
+    try { return Number(num).toLocaleString("en-US"); }
+    catch { return String(num||"").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  }
+
+  function toQuetzalesFromDigits(d){
+    if (!d) return "";
+    const n = parseInt(d, 10);
+    if (!Number.isFinite(n)) return "";
+    return "Q " + formatThousands(n);
+  }
+
+  function clearSvgText(textEl){
+    if (!textEl) return;
+    while (textEl.firstChild) textEl.removeChild(textEl.firstChild);
+    textEl.textContent = "";
+  }
+
+  /* ===== Wrap por BOX ===== */
+  function getSvgViewBox(svg) {
+    const vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width && vb.height) return { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
+    const w = parseFloat(svg.getAttribute("width") || "0") || 0;
+    const h = parseFloat(svg.getAttribute("height") || "0") || 0;
+    return { x: 0, y: 0, w: w || 1000, h: h || 1000 };
+  }
+
+  function getTextBoxById(svg, textId) {
+    const box = svg.querySelector(`#box_${CSS.escape(textId)}`);
+    if (box && typeof box.getBBox === "function") {
+      const b = box.getBBox();
+      return { x: b.x, y: b.y, w: b.width, h: b.height, cx: b.x + b.width/2, cy: b.y + b.height/2 };
+    }
+    const vb = getSvgViewBox(svg);
+    const w = vb.w * 0.85;
+    const h = vb.h * 0.18;
+    return { x: vb.x + (vb.w - w)/2, y: vb.y + vb.h*0.18, w, h, cx: vb.x + vb.w/2, cy: vb.y + vb.h*0.27 };
+  }
+
+  function getFontSizePx(textEl) {
+    const fsAttr = textEl.getAttribute("font-size");
+    if (fsAttr) {
+      const n = parseFloat(fsAttr);
+      if (Number.isFinite(n)) return n;
+    }
+    const cs = window.getComputedStyle(textEl);
+    const n = parseFloat(cs.fontSize || "0");
+    return Number.isFinite(n) && n > 0 ? n : 16;
+  }
+
+  function setWrappedTextInBox(textEl, text, box, opts = {}) {
+    const NS = "http://www.w3.org/2000/svg";
+    const t = (text || "").trim();
+    if (!t) { clearSvgText(textEl); return; }
+
+    const words = t.split(/\s+/).filter(Boolean);
+    const lineHeightEm = opts.lineHeightEm ?? 1.10;
+    const maxWidth = box.w;
+
+    const fontPx = getFontSizePx(textEl);
+    const maxLines = Math.max(1, Math.floor(box.h / (fontPx * lineHeightEm)));
+
+    const cx = box.cx;
+    const cy = box.cy;
+
+    textEl.setAttribute("text-anchor", "middle");
+    textEl.setAttribute("x", cx);
+    textEl.setAttribute("y", cy);
+
+    while (textEl.firstChild) textEl.removeChild(textEl.firstChild);
+
+    const meas = document.createElementNS(NS, "tspan");
+    meas.setAttribute("x", cx);
+    textEl.appendChild(meas);
+
+    let lines = [];
+    let line = [];
+
+    for (let i = 0; i < words.length; i++) {
+      line.push(words[i]);
+      meas.textContent = line.join(" ");
+      if (meas.getComputedTextLength() > maxWidth && line.length > 1) {
+        line.pop();
+        lines.push(line.join(" "));
+        line = [words[i]];
+        if (lines.length === maxLines) break;
+        meas.textContent = line.join(" ");
+      }
+    }
+    if (lines.length < maxLines && line.length) lines.push(line.join(" "));
+
+    if (words.length && lines.length === maxLines) {
+      let last = lines[lines.length - 1];
+      meas.textContent = last;
+      while (meas.getComputedTextLength() > maxWidth && last.length > 1) {
+        last = last.slice(0, -2) + "…";
+        meas.textContent = last;
+      }
+      lines[lines.length - 1] = last;
+    }
+
+    while (textEl.firstChild) textEl.removeChild(textEl.firstChild);
+
+    const n = Math.max(lines.length, 1);
+    const totalEm = (n - 1) * lineHeightEm;
+    const firstDy = -totalEm / 2;
+
+    lines.forEach((txt, idx) => {
+      const ts = document.createElementNS(NS, "tspan");
+      ts.setAttribute("x", cx);
+      ts.setAttribute("dy", (idx === 0 ? firstDy : lineHeightEm) + "em");
+      ts.textContent = txt;
+      textEl.appendChild(ts);
+    });
+  }
+
+  function setTextSmartCentered(id, value){
+    const el = $(id);
+    if (!el) return;
+    const txt = (value ?? "").toString().trim();
+    if (!txt) { clearSvgText(el); return; }
+    el.setAttribute("text-anchor", "middle");
+    const tspan = el.querySelector("tspan");
+    if (tspan) tspan.textContent = txt;
+    else el.textContent = txt;
+  }
+
+  function updateSvg(){
+    if (!svgEl) return;
+
+    // ✅ SIEMPRE MAYÚSCULAS EN LA ETIQUETA
+    const nombre = ($("fNombre").value || "").trim().toUpperCase();
+
+    const antesD = sanitizeIntInput($("fAntes"));
+    const ahoraD = sanitizeIntInput($("fAhora"));
+    const cuotaD = sanitizeIntInput($("fCuota"));
+
+    const antes = toQuetzalesFromDigits(antesD);
+    const ahora = toQuetzalesFromDigits(ahoraD);
+    const cuota = toQuetzalesFromDigits(cuotaD);
+
+    const nameEl = $(IDS.nombre);
+    if (nameEl) {
+      const box = getTextBoxById(svgEl, IDS.nombre);
+      setWrappedTextInBox(nameEl, nombre, box, { lineHeightEm: 1.10 });
+    }
+    setTextSmartCentered(IDS.antes, antes);
+    setTextSmartCentered(IDS.ahora, ahora);
+    setTextSmartCentered(IDS.cuota, cuota);
+  }
+
+  /* ===== Validación con errores por campo ===== */
+  function validateForm(){
+    clearAllErrors();
+
+    const tpl = $("fTemplate").value;
+    const size = $("fSize").value;
+
+    const nombre = $("fNombre").value.trim();
+    const antesD = sanitizeIntInput($("fAntes"));
+    const ahoraD = sanitizeIntInput($("fAhora"));
+    const cuotaD = sanitizeIntInput($("fCuota"));
+
+    const qtyRaw = parseInt($("fQty").value, 10);
+    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 0;
+
+    let ok = true;
+
+    if (!tpl){ setFieldError("fTemplate","eTemplate","Selecciona una plantilla."); ok = false; }
+    if (!size){ setFieldError("fSize","eSize","Selecciona un tamaño."); ok = false; }
+
+    if (!nombre){ setFieldError("fNombre","eNombre","Este campo es obligatorio."); ok = false; }
+    if (!antesD){ setFieldError("fAntes","eAntes","Ingresa el precio 'Antes' (máx 6 dígitos)."); ok = false; }
+    if (!ahoraD){ setFieldError("fAhora","eAhora","Ingresa el precio 'Ahora' (máx 6 dígitos)."); ok = false; }
+    if (!cuotaD){ setFieldError("fCuota","eCuota","Ingresa la cuota (máx 6 dígitos)."); ok = false; }
+    if (!qty){ setFieldError("fQty","eQty","Cantidad debe ser mayor a 0."); ok = false; }
+
+    if (antesD && ahoraD){
+      const antesN = parseInt(antesD, 10);
+      const ahoraN = parseInt(ahoraD, 10);
+      if (Number.isFinite(antesN) && Number.isFinite(ahoraN) && ahoraN > antesN){
+        setFieldError("fAhora","eAhora","'Ahora' no puede ser mayor que 'Antes'.");
+        ok = false;
+      }
+    }
+
+    $("btnPrint").disabled = !ok;
+    return ok;
+  }
+
+  /* ===== SVG -> PNG ===== */
+  async function svgNodeToPng(svgNode, targetWidthPx = 2200){
+    const serializer = new XMLSerializer();
+    let svgText = serializer.serializeToString(svgNode);
+
+    if (!svgText.includes('xmlns="http://www.w3.org/2000/svg"')) {
+      svgText = svgText.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    if (!svgText.includes('xmlns:xlink="http://www.w3.org/1999/xlink"')) {
+      svgText = svgText.replace("<svg", '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+    }
+
+    const vb = getSvgViewBox(svgNode);
+    const w = vb.w || parseFloat(svgNode.getAttribute("width") || "408");
+    const h = vb.h || parseFloat(svgNode.getAttribute("height") || "528");
+
+    const scale = targetWidthPx / w;
+    const cw = Math.round(w * scale);
+    const ch = Math.round(h * scale);
+
+    const blob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = url;
+    });
+
+    const canvas = $("workCanvas");
+    canvas.width = cw;
+    canvas.height = ch;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.drawImage(img, 0, 0, cw, ch);
+
+    URL.revokeObjectURL(url);
+    return canvas.toDataURL("image/png");
+  }
+
+  async function rotatePng90(pngDataUrl){
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = pngDataUrl;
+    });
+
+    const canvas = $("workCanvas");
+    canvas.width = img.height;
+    canvas.height = img.width;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.translate(canvas.width, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(img, 0, 0);
+
+    return canvas.toDataURL("image/png");
+  }
+
+  async function ensurePngs(){
+    if (!svgEl) return false;
+    if (!renderPromise) {
+      renderPromise = (async () => {
+        pngNormal = await svgNodeToPng(svgEl, 2200);
+        pngRotated = await rotatePng90(pngNormal);
+        renderPromise = null;
+        return true;
+      })();
+    }
+    return renderPromise;
+  }
+
+  /* ===== Preview ===== */
+  function buildPreview(){
+    const tpl = $("fTemplate").value;
+    const size = $("fSize").value;
+
+    if (!tpl && !size){
+      showEmptyPreview("Selecciona plantilla y tamaño", "Elige una plantilla (SVG) y un tamaño para mostrar la previsualización.");
+      return;
+    }
+    if (!tpl){
+      showEmptyPreview("Selecciona una plantilla", "Elige la plantilla (SVG) para poder generar la etiqueta.");
+      return;
+    }
+    if (!size){
+      showEmptyPreview("Selecciona un tamaño", "Elige el tamaño de impresión para ver cómo quedará en la hoja.");
+      return;
+    }
+    if (!svgEl || !pngNormal){
+      showEmptyPreview("Generando previsualización…", "En un momento se mostrará aquí.");
+      return;
+    }
+
+    const qtyRaw = parseInt($("fQty").value, 10);
+    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
+
+    const mode = getMode();
+    const perPage = mode.perPage;
+
+    const preview = $("paperPreview");
+    preview.innerHTML = "";
+
+    const pages = Math.ceil(qty / perPage);
+    const imgSrc = mode.useRotated ? pngRotated : pngNormal;
+
+    for (let p = 0; p < pages; p++) {
+      const shell = document.createElement("div");
+      shell.className = "page-shell";
+      applyModeVars(shell);
+
+      const inner = document.createElement("div");
+      inner.className = "page-inner";
+
+      const page = document.createElement("div");
+      page.className = "paper-page";
+      applyModeVars(page);
+
+      for (let i = 0; i < perPage; i++) {
+        const idx = p * perPage + i;
+        const cell = document.createElement("div");
+        cell.className = "label-cell";
+
+        if (idx < qty) {
+          const img = document.createElement("img");
+          img.className = "label-img";
+          img.src = imgSrc || "";
+          img.alt = "Etiqueta";
+          cell.appendChild(img);
+        }
+        page.appendChild(cell);
+      }
+
+      inner.appendChild(page);
+      shell.appendChild(inner);
+      preview.appendChild(shell);
+    }
+  }
+
+  function scheduleRender(force=false){
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(async () => {
+      const tpl = $("fTemplate").value;
+      const size = $("fSize").value;
+      if (!tpl || !size) { buildPreview(); return; }
+
+      if (force) renderPromise = null;
+      await ensurePngs();
+      buildPreview();
+    }, 120);
+  }
+
+  /* ===== Print ===== */
+  function buildPrintRoot(){
+    const qtyRaw = parseInt($("fQty").value, 10);
+    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
+
+    const mode = getMode();
+    const perPage = mode.perPage;
+    const pages = Math.ceil(qty / perPage);
+
+    const imgSrc = mode.useRotated ? pngRotated : pngNormal;
+
+    const printRoot = $("printRoot");
+    printRoot.innerHTML = "";
+    printRoot.style.display = "block";
+
+    for (let p = 0; p < pages; p++) {
+      const pageWrap = document.createElement("div");
+      pageWrap.className = "print-page";
+
+      const page = document.createElement("div");
+      page.className = "paper-page";
+      applyModeVars(page);
+
+      for (let i = 0; i < perPage; i++) {
+        const idx = p * perPage + i;
+        const cell = document.createElement("div");
+        cell.className = "label-cell";
+
+        if (idx < qty) {
+          const img = document.createElement("img");
+          img.className = "label-img";
+          img.src = imgSrc || "";
+          img.alt = "Etiqueta";
+          cell.appendChild(img);
+        }
+        page.appendChild(cell);
+      }
+
+      pageWrap.appendChild(page);
+      printRoot.appendChild(pageWrap);
+    }
+  }
+
+  async function printNow(){
+    if (!validateForm()) return;
+
+    const antesN = parseInt($("fAntes").value || "0", 10);
+    const ahoraN = parseInt($("fAhora").value || "0", 10);
+    if (Number.isFinite(antesN) && Number.isFinite(ahoraN) && ahoraN > antesN) return;
+
+    updateSvg();
+    renderPromise = null;
+    await ensurePngs();
+
+    buildPrintRoot();
+
+    const cleanup = () => {
+      $("printRoot").style.display = "none";
+      $("printRoot").innerHTML = "";
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+
+    window.print();
+  }
+
+  function resetForm(){
+    $("fTemplate").value = "";
+    $("fSize").value = "";
+    $("fNombre").value = "";
+    $("fAntes").value  = "";
+    $("fAhora").value  = "";
+    $("fCuota").value  = "";
+    $("fQty").value    = "1";
+
+    svgEl = null;
+    pngNormal = null;
+    pngRotated = null;
+    renderPromise = null;
+
+    const oldHost = $("__svgHostHidden");
+    if (oldHost) oldHost.remove();
+
+    clearAllErrors();
+    $("btnPrint").disabled = true;
+    showEmptyPreview("Sin previsualización", "Selecciona una plantilla y un tamaño para ver la etiqueta aquí.");
+  }
+
+  /* ===== Eventos ===== */
+  ["fAntes","fAhora","fCuota"].forEach(id=>{
+    const el = $(id);
+
+    el.addEventListener("keydown", (e)=>{
+      const allowed = ["Backspace","Delete","ArrowLeft","ArrowRight","Home","End","Tab"];
+      if (allowed.includes(e.key)) return;
+      if (e.ctrlKey || e.metaKey) return;
+      if (!/^\d$/.test(e.key)) e.preventDefault();
+    });
+
+    el.addEventListener("input", ()=>{
+      sanitizeIntInput(el);          // ✅ aplica límite de 6 dígitos
+      validateForm();
+      if (svgEl) updateSvg();
+      scheduleRender(true);
+    });
+
+    el.addEventListener("paste", ()=>{
+      setTimeout(()=>{
+        sanitizeIntInput(el);        // ✅ aplica límite de 6 dígitos
+        validateForm();
+        if (svgEl) updateSvg();
+        scheduleRender(true);
+      }, 0);
+    });
+  });
+
+  $("fNombre").addEventListener("input", ()=>{
+    validateForm();
+    if (svgEl) updateSvg(); // se va a mayúsculas al SVG
+    scheduleRender(true);
+  });
+
+  $("fQty").addEventListener("input", ()=>{
+    validateForm();
+    buildPreview();
+  });
+
+  $("fSize").addEventListener("change", ()=>{
+    validateForm();
+    scheduleRender(true);
+  });
+
+  $("fTemplate").addEventListener("change", async ()=>{
+    const file = $("fTemplate").value;
+    validateForm();
+
+    if (!file){
+      svgEl = null; pngNormal = null; pngRotated = null;
+      buildPreview();
+      return;
+    }
+
+    try{
+      await loadSvgFrom(file);
+      if (svgEl) updateSvg();
+      await ensurePngs();
+      buildPreview();
+    }catch(e){
+      svgEl = null; pngNormal = null; pngRotated = null;
+      setFieldError("fTemplate","eTemplate","No se pudo cargar el SVG. Verifica el nombre y ubicación.");
+      showEmptyPreview("No se pudo cargar la plantilla", "Verifica que el SVG esté junto al HTML y que el nombre coincida.");
+      console.error(e);
+    }
+  });
+
+  $("btnReset").addEventListener("click", resetForm);
+  $("btnPrint").addEventListener("click", printNow);
+
+  (function init(){
+    $("fTemplate").value = "";
+    $("fSize").value = "";
+    $("btnPrint").disabled = true;
+    showEmptyPreview("Sin previsualización", "Selecciona una plantilla y un tamaño para ver la etiqueta aquí.");
+  })();
+</script>
+</body>
+</html>
