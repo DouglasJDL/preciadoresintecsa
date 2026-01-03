@@ -19,6 +19,16 @@
       --danger:#b91c1c;
       --dangerBorder:#fecaca;
       --dangerBg:#fef2f2;
+      --ok:#166534;
+      --okBg:#f0fdf4;
+      --okBorder:#bbf7d0;
+
+      /* Base layout (mezcla tamaños sin desperdiciar) */
+      --cols:2;
+      --rows:2;
+      --pagePad:6mm;
+      --gap:6mm;
+      --previewScale:0.58;
     }
     *{box-sizing:border-box}
     body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px;background:var(--bg);color:var(--text)}
@@ -26,7 +36,7 @@
 
     .wrap{
       display:grid;
-      grid-template-columns: minmax(320px, 420px) 1fr;
+      grid-template-columns: minmax(320px, 520px) 1fr;
       gap:16px;
       align-items:start;
     }
@@ -44,7 +54,28 @@
     .cardHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
     .cardHeader h3{margin:0;font-size:14px}
     .subtle{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--border);margin:12px 0}
 
+    /* Botones */
+    .btnRow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button{padding:10px 12px;border:0;border-radius:12px;cursor:pointer;font-weight:900}
+    .btnBlue{background:var(--blue);color:#fff}
+    .btnBlue:hover{background:var(--blue2)}
+    .btn2{background:var(--gray);color:var(--text)}
+    .btnDanger{background:#ef4444;color:#fff}
+    .btnDanger:hover{background:#dc2626}
+    .btnGhost{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .btnSm{padding:8px 10px;border-radius:10px;font-weight:900;font-size:12px}
+
+    /* ✅ Edit más visible */
+    .btnEdit{
+      background:#eff6ff;
+      color:#1d4ed8;
+      border:1px solid #bfdbfe;
+    }
+    .btnEdit:hover{background:#dbeafe}
+
+    /* Form */
     .form{
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -84,16 +115,51 @@
     .fieldError.show{display:block}
     .isInvalid{border-color:#fca5a5 !important; box-shadow:0 0 0 3px rgba(239,68,68,.12) !important;}
 
-    .btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
-    button{padding:10px 12px;border:0;border-radius:12px;cursor:pointer;font-weight:700}
-    .btnBlue{background:var(--blue);color:#fff}
-    .btnBlue:hover{background:var(--blue2)}
-    .btnBlue:disabled{opacity:.55;cursor:not-allowed}
-    .btn2{background:var(--gray);color:var(--text)}
-
     .help{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.35}
 
-    /* ===== PREVIEW ===== */
+    /* Lista productos */
+    .list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+    .item{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      background:#fff;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .itemLeft{min-width:0}
+    .itemTitle{margin:0;font-size:13px;font-weight:1000}
+    .itemMeta{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.35}
+    .itemActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+    .badge{
+      display:inline-block;
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fafafa;
+      color:#334155;
+      margin-right:6px;
+      font-weight:900;
+    }
+
+    .notice{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--okBorder);
+      background:var(--okBg);
+      color:var(--ok);
+      font-size:12px;
+      line-height:1.35;
+      display:none;
+    }
+    .notice.show{display:block}
+
+    /* Preview */
     #paperPreviewWrap{display:flex;justify-content:center;align-items:flex-start;overflow:auto;min-height:520px}
     #paperPreview{
       width:100%;
@@ -111,54 +177,105 @@
       border-radius:16px;
       background:#fafafa;
       padding:18px;
-      max-width:740px;
+      max-width:980px;
       text-align:center;
       color:#334155;
     }
     .emptyPreview h4{margin:0 0 6px;font-size:14px}
     .emptyPreview p{margin:0;font-size:12px;color:#64748b;line-height:1.4}
 
-    /* Preview sin “mega-espacio” entre hojas */
+    .summaryBar{
+      width:100%;
+      max-width:980px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      font-size:12px;
+      font-weight:1000;
+      color:#334155;
+    }
+    .summaryBar span{color:#64748b;font-weight:900}
+    .summaryBar .hint{
+      font-weight:900;
+      color:#475569;
+      background:#f1f5f9;
+      border:1px solid #e2e8f0;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:11px;
+      white-space:nowrap;
+    }
+
+    /* Preview sin mega-espacio entre hojas */
     .page-shell{
-      width: calc(215.9mm * var(--previewScale, 0.58));
-      height: calc(279.4mm * var(--previewScale, 0.58));
+      width: calc(215.9mm * var(--previewScale));
+      height: calc(279.4mm * var(--previewScale));
       background:#fff;
       border:1px solid var(--border);
       border-radius:12px;
       box-shadow:0 8px 20px rgba(0,0,0,.06);
       overflow:hidden;
+      position:relative;
     }
     .page-inner{
       width:215.9mm;
       height:279.4mm;
-      transform: scale(var(--previewScale, 0.58));
+      transform: scale(var(--previewScale));
       transform-origin: top left;
     }
 
     .paper-page{
       width:215.9mm;
       height:279.4mm;
-      padding: var(--pagePad, 6mm);
+      padding: var(--pagePad);
       display:grid;
-      grid-template-columns: repeat(var(--cols, 2), 1fr);
-      grid-template-rows: repeat(var(--rows, 2), 1fr);
-      gap: var(--gap, 6mm);
+      grid-template-columns: repeat(var(--cols), 1fr);
+      grid-template-rows: repeat(var(--rows), 1fr);
+      gap: var(--gap);
       background:#fff;
+      position:relative;
     }
 
-    .label-cell{display:flex;justify-content:center;align-items:center;overflow:hidden}
+    .label-cell{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      overflow:hidden;
+      position:relative;
+      border-radius:10px;
+    }
+    /* Para mezclar tamaños: siempre fill */
     .label-img{
-      width: var(--labelW, 95mm);
-      height: var(--labelH, auto);
-      max-width: 100%;
-      max-height: 100%;
+      width:100%;
+      height:100%;
       display:block;
       object-fit: contain;
     }
 
+    /* ✅ Resaltado del que estás agregando/editando (solo preview) */
+    .hl{
+      outline:4px solid #f59e0b;
+      box-shadow:0 0 0 6px rgba(245,158,11,.20);
+    }
+    .hl::after{
+      content:"EDITANDO";
+      position:absolute;
+      top:8px;
+      left:8px;
+      font-size:10px;
+      font-weight:1000;
+      letter-spacing:.08em;
+      color:#ffffff;
+      background:rgba(7, 26, 243, 0.95);
+      border:1px solid #9b00f4;
+      padding:4px 8px;
+      border-radius:999px;
+    }
+
     #workCanvas{display:none}
 
-    /* ===== IMPRESIÓN ===== */
+    /* Print */
     @media print{
       body *{visibility:hidden}
       #printRoot, #printRoot *{visibility:visible}
@@ -174,6 +291,10 @@
       .print-page{ page-break-after: always; break-after: page; }
       .print-page:last-child{ page-break-after: auto; break-after: auto; }
 
+      /* ✅ NO imprimir resaltados */
+      .hl{ outline:none !important; box-shadow:none !important; }
+      .hl::after{ display:none !important; }
+
       @page{ size: letter portrait; margin:0; }
     }
   </style>
@@ -183,86 +304,120 @@
   <h2>Editor de etiqueta</h2>
 
   <div class="wrap">
+
+    <!-- IZQUIERDA -->
     <div class="card">
       <div class="cardHeader">
-        <h3>Campos</h3>
-        <span class="subtle">Completa todo para imprimir</span>
+        <h3>Productos</h3>
+        <span class="subtle" id="countHint">0 guardados</span>
       </div>
 
-      <div class="form" id="formGrid">
-        <div class="field">
-          <label>Plantilla (SVG)</label>
-          <select id="fTemplate" required>
-            <option value="" selected disabled>Selecciona una plantilla…</option>
-            <option value="promocion1.SVG">Promoción</option>
-            <option value="normal1.SVG">Normal</option>
-            <option value="liquidacion1.svg">Liquidación</option>
-            <option value="oferta1.svg">Oferta</option>
-          </select>
-          <div class="fieldError" id="eTemplate"></div>
-        </div>
-
-        <div class="field">
-          <label>Tamaño</label>
-          <select id="fSize" required>
-            <option value="" selected disabled>Selecciona un tamaño…</option>
-            <option value="quarter">1/4 (4 por hoja)</option>
-            <option value="half_h">Media hoja horizontal (2 por hoja)</option>
-            <option value="full">Carta completa (1 por hoja)</option>
-          </select>
-          <div class="fieldError" id="eSize"></div>
-        </div>
-
-        <div class="field span2">
-          <label>Nombre</label>
-          <input id="fNombre" placeholder="Ej: Laptop color rojo y verde" autocomplete="off">
-          <div class="fieldError" id="eNombre"></div>
-        </div>
-
-        <div class="field">
-          <label>Antes (entero, máx 6 dígitos)</label>
-          <input id="fAntes" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 3999" autocomplete="off">
-          <div class="fieldError" id="eAntes"></div>
-        </div>
-
-        <div class="field">
-          <label>Ahora (entero, máx 6 dígitos)</label>
-          <input id="fAhora" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 2999" autocomplete="off">
-          <div class="fieldError" id="eAhora"></div>
-        </div>
-
-        <div class="field span2">
-          <label>Cuota (entero, máx 6 dígitos)</label>
-          <input id="fCuota" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 199" autocomplete="off">
-          <div class="fieldError" id="eCuota"></div>
-        </div>
-
-        <div class="field span2">
-          <label>Cantidad</label>
-          <input id="fQty" type="number" min="1" step="1" value="1">
-          <div class="fieldError" id="eQty"></div>
-        </div>
+      <div class="btnRow" id="topActions">
+        <button class="btnBlue" id="btnShowForm" type="button">+ Agregar</button>
+        <button class="btnBlue" id="btnPrint" type="button" style="display:none">Imprimir</button>
+        <button class="btn2" id="btnResetAll" type="button" style="display:none">Limpiar todo</button>
       </div>
 
-      <div class="btnRow">
-        <button class="btnBlue" id="btnPrint" type="button" disabled>Imprimir</button>
-        <button class="btn2" id="btnReset" type="button">Reset</button>
+      <div class="notice" id="noticeOk">✅ Guardado.</div>
+
+      <div class="divider"></div>
+
+      <!-- Formulario -->
+      <div id="formWrap" style="display:none">
+        <div class="cardHeader" style="margin-bottom:10px">
+          <h3 id="formTitle">Agregar producto</h3>
+          <span class="subtle">Se previsualiza en vivo</span>
+        </div>
+
+        <div class="form">
+          <div class="field">
+            <label>Plantilla (SVG)</label>
+            <select id="fTemplate" required>
+              <option value="" selected disabled>Selecciona una plantilla…</option>
+              <option value="promocion1.SVG">Promoción</option>
+              <option value="normal1.SVG">Normal</option>
+              <option value="liquidacion1.svg">Liquidación</option>
+              <option value="oferta1.svg">Oferta</option>
+            </select>
+            <div class="fieldError" id="eTemplate"></div>
+          </div>
+
+          <div class="field">
+            <label>Tamaño</label>
+            <select id="fSize" required>
+              <option value="" selected disabled>Selecciona un tamaño…</option>
+              <option value="quarter">1/4 (4 por hoja)</option>
+              <option value="half_h">Media hoja horizontal (2 por hoja)</option>
+              <option value="full">Carta completa (1 por hoja)</option>
+            </select>
+            <div class="fieldError" id="eSize"></div>
+          </div>
+
+          <div class="field span2">
+            <label>Nombre</label>
+            <input id="fNombre" placeholder="Ej: Laptop color rojo y verde" autocomplete="off">
+            <div class="fieldError" id="eNombre"></div>
+          </div>
+
+          <div class="field">
+            <label>Antes (entero, máx 6 dígitos)</label>
+            <input id="fAntes" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 3999" autocomplete="off">
+            <div class="fieldError" id="eAntes"></div>
+          </div>
+
+          <div class="field">
+            <label>Ahora (entero, máx 6 dígitos)</label>
+            <input id="fAhora" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 2999" autocomplete="off">
+            <div class="fieldError" id="eAhora"></div>
+          </div>
+
+          <div class="field">
+            <label>Cuota (entero, máx 6 dígitos)</label>
+            <input id="fCuota" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 199" autocomplete="off">
+            <div class="fieldError" id="eCuota"></div>
+          </div>
+
+          <div class="field">
+            <label>Cantidad</label>
+            <input id="fQty" type="number" min="1" step="1" value="1">
+            <div class="fieldError" id="eQty"></div>
+          </div>
+        </div>
+
+        <div class="btnRow" style="margin-top:12px">
+          <button class="btnBlue" id="btnSave" type="button">Guardar producto</button>
+          <button class="btnGhost" id="btnCancel" type="button">Volver</button>
+        </div>
+
+        <p class="help">
+          El producto que estás agregando/editando se marca en la previsualización (no se imprime).<br>
+          Para que el nombre se adapte: en cada SVG crea un rect con ID <b>box_nombre_producto</b>.
+        </p>
+
+        <div class="divider"></div>
       </div>
 
-      <p class="help">
-        Para que el nombre se adapte, en cada SVG crea un rect con ID: <b>box_nombre_producto</b>.
-      </p>
+      <!-- Lista -->
+      <div id="listWrap">
+        <div class="subtle">Guardados</div>
+        <div class="list" id="productsList"></div>
+      </div>
     </div>
 
+    <!-- DERECHA -->
     <div class="card" id="paperPreviewWrap">
       <div id="paperPreview"></div>
     </div>
+
   </div>
 
   <div id="printRoot" style="display:none"></div>
   <canvas id="workCanvas"></canvas>
 
 <script>
+  /* =========================
+     CONFIG
+     ========================= */
   const IDS = {
     nombre: "nombre_producto",
     antes:  "precio_antes",
@@ -270,44 +425,79 @@
     cuota:  "cuota_semanal"
   };
 
-  const MODES = {
-    quarter: { cols:2, rows:2, perPage:4, pagePad:"6mm", gap:"6mm", labelW:"98mm",  labelH:"auto", previewScale:0.58, useRotated:false },
-    half_h:  { cols:1, rows:2, perPage:2, pagePad:"6mm", gap:"6mm", labelW:"100%", labelH:"100%", previewScale:0.58, useRotated:true  },
-    full:    { cols:1, rows:1, perPage:1, pagePad:"6mm", gap:"0mm", labelW:"100%", labelH:"100%", previewScale:0.58, useRotated:false }
+  // Piezas:
+  // quarter = 1x1, half_h = 2x1, full = 2x2
+  const PIECES = {
+    quarter: { w:1, h:1, area:1, useRotated:false, label:"1/4" },
+    half_h:  { w:2, h:1, area:2, useRotated:true,  label:"1/2 horizontal" },
+    full:    { w:2, h:2, area:4, useRotated:false, label:"Carta completa" }
   };
-
-  let svgEl = null;
-  let pngNormal = null;
-  let pngRotated = null;
-  let renderPromise = null;
-  let renderTimer = null;
 
   const $ = (id) => document.getElementById(id);
 
-  function getModeKey(){ return $("fSize").value || ""; }
-  function getMode(){ return MODES[getModeKey()] || null; }
+  /* =========================
+     STATE
+     ========================= */
+  let products = []; // {id, template, size, nombre, antesD, ahoraD, cuotaD, qty}
+  let editingId = null;
 
-  function applyModeVars(el) {
-    const m = getMode();
-    if (!m) return;
-    el.style.setProperty("--cols", m.cols);
-    el.style.setProperty("--rows", m.rows);
-    el.style.setProperty("--pagePad", m.pagePad);
-    el.style.setProperty("--gap", m.gap);
-    el.style.setProperty("--labelW", m.labelW);
-    el.style.setProperty("--labelH", m.labelH);
-    el.style.setProperty("--previewScale", m.previewScale);
+  // Draft (lo que estás escribiendo) para preview en vivo
+  let draft = null; // {id:"__draft__", template,size,nombre,antesD,ahoraD,cuotaD,qty, __isDraft:true}
+
+  const templateCache = new Map(); // file -> svgText
+  const pngCache = new Map();      // key -> {normal, rotated}
+
+  let renderTimer = null;
+  let isRendering = false;
+
+  /* =========================
+     INPUT HELPERS
+     ========================= */
+  function onlyDigits(str){ return (str ?? "").toString().replace(/[^\d]/g, ""); }
+
+  function sanitizeDigitsMax6(el){
+    let cleaned = onlyDigits(el.value).slice(0, 6);
+    if (cleaned.length > 1) cleaned = cleaned.replace(/^0+/, "") || "0";
+    el.value = cleaned;
+    return cleaned;
   }
 
-  function showEmptyPreview(title, body){
-    $("paperPreview").innerHTML = `
-      <div class="emptyPreview">
-        <h4>${title}</h4>
-        <p>${body}</p>
-      </div>
-    `;
+  function formatThousands(n){
+    const num = Number(n);
+    if (!Number.isFinite(num)) return "";
+    return num.toLocaleString("en-US");
   }
 
+  function toQuetzalesFromDigits(d){
+    if (!d) return "";
+    const n = parseInt(d, 10);
+    if (!Number.isFinite(n)) return "";
+    return "Q " + formatThousands(n);
+  }
+
+  function uid(){
+    return "p_" + Math.random().toString(36).slice(2,10) + "_" + Date.now().toString(36);
+  }
+
+  function escapeHtml(s){
+    return (s ?? "").toString()
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  function templateLabel(file){
+    const map = {
+      "promocion1.SVG":"Promoción",
+      "normal1.SVG":"Normal",
+      "liquidacion1.svg":"Liquidación",
+      "oferta1.svg":"Oferta"
+    };
+    return map[file] || file || "";
+  }
+
+  /* =========================
+     UI: ERRORS
+     ========================= */
   function setFieldError(inputId, errorId, msg){
     const input = $(inputId);
     const err = $(errorId);
@@ -328,61 +518,235 @@
     setFieldError("fQty","eQty","");
   }
 
-  async function loadSvgFrom(file) {
-    const res = await fetch(file, { cache: "no-store" });
-    if (!res.ok) throw new Error("No se pudo cargar " + file + ". Debe estar junto al HTML.");
-    const svgText = await res.text();
-
-    const oldHost = $("__svgHostHidden");
-    if (oldHost) oldHost.remove();
-
-    const host = document.createElement("div");
-    host.id = "__svgHostHidden";
-    host.style.position = "absolute";
-    host.style.left = "-99999px";
-    host.style.top = "-99999px";
-    host.innerHTML = svgText;
-    document.body.appendChild(host);
-
-    svgEl = host.querySelector("svg");
-    pngNormal = null;
-    pngRotated = null;
-    renderPromise = null;
+  /* =========================
+     FORM SHOW/HIDE
+     ========================= */
+  function setTopButtonsForMode(mode){
+    if (mode === "form"){
+      $("btnPrint").style.display = "none";
+      $("btnResetAll").style.display = "none";
+    } else {
+      $("btnPrint").style.display = products.length > 0 ? "inline-block" : "none";
+      $("btnResetAll").style.display = products.length > 0 ? "inline-block" : "none";
+    }
   }
 
-  /* ===== Enteros + max 6 dígitos + formato miles + Q ===== */
-  function onlyDigits(str){ return (str ?? "").toString().replace(/[^\d]/g, ""); }
+  function showForm(editId = null){
+    $("formWrap").style.display = "block";
+    $("listWrap").style.display = "none";
+    $("btnShowForm").style.display = "none";
+    $("noticeOk").classList.remove("show");
 
-  function sanitizeIntInput(el){
-    // ✅ toma solo dígitos y recorta a 6
-    let cleaned = onlyDigits(el.value).slice(0, 6);
+    setTopButtonsForMode("form");
 
-    // ✅ evita números tipo 000123
-    if (cleaned.length > 1) cleaned = cleaned.replace(/^0+/, "") || "0";
+    editingId = editId;
 
-    el.value = cleaned;
-    return cleaned;
+    if (!editId){
+      $("formTitle").textContent = "Agregar producto";
+      $("btnSave").textContent = "Guardar producto";
+      clearAllErrors();
+
+      $("fTemplate").value = "";
+      $("fSize").value = "";
+      $("fNombre").value = "";
+      $("fAntes").value = "";
+      $("fAhora").value = "";
+      $("fCuota").value = "";
+      $("fQty").value = "1";
+
+      // crea draft vacío y resalta en preview cuando ya haya template/size
+      draft = {
+        id: "__draft__",
+        template: "",
+        size: "",
+        nombre: "",
+        antesD: "",
+        ahoraD: "",
+        cuotaD: "",
+        qty: 1,
+        __isDraft: true
+      };
+      scheduleRebuildAll(true);
+      return;
+    }
+
+    const p = products.find(x => x.id === editId);
+    if (!p) return;
+
+    $("formTitle").textContent = "Editar producto";
+    $("btnSave").textContent = "Guardar cambios";
+    clearAllErrors();
+
+    $("fTemplate").value = p.template;
+    $("fSize").value = p.size;
+    $("fNombre").value = p.nombre;
+    $("fAntes").value = p.antesD;
+    $("fAhora").value = p.ahoraD;
+    $("fCuota").value = p.cuotaD;
+    $("fQty").value = String(p.qty);
+
+    // draft clonado del producto editado (para marcar y ver el acomodo)
+    draft = { ...p, __isDraft: true };
+    scheduleRebuildAll(true);
   }
 
-  function formatThousands(num){
-    try { return Number(num).toLocaleString("en-US"); }
-    catch { return String(num||"").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  function hideForm(){
+    $("formWrap").style.display = "none";
+    $("listWrap").style.display = "block";
+    $("btnShowForm").style.display = "inline-block";
+    editingId = null;
+
+    // al salir del form: ya no hay draft en preview
+    draft = null;
+
+    clearAllErrors();
+    setTopButtonsForMode("list");
+    scheduleRebuildAll(true);
   }
 
-  function toQuetzalesFromDigits(d){
-    if (!d) return "";
-    const n = parseInt(d, 10);
-    if (!Number.isFinite(n)) return "";
-    return "Q " + formatThousands(n);
+  /* =========================
+     VALIDATION (SAVE)
+     ========================= */
+  function validateFormForSave(){
+    clearAllErrors();
+
+    const template = $("fTemplate").value;
+    const size = $("fSize").value;
+
+    const nombre = ($("fNombre").value || "").trim();
+    const antesD = sanitizeDigitsMax6($("fAntes"));
+    const ahoraD = sanitizeDigitsMax6($("fAhora"));
+    const cuotaD = sanitizeDigitsMax6($("fCuota"));
+
+    const qtyRaw = parseInt($("fQty").value, 10);
+    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 0;
+
+    let ok = true;
+
+    if (!template){ setFieldError("fTemplate","eTemplate","Selecciona una plantilla."); ok = false; }
+    if (!size){ setFieldError("fSize","eSize","Selecciona un tamaño."); ok = false; }
+
+    if (!nombre){ setFieldError("fNombre","eNombre","Este campo es obligatorio."); ok = false; }
+    if (!antesD){ setFieldError("fAntes","eAntes","Ingresa 'Antes' (máx 6 dígitos)."); ok = false; }
+    if (!ahoraD){ setFieldError("fAhora","eAhora","Ingresa 'Ahora' (máx 6 dígitos)."); ok = false; }
+    if (!cuotaD){ setFieldError("fCuota","eCuota","Ingresa 'Cuota' (máx 6 dígitos)."); ok = false; }
+    if (!qty){ setFieldError("fQty","eQty","Cantidad debe ser mayor a 0."); ok = false; }
+
+    if (antesD && ahoraD){
+      const antesN = parseInt(antesD, 10);
+      const ahoraN = parseInt(ahoraD, 10);
+      if (Number.isFinite(antesN) && Number.isFinite(ahoraN) && ahoraN > antesN){
+        setFieldError("fAhora","eAhora","'Ahora' no puede ser mayor que 'Antes'.");
+        ok = false;
+      }
+    }
+
+    if (!ok) return { ok:false };
+
+    return {
+      ok:true,
+      data: { template, size, nombre, antesD, ahoraD, cuotaD, qty }
+    };
   }
 
-  function clearSvgText(textEl){
-    if (!textEl) return;
-    while (textEl.firstChild) textEl.removeChild(textEl.firstChild);
-    textEl.textContent = "";
+  /* =========================
+     DRAFT LIVE UPDATE
+     ========================= */
+  function syncDraftFromForm(){
+    if (!draft) return;
+
+    draft.template = $("fTemplate").value || "";
+    draft.size = $("fSize").value || "";
+    draft.nombre = ($("fNombre").value || "").trim();
+    draft.antesD = onlyDigits($("fAntes").value || "").slice(0,6);
+    draft.ahoraD = onlyDigits($("fAhora").value || "").slice(0,6);
+    draft.cuotaD = onlyDigits($("fCuota").value || "").slice(0,6);
+
+    const qtyRaw = parseInt($("fQty").value, 10);
+    draft.qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
+
+    // si está editando un producto guardado, el highlight será ese ID
+    // si está agregando, se resalta "__draft__"
   }
 
-  /* ===== Wrap por BOX ===== */
+  /* =========================
+     LIST UI
+     ========================= */
+  function updateTopUI(){
+    $("countHint").textContent = `${products.length} guardados`;
+    if (!editingId && $("formWrap").style.display === "none"){
+      $("btnPrint").style.display = products.length > 0 ? "inline-block" : "none";
+      $("btnResetAll").style.display = products.length > 0 ? "inline-block" : "none";
+    }
+  }
+
+  function renderProductsList(){
+    const wrap = $("productsList");
+    wrap.innerHTML = "";
+
+    if (products.length === 0){
+      wrap.innerHTML = `
+        <div class="emptyPreview" style="max-width:none">
+          <h4>Sin productos guardados</h4>
+          <p>Haz clic en <b>Agregar producto</b> para empezar.</p>
+        </div>
+      `;
+      return;
+    }
+
+    products.forEach(p => {
+      const before = toQuetzalesFromDigits(p.antesD);
+      const now = toQuetzalesFromDigits(p.ahoraD);
+      const cuota = toQuetzalesFromDigits(p.cuotaD);
+      const piece = PIECES[p.size];
+
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = `
+        <div class="itemLeft">
+          <p class="itemTitle">${escapeHtml(p.nombre).toUpperCase()}</p>
+          <p class="itemMeta">
+            <span class="badge">${escapeHtml(templateLabel(p.template))}</span>
+            <span class="badge">${escapeHtml(piece?.label || p.size)}</span>
+            <span class="badge">Qty: ${p.qty}</span><br/>
+            Antes: <b>${escapeHtml(before)}</b> · Ahora: <b>${escapeHtml(now)}</b> · Cuota: <b>${escapeHtml(cuota)}</b>
+          </p>
+        </div>
+        <div class="itemActions">
+          <button class="btnEdit btnSm" type="button" data-act="edit" data-id="${p.id}">✏️ Editar</button>
+          <button class="btnDanger btnSm" type="button" data-act="del" data-id="${p.id}">🗑️ Eliminar</button>
+        </div>
+      `;
+      wrap.appendChild(el);
+    });
+
+    wrap.querySelectorAll("button[data-act]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-id");
+        const act = btn.getAttribute("data-act");
+        if (act === "edit") showForm(id);
+        if (act === "del") deleteProduct(id);
+      });
+    });
+  }
+
+  function deleteProduct(id){
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    const ok = confirm(`¿Eliminar este producto?\n\n${p.nombre.toUpperCase()}\nCantidad: ${p.qty}`);
+    if (!ok) return;
+
+    products = products.filter(x => x.id !== id);
+
+    updateTopUI();
+    renderProductsList();
+    scheduleRebuildAll(true);
+  }
+
+  /* =========================
+     SVG / PNG
+     ========================= */
   function getSvgViewBox(svg) {
     const vb = svg.viewBox && svg.viewBox.baseVal;
     if (vb && vb.width && vb.height) return { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
@@ -412,6 +776,12 @@
     const cs = window.getComputedStyle(textEl);
     const n = parseFloat(cs.fontSize || "0");
     return Number.isFinite(n) && n > 0 ? n : 16;
+  }
+
+  function clearSvgText(textEl){
+    if (!textEl) return;
+    while (textEl.firstChild) textEl.removeChild(textEl.firstChild);
+    textEl.textContent = "";
   }
 
   function setWrappedTextInBox(textEl, text, box, opts = {}) {
@@ -480,81 +850,41 @@
     });
   }
 
-  function setTextSmartCentered(id, value){
-    const el = $(id);
-    if (!el) return;
+  function setTextSmartCentered(textEl, value){
+    if (!textEl) return;
     const txt = (value ?? "").toString().trim();
-    if (!txt) { clearSvgText(el); return; }
-    el.setAttribute("text-anchor", "middle");
-    const tspan = el.querySelector("tspan");
+    if (!txt) { clearSvgText(textEl); return; }
+    textEl.setAttribute("text-anchor", "middle");
+    const tspan = textEl.querySelector("tspan");
     if (tspan) tspan.textContent = txt;
-    else el.textContent = txt;
+    else textEl.textContent = txt;
   }
 
-  function updateSvg(){
-    if (!svgEl) return;
-
-    // ✅ SIEMPRE MAYÚSCULAS EN LA ETIQUETA
-    const nombre = ($("fNombre").value || "").trim().toUpperCase();
-
-    const antesD = sanitizeIntInput($("fAntes"));
-    const ahoraD = sanitizeIntInput($("fAhora"));
-    const cuotaD = sanitizeIntInput($("fCuota"));
-
-    const antes = toQuetzalesFromDigits(antesD);
-    const ahora = toQuetzalesFromDigits(ahoraD);
-    const cuota = toQuetzalesFromDigits(cuotaD);
-
-    const nameEl = $(IDS.nombre);
-    if (nameEl) {
-      const box = getTextBoxById(svgEl, IDS.nombre);
-      setWrappedTextInBox(nameEl, nombre, box, { lineHeightEm: 1.10 });
-    }
-    setTextSmartCentered(IDS.antes, antes);
-    setTextSmartCentered(IDS.ahora, ahora);
-    setTextSmartCentered(IDS.cuota, cuota);
+  async function getTemplateText(file){
+    if (templateCache.has(file)) return templateCache.get(file);
+    const res = await fetch(file, { cache: "no-store" });
+    if (!res.ok) throw new Error("No se pudo cargar " + file);
+    const txt = await res.text();
+    templateCache.set(file, txt);
+    return txt;
   }
 
-  /* ===== Validación con errores por campo ===== */
-  function validateForm(){
-    clearAllErrors();
+  function mountHiddenSvg(svgText){
+    const old = $("__svgHostHidden");
+    if (old) old.remove();
 
-    const tpl = $("fTemplate").value;
-    const size = $("fSize").value;
+    const host = document.createElement("div");
+    host.id = "__svgHostHidden";
+    host.style.position = "absolute";
+    host.style.left = "-99999px";
+    host.style.top = "-99999px";
+    host.innerHTML = svgText;
+    document.body.appendChild(host);
 
-    const nombre = $("fNombre").value.trim();
-    const antesD = sanitizeIntInput($("fAntes"));
-    const ahoraD = sanitizeIntInput($("fAhora"));
-    const cuotaD = sanitizeIntInput($("fCuota"));
-
-    const qtyRaw = parseInt($("fQty").value, 10);
-    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 0;
-
-    let ok = true;
-
-    if (!tpl){ setFieldError("fTemplate","eTemplate","Selecciona una plantilla."); ok = false; }
-    if (!size){ setFieldError("fSize","eSize","Selecciona un tamaño."); ok = false; }
-
-    if (!nombre){ setFieldError("fNombre","eNombre","Este campo es obligatorio."); ok = false; }
-    if (!antesD){ setFieldError("fAntes","eAntes","Ingresa el precio 'Antes' (máx 6 dígitos)."); ok = false; }
-    if (!ahoraD){ setFieldError("fAhora","eAhora","Ingresa el precio 'Ahora' (máx 6 dígitos)."); ok = false; }
-    if (!cuotaD){ setFieldError("fCuota","eCuota","Ingresa la cuota (máx 6 dígitos)."); ok = false; }
-    if (!qty){ setFieldError("fQty","eQty","Cantidad debe ser mayor a 0."); ok = false; }
-
-    if (antesD && ahoraD){
-      const antesN = parseInt(antesD, 10);
-      const ahoraN = parseInt(ahoraD, 10);
-      if (Number.isFinite(antesN) && Number.isFinite(ahoraN) && ahoraN > antesN){
-        setFieldError("fAhora","eAhora","'Ahora' no puede ser mayor que 'Antes'.");
-        ok = false;
-      }
-    }
-
-    $("btnPrint").disabled = !ok;
-    return ok;
+    const svgEl = host.querySelector("svg");
+    return { host, svgEl };
   }
 
-  /* ===== SVG -> PNG ===== */
   async function svgNodeToPng(svgNode, targetWidthPx = 2200){
     const serializer = new XMLSerializer();
     let svgText = serializer.serializeToString(svgNode);
@@ -622,188 +952,512 @@
     return canvas.toDataURL("image/png");
   }
 
-  async function ensurePngs(){
-    if (!svgEl) return false;
-    if (!renderPromise) {
-      renderPromise = (async () => {
-        pngNormal = await svgNodeToPng(svgEl, 2200);
-        pngRotated = await rotatePng90(pngNormal);
-        renderPromise = null;
+  async function renderProductPngs(product){
+    // ✅ si no hay template, no se puede renderizar
+    if (!product.template) return null;
+
+    const key = JSON.stringify({
+      t: product.template,
+      n: (product.nombre||"").trim().toUpperCase(),
+      a: product.antesD,
+      b: product.ahoraD,
+      c: product.cuotaD
+    });
+
+    if (pngCache.has(key)) return pngCache.get(key);
+
+    const svgText = await getTemplateText(product.template);
+    const { host, svgEl } = mountHiddenSvg(svgText);
+
+    const nombre = (product.nombre || "").trim().toUpperCase();
+    const antes = toQuetzalesFromDigits(product.antesD);
+    const ahora = toQuetzalesFromDigits(product.ahoraD);
+    const cuota = toQuetzalesFromDigits(product.cuotaD);
+
+    const nameEl = host.querySelector(`#${CSS.escape(IDS.nombre)}`);
+    if (nameEl && svgEl){
+      const box = getTextBoxById(svgEl, IDS.nombre);
+      setWrappedTextInBox(nameEl, nombre, box, { lineHeightEm: 1.10 });
+    }
+
+    setTextSmartCentered(host.querySelector(`#${CSS.escape(IDS.antes)}`), antes);
+    setTextSmartCentered(host.querySelector(`#${CSS.escape(IDS.ahora)}`), ahora);
+    setTextSmartCentered(host.querySelector(`#${CSS.escape(IDS.cuota)}`), cuota);
+
+    const normal = await svgNodeToPng(svgEl, 2200);
+    const rotated = await rotatePng90(normal);
+
+    host.remove();
+
+    const out = { normal, rotated };
+    pngCache.set(key, out);
+    return out;
+  }
+
+  /* =========================
+     PACKING (incremental: rellena huecos primero)
+     ========================= */
+  function buildWorkingSet(){
+    // ✅ incluye draft si existe y tiene size/template seleccionados (para ver acomodo real)
+    const out = [...products];
+
+    if (draft && draft.size && draft.template){
+      if (editingId){
+        // si estoy editando, reemplazo temporalmente el producto por el draft
+        const idx = out.findIndex(x => x.id === editingId);
+        if (idx >= 0) out[idx] = { ...draft };
+        else out.unshift({ ...draft });
+      } else {
+        // si estoy agregando, lo añado al final (o al inicio) para verlo entrando a huecos
+        out.push({ ...draft });
+      }
+    }
+
+    return out;
+  }
+
+  function buildInstances(workingProducts){
+    const out = [];
+    let seq = 0;
+
+    for (const p of workingProducts){
+      const piece = PIECES[p.size];
+      if (!piece) continue;
+      const qty = Number(p.qty || 0);
+      if (!Number.isFinite(qty) || qty <= 0) continue;
+
+      for (let i=0;i<qty;i++){
+        out.push({
+          seq: seq++,
+          product: p,
+          pieceKey: p.size,
+          piece,
+          __isDraft: !!p.__isDraft
+        });
+      }
+    }
+
+    // ✅ Para minimizar hojas (y llenar huecos): grandes primero
+    // Si empate: los que ya están guardados primero, luego draft (para que el draft “entre” en huecos disponibles)
+    out.sort((a,b)=>{
+      if (b.piece.area !== a.piece.area) return b.piece.area - a.piece.area;
+      if (a.__isDraft !== b.__isDraft) return a.__isDraft ? 1 : -1;
+      return a.seq - b.seq;
+    });
+
+    return out;
+  }
+
+  function emptyOcc(){
+    return [[false,false],[false,false]];
+  }
+
+  function canPlace(occ, row, col, w, h){
+    if (row + h > 2 || col + w > 2) return false;
+    for (let r=row; r<row+h; r++){
+      for (let c=col; c<col+w; c++){
+        if (occ[r][c]) return false;
+      }
+    }
+    return true;
+  }
+
+  function place(occ, row, col, w, h){
+    for (let r=row; r<row+h; r++){
+      for (let c=col; c<col+w; c++){
+        occ[r][c] = true;
+      }
+    }
+  }
+
+  function firstFitInPage(page, inst){
+    const { w, h } = inst.piece;
+
+    if (w === 2 && h === 2){
+      if (canPlace(page.occ, 0, 0, 2, 2)){
+        place(page.occ, 0, 0, 2, 2);
+        page.items.push({ inst, row:0, col:0, w:2, h:2 });
         return true;
-      })();
+      }
+      return false;
     }
-    return renderPromise;
+
+    if (w === 2 && h === 1){
+      for (let row=0; row<2; row++){
+        if (canPlace(page.occ, row, 0, 2, 1)){
+          place(page.occ, row, 0, 2, 1);
+          page.items.push({ inst, row, col:0, w:2, h:1 });
+          return true;
+        }
+      }
+      return false;
+    }
+
+    for (let row=0; row<2; row++){
+      for (let col=0; col<2; col++){
+        if (canPlace(page.occ, row, col, 1, 1)){
+          place(page.occ, row, col, 1, 1);
+          page.items.push({ inst, row, col, w:1, h:1 });
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
-  /* ===== Preview ===== */
-  function buildPreview(){
-    const tpl = $("fTemplate").value;
-    const size = $("fSize").value;
+  function packToPages(instances){
+    const pages = [];
+    for (const inst of instances){
+      let placed = false;
 
-    if (!tpl && !size){
-      showEmptyPreview("Selecciona plantilla y tamaño", "Elige una plantilla (SVG) y un tamaño para mostrar la previsualización.");
-      return;
-    }
-    if (!tpl){
-      showEmptyPreview("Selecciona una plantilla", "Elige la plantilla (SVG) para poder generar la etiqueta.");
-      return;
-    }
-    if (!size){
-      showEmptyPreview("Selecciona un tamaño", "Elige el tamaño de impresión para ver cómo quedará en la hoja.");
-      return;
-    }
-    if (!svgEl || !pngNormal){
-      showEmptyPreview("Generando previsualización…", "En un momento se mostrará aquí.");
-      return;
-    }
-
-    const qtyRaw = parseInt($("fQty").value, 10);
-    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
-
-    const mode = getMode();
-    const perPage = mode.perPage;
-
-    const preview = $("paperPreview");
-    preview.innerHTML = "";
-
-    const pages = Math.ceil(qty / perPage);
-    const imgSrc = mode.useRotated ? pngRotated : pngNormal;
-
-    for (let p = 0; p < pages; p++) {
-      const shell = document.createElement("div");
-      shell.className = "page-shell";
-      applyModeVars(shell);
-
-      const inner = document.createElement("div");
-      inner.className = "page-inner";
-
-      const page = document.createElement("div");
-      page.className = "paper-page";
-      applyModeVars(page);
-
-      for (let i = 0; i < perPage; i++) {
-        const idx = p * perPage + i;
-        const cell = document.createElement("div");
-        cell.className = "label-cell";
-
-        if (idx < qty) {
-          const img = document.createElement("img");
-          img.className = "label-img";
-          img.src = imgSrc || "";
-          img.alt = "Etiqueta";
-          cell.appendChild(img);
+      // ✅ rellena huecos en páginas existentes primero
+      for (const page of pages){
+        if (firstFitInPage(page, inst)){
+          placed = true;
+          break;
         }
-        page.appendChild(cell);
       }
 
-      inner.appendChild(page);
-      shell.appendChild(inner);
-      preview.appendChild(shell);
+      // si no cabe, crea nueva hoja
+      if (!placed){
+        const page = { occ: emptyOcc(), items: [] };
+        if (firstFitInPage(page, inst)){
+          pages.push(page);
+        }
+      }
+    }
+    return pages;
+  }
+
+  /* =========================
+     PREVIEW
+     ========================= */
+  function showEmptyPreview(title, body){
+    $("paperPreview").innerHTML = `
+      <div class="emptyPreview">
+        <h4>${title}</h4>
+        <p>${body}</p>
+      </div>
+    `;
+  }
+
+  function buildPageDOM(pageItems, prodToPng, highlightId){
+    const shell = document.createElement("div");
+    shell.className = "page-shell";
+
+    const inner = document.createElement("div");
+    inner.className = "page-inner";
+
+    const page = document.createElement("div");
+    page.className = "paper-page";
+
+    for (const it of pageItems){
+      const { inst, row, col, w, h } = it;
+      const cell = document.createElement("div");
+      cell.className = "label-cell";
+      cell.style.gridRow = `${row+1} / span ${h}`;
+      cell.style.gridColumn = `${col+1} / span ${w}`;
+
+      const pid = inst.product.id;
+      const isHighlight = highlightId && (pid === highlightId || (inst.__isDraft && highlightId === "__draft__"));
+      if (isHighlight) cell.classList.add("hl");
+
+      const pngs = prodToPng.get(pid);
+      if (!pngs){
+        // si no hay png (ej: draft sin template) no pintamos nada
+        continue;
+      }
+
+      const img = document.createElement("img");
+      img.className = "label-img";
+      img.alt = "Etiqueta";
+      img.src = inst.piece.useRotated ? pngs.rotated : pngs.normal;
+
+      cell.appendChild(img);
+      page.appendChild(cell);
+    }
+
+    inner.appendChild(page);
+    shell.appendChild(inner);
+    return shell;
+  }
+
+  async function buildAllPreview(){
+    const working = buildWorkingSet();
+
+    if (working.length === 0){
+      showEmptyPreview("Sin previsualización", "Agrega al menos un producto para ver las hojas aquí.");
+      return;
+    }
+
+    const instances = buildInstances(working);
+    if (instances.length === 0){
+      showEmptyPreview("Completa plantilla y tamaño", "Selecciona plantilla y tamaño para ver el acomodo en la hoja.");
+      return;
+    }
+
+    if (isRendering) return;
+    isRendering = true;
+
+    try{
+      // 1) PNGs por producto (incluye draft si aplica)
+      const prodToPng = new Map();
+      for (const p of working){
+        const pngs = await renderProductPngs(p);
+        if (pngs) prodToPng.set(p.id, pngs);
+      }
+
+      // 2) packing
+      const pages = packToPages(instances);
+
+      const preview = $("paperPreview");
+      preview.innerHTML = "";
+
+      // highlight id: si editando => editingId, si agregando => "__draft__"
+      const highlightId = draft ? (editingId ? editingId : "__draft__") : null;
+
+      const sum = document.createElement("div");
+      sum.className = "summaryBar";
+      sum.innerHTML = `
+        <div>Total etiquetas: ${instances.length}</div>
+        <span>Hojas: ${pages.length}</span>
+        ${draft ? `<div class="hint">Marcado: ${editingId ? "EDITANDO" : "AGREGANDO"}</div>` : `<div class="hint">Vista general</div>`}
+      `;
+      preview.appendChild(sum);
+
+      for (const page of pages){
+        preview.appendChild(buildPageDOM(page.items, prodToPng, highlightId));
+      }
+
+    }catch(e){
+      console.error(e);
+      showEmptyPreview("Error en previsualización", "No se pudo generar. Verifica que los SVG existan junto al HTML.");
+    }finally{
+      isRendering = false;
     }
   }
 
-  function scheduleRender(force=false){
+  function scheduleRebuildAll(force=false){
     if (renderTimer) clearTimeout(renderTimer);
-    renderTimer = setTimeout(async () => {
-      const tpl = $("fTemplate").value;
-      const size = $("fSize").value;
-      if (!tpl || !size) { buildPreview(); return; }
-
-      if (force) renderPromise = null;
-      await ensurePngs();
-      buildPreview();
-    }, 120);
+    renderTimer = setTimeout(buildAllPreview, force ? 0 : 120);
   }
 
-  /* ===== Print ===== */
-  function buildPrintRoot(){
-    const qtyRaw = parseInt($("fQty").value, 10);
-    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
+  /* =========================
+     PRINT (sin draft / sin highlights)
+     ========================= */
+  function buildPrintPageDOM(pageItems, prodToPng){
+    const wrap = document.createElement("div");
+    wrap.className = "print-page";
 
-    const mode = getMode();
-    const perPage = mode.perPage;
-    const pages = Math.ceil(qty / perPage);
+    const page = document.createElement("div");
+    page.className = "paper-page";
 
-    const imgSrc = mode.useRotated ? pngRotated : pngNormal;
+    for (const it of pageItems){
+      const { inst, row, col, w, h } = it;
+      if (inst.__isDraft) continue; // ✅ NUNCA imprimir draft
 
-    const printRoot = $("printRoot");
-    printRoot.innerHTML = "";
-    printRoot.style.display = "block";
+      const cell = document.createElement("div");
+      cell.className = "label-cell";
+      cell.style.gridRow = `${row+1} / span ${h}`;
+      cell.style.gridColumn = `${col+1} / span ${w}`;
 
-    for (let p = 0; p < pages; p++) {
-      const pageWrap = document.createElement("div");
-      pageWrap.className = "print-page";
+      const pngs = prodToPng.get(inst.product.id);
+      if (!pngs) continue;
 
-      const page = document.createElement("div");
-      page.className = "paper-page";
-      applyModeVars(page);
+      const img = document.createElement("img");
+      img.className = "label-img";
+      img.alt = "Etiqueta";
+      img.src = inst.piece.useRotated ? pngs.rotated : pngs.normal;
 
-      for (let i = 0; i < perPage; i++) {
-        const idx = p * perPage + i;
-        const cell = document.createElement("div");
-        cell.className = "label-cell";
-
-        if (idx < qty) {
-          const img = document.createElement("img");
-          img.className = "label-img";
-          img.src = imgSrc || "";
-          img.alt = "Etiqueta";
-          cell.appendChild(img);
-        }
-        page.appendChild(cell);
-      }
-
-      pageWrap.appendChild(page);
-      printRoot.appendChild(pageWrap);
+      cell.appendChild(img);
+      page.appendChild(cell);
     }
+
+    wrap.appendChild(page);
+    return wrap;
   }
 
   async function printNow(){
-    if (!validateForm()) return;
+    if (products.length === 0) return;
 
-    const antesN = parseInt($("fAntes").value || "0", 10);
-    const ahoraN = parseInt($("fAhora").value || "0", 10);
-    if (Number.isFinite(antesN) && Number.isFinite(ahoraN) && ahoraN > antesN) return;
+    try{
+      const prodToPng = new Map();
+      for (const p of products){
+        const pngs = await renderProductPngs(p);
+        if (pngs) prodToPng.set(p.id, pngs);
+      }
 
-    updateSvg();
-    renderPromise = null;
-    await ensurePngs();
+      const instances = buildInstances(products);
+      const pages = packToPages(instances);
 
-    buildPrintRoot();
+      const printRoot = $("printRoot");
+      printRoot.innerHTML = "";
+      printRoot.style.display = "block";
 
-    const cleanup = () => {
+      for (const page of pages){
+        printRoot.appendChild(buildPrintPageDOM(page.items, prodToPng));
+      }
+
+      const cleanup = () => {
+        printRoot.style.display = "none";
+        printRoot.innerHTML = "";
+        window.removeEventListener("afterprint", cleanup);
+        scheduleRebuildAll(true);
+      };
+      window.addEventListener("afterprint", cleanup);
+
+      window.print();
+
+    }catch(e){
+      console.error(e);
       $("printRoot").style.display = "none";
       $("printRoot").innerHTML = "";
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-
-    window.print();
+      alert("No se pudo imprimir. Verifica que los SVG existan y que el navegador permita imprimir.");
+      scheduleRebuildAll(true);
+    }
   }
 
-  function resetForm(){
-    $("fTemplate").value = "";
-    $("fSize").value = "";
-    $("fNombre").value = "";
-    $("fAntes").value  = "";
-    $("fAhora").value  = "";
-    $("fCuota").value  = "";
-    $("fQty").value    = "1";
+  /* =========================
+     SAVE / EDIT / CLEAR
+     ========================= */
+  function saveProduct(){
+    const v = validateFormForSave();
+    if (!v.ok) return;
 
-    svgEl = null;
-    pngNormal = null;
-    pngRotated = null;
-    renderPromise = null;
+    const data = v.data;
 
-    const oldHost = $("__svgHostHidden");
-    if (oldHost) oldHost.remove();
+    if (!editingId){
+      products.unshift({ id: uid(), ...data });
+    } else {
+      const idx = products.findIndex(x => x.id === editingId);
+      if (idx >= 0) products[idx] = { ...products[idx], ...data };
+    }
 
-    clearAllErrors();
-    $("btnPrint").disabled = true;
-    showEmptyPreview("Sin previsualización", "Selecciona una plantilla y un tamaño para ver la etiqueta aquí.");
+    $("noticeOk").classList.add("show");
+    setTimeout(()=> $("noticeOk").classList.remove("show"), 1200);
+
+    // al guardar: se elimina draft y vuelve a lista
+    draft = null;
+    hideForm();
+
+    updateTopUI();
+    renderProductsList();
+    scheduleRebuildAll(true);
   }
 
-  /* ===== Eventos ===== */
+  function clearAll(){
+    const ok = confirm("¿Eliminar todos los productos guardados?");
+    if (!ok) return;
+    products = [];
+    draft = null;
+    updateTopUI();
+    renderProductsList();
+    scheduleRebuildAll(true);
+  }
+
+  /* =========================
+     LIST UI
+     ========================= */
+  function updateTopUI(){
+    $("countHint").textContent = `${products.length} guardados`;
+    if (!editingId && $("formWrap").style.display === "none"){
+      $("btnPrint").style.display = products.length > 0 ? "inline-block" : "none";
+      $("btnResetAll").style.display = products.length > 0 ? "inline-block" : "none";
+    }
+  }
+
+  function renderProductsList(){
+    const wrap = $("productsList");
+    wrap.innerHTML = "";
+
+    if (products.length === 0){
+      wrap.innerHTML = `
+        <div class="emptyPreview" style="max-width:none">
+          <h4>Sin productos guardados</h4>
+          <p>Haz clic en <b>Agregar producto</b> para empezar.</p>
+        </div>
+      `;
+      return;
+    }
+
+    products.forEach(p => {
+      const before = toQuetzalesFromDigits(p.antesD);
+      const now = toQuetzalesFromDigits(p.ahoraD);
+      const cuota = toQuetzalesFromDigits(p.cuotaD);
+      const piece = PIECES[p.size];
+
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = `
+        <div class="itemLeft">
+          <p class="itemTitle">${escapeHtml(p.nombre).toUpperCase()}</p>
+          <p class="itemMeta">
+            <span class="badge">${escapeHtml(templateLabel(p.template))}</span>
+            <span class="badge">${escapeHtml(piece?.label || p.size)}</span>
+            <span class="badge">Qty: ${p.qty}</span><br/>
+            Antes: <b>${escapeHtml(before)}</b> · Ahora: <b>${escapeHtml(now)}</b> · Cuota: <b>${escapeHtml(cuota)}</b>
+          </p>
+        </div>
+        <div class="itemActions">
+          <button class="btnEdit btnSm" type="button" data-act="edit" data-id="${p.id}">✏️ Editar</button>
+          <button class="btnDanger btnSm" type="button" data-act="del" data-id="${p.id}">🗑️ Eliminar</button>
+        </div>
+      `;
+      wrap.appendChild(el);
+    });
+
+    wrap.querySelectorAll("button[data-act]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-id");
+        const act = btn.getAttribute("data-act");
+        if (act === "edit") showForm(id);
+        if (act === "del") deleteProduct(id);
+      });
+    });
+  }
+
+  function deleteProduct(id){
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    const ok = confirm(`¿Eliminar este producto?\n\n${p.nombre.toUpperCase()}\nCantidad: ${p.qty}`);
+    if (!ok) return;
+
+    products = products.filter(x => x.id !== id);
+
+    updateTopUI();
+    renderProductsList();
+    scheduleRebuildAll(true);
+  }
+
+  /* =========================
+     EVENTS
+     ========================= */
+  $("btnShowForm").addEventListener("click", ()=> showForm(null));
+  $("btnCancel").addEventListener("click", hideForm);
+  $("btnSave").addEventListener("click", saveProduct);
+  $("btnPrint").addEventListener("click", printNow);
+  $("btnResetAll").addEventListener("click", clearAll);
+
+  // inputs: live draft + preview
+  function onFormChange(){
+    // sanitiza
+    sanitizeDigitsMax6($("fAntes"));
+    sanitizeDigitsMax6($("fAhora"));
+    sanitizeDigitsMax6($("fCuota"));
+
+    // draft
+    if (draft){
+      syncDraftFromForm();
+      scheduleRebuildAll();
+    }
+  }
+
+  ["fTemplate","fSize","fNombre","fQty"].forEach(id=>{
+    $(id).addEventListener("input", onFormChange);
+    $(id).addEventListener("change", onFormChange);
+  });
+
   ["fAntes","fAhora","fCuota"].forEach(id=>{
     const el = $(id);
 
@@ -814,70 +1468,18 @@
       if (!/^\d$/.test(e.key)) e.preventDefault();
     });
 
-    el.addEventListener("input", ()=>{
-      sanitizeIntInput(el);          // ✅ aplica límite de 6 dígitos
-      validateForm();
-      if (svgEl) updateSvg();
-      scheduleRender(true);
-    });
-
-    el.addEventListener("paste", ()=>{
-      setTimeout(()=>{
-        sanitizeIntInput(el);        // ✅ aplica límite de 6 dígitos
-        validateForm();
-        if (svgEl) updateSvg();
-        scheduleRender(true);
-      }, 0);
-    });
+    el.addEventListener("input", onFormChange);
+    el.addEventListener("paste", ()=> setTimeout(onFormChange, 0));
   });
 
-  $("fNombre").addEventListener("input", ()=>{
-    validateForm();
-    if (svgEl) updateSvg(); // se va a mayúsculas al SVG
-    scheduleRender(true);
-  });
-
-  $("fQty").addEventListener("input", ()=>{
-    validateForm();
-    buildPreview();
-  });
-
-  $("fSize").addEventListener("change", ()=>{
-    validateForm();
-    scheduleRender(true);
-  });
-
-  $("fTemplate").addEventListener("change", async ()=>{
-    const file = $("fTemplate").value;
-    validateForm();
-
-    if (!file){
-      svgEl = null; pngNormal = null; pngRotated = null;
-      buildPreview();
-      return;
-    }
-
-    try{
-      await loadSvgFrom(file);
-      if (svgEl) updateSvg();
-      await ensurePngs();
-      buildPreview();
-    }catch(e){
-      svgEl = null; pngNormal = null; pngRotated = null;
-      setFieldError("fTemplate","eTemplate","No se pudo cargar el SVG. Verifica el nombre y ubicación.");
-      showEmptyPreview("No se pudo cargar la plantilla", "Verifica que el SVG esté junto al HTML y que el nombre coincida.");
-      console.error(e);
-    }
-  });
-
-  $("btnReset").addEventListener("click", resetForm);
-  $("btnPrint").addEventListener("click", printNow);
-
+  /* =========================
+     INIT
+     ========================= */
   (function init(){
-    $("fTemplate").value = "";
-    $("fSize").value = "";
-    $("btnPrint").disabled = true;
-    showEmptyPreview("Sin previsualización", "Selecciona una plantilla y un tamaño para ver la etiqueta aquí.");
+    updateTopUI();
+    renderProductsList();
+    setTopButtonsForMode("list");
+    showEmptyPreview("Sin previsualización", "Agrega al menos un producto para ver las hojas aquí.");
   })();
 </script>
 </body>
