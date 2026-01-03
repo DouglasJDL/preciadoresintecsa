@@ -8,6 +8,9 @@
   <!-- ✅ Exportar a PDF (jsPDF) -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
+  <!-- ✅ Importar/Exportar Excel (SheetJS/xlsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     :root{
       --bg:#f6f7f9;
@@ -24,7 +27,7 @@
 
       --padGrid: 6mm;
       --gapGrid: 6mm;
-      --padFull: 10mm; /* ✅ margen extra para FULL */
+      --padFull: 10mm;
 
       --focus: rgba(59,130,246,.18);
     }
@@ -77,6 +80,7 @@
       overflow:auto;
       height:100%;
       min-height:0;
+      background:transparent;
     }
 
     .cardHeader{
@@ -109,7 +113,7 @@
     .btnNeutral{ background:#eef2f7; color:#0f172a; border-color:#dbe3ee; }
     .btnNeutral:hover{ background:#e5e7eb; }
 
-    /* ✅ Icon buttons (menos saturación visual) */
+    /* ✅ Icon buttons */
     .btnIcon{
       width:40px;height:40px;padding:0;border-radius:12px;
       background:#ffffff;border:1px solid #e5e7eb;color:#0f172a;
@@ -127,7 +131,7 @@
 
     .btnIcon svg{width:18px;height:18px;display:block}
 
-    /* ✅ spinner (export) */
+    /* ✅ spinner */
     .spin{
       width:18px;height:18px;border-radius:999px;
       border:2px solid currentColor;border-top-color:transparent;
@@ -282,6 +286,7 @@
       overflow:hidden;border-radius:10px;cursor:pointer;
       --pairColor:#93c5fd;
       --pairGlowStrong: rgba(37,99,235,.18);
+      background:#fff;
     }
     .slot img{width:100%;height:100%;object-fit:contain;display:block}
 
@@ -333,14 +338,93 @@
     .ctxBtns button{width:100%}
     .ctxHint{font-size:11px;color:#64748b;margin-top:6px;padding:0 4px}
 
-    /* ===== Print ===== */
+    /* ===== MODAL ===== */
+    .modalOverlay{
+      position:fixed;inset:0;z-index:999999;
+      background:rgba(15,23,42,.55);
+      display:none;align-items:center;justify-content:center;
+      padding:18px;
+    }
+    .modal{
+      width:min(720px, 100%);
+      background:#fff;border:1px solid #e5e7eb;border-radius:16px;
+      box-shadow:0 30px 70px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .modalHead{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:14px 14px;border-bottom:1px solid #eef2f7;background:#f8fafc;
+    }
+    .modalHead h4{margin:0;font-size:14px}
+    .modalBody{padding:14px 14px;max-height:min(62vh, 520px);overflow:auto}
+    .modalActions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;padding:14px;border-top:1px solid #eef2f7;background:#fff}
+    .modalText{font-size:13px;color:#0f172a;line-height:1.45}
+    .errList{
+      margin:12px 0 0;padding:0;list-style:none;
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .errList li{
+      border:1px solid #fee2e2;background:#fef2f2;color:#991b1b;
+      border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.35;
+    }
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 8px;border-radius:999px;border:1px solid #e5e7eb;
+      background:#f8fafc;font-size:11px;font-weight:900;color:#0f172a;
+    }
+
+    /* ===== IMPRESIÓN ===== */
     @media print{
-      body *{visibility:hidden}
-      #printRoot, #printRoot *{visibility:visible}
-      #printRoot{position:absolute;left:0;top:0;width:215.9mm;margin:0;padding:0;display:block !important;}
-      *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
-      .print-page{ page-break-after: always; break-after: page; }
-      .print-page:last-child{ page-break-after: auto; break-after: auto; }
+      html, body{
+        margin:0 !important;
+        padding:0 !important;
+        background:#fff !important;
+      }
+      body{
+        overflow:visible !important;
+        height:auto !important;
+      }
+
+      body > :not(#printRoot){
+        display:none !important;
+      }
+
+      #printRoot{
+        display:block !important;
+        position:static !important;
+        width:215.9mm;
+        margin:0 !important;
+        padding:0 !important;
+        background:#fff !important;
+        overflow:visible !important;
+      }
+
+      *{
+        -webkit-print-color-adjust:exact !important;
+        print-color-adjust:exact !important;
+      }
+
+      .print-page{
+        width:215.9mm !important;
+        height:279.4mm !important;
+        margin:0 !important;
+        padding:0 !important;
+        background:#fff !important;
+
+        page-break-after: always;
+        break-after: page;
+
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .print-page:last-child{
+        page-break-after:auto;
+        break-after:auto;
+      }
+
+      .paper-page{ background:#fff !important; }
+      .slot{ background:#fff !important; border-radius:0 !important; cursor:default !important; }
+
       @page{ size: letter portrait; margin:0; }
     }
   </style>
@@ -360,9 +444,26 @@
             <div class="subtle">Hover resalta · Click mueve · 1 desplegado</div>
           </div>
 
-          <!-- ✅ Acciones compactas -->
           <div class="btnRow" style="gap:8px">
             <button class="btnPrimary" id="btnShowForm" type="button">➕ Agregar</button>
+
+            <!-- ✅ Plantilla Excel -->
+            <button class="btnIcon primary" id="btnTemplate" type="button" title="Descargar plantilla Excel" aria-label="Descargar plantilla Excel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <path d="M7 10l5 5 5-5"/>
+                <path d="M12 15V3"/>
+              </svg>
+            </button>
+
+            <!-- ✅ Importar Excel -->
+            <button class="btnIcon primary" id="btnImport" type="button" title="Importar Excel" aria-label="Importar Excel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <path d="M7 10l5-5 5 5"/>
+                <path d="M12 5v14"/>
+              </svg>
+            </button>
 
             <button class="btnIcon primary" id="btnPdf" type="button" style="display:none" title="Exportar PDF" aria-label="Exportar PDF">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -381,7 +482,6 @@
               </svg>
             </button>
 
-            <!-- ✅ icono distinto a “eliminar” -->
             <button class="btnIcon danger" id="btnResetAll" type="button" style="display:none" title="Limpiar todo" aria-label="Limpiar todo">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M7 21h10"/>
@@ -399,6 +499,20 @@
             IDs en SVG:
             <b>nombre_producto</b>, <b>precio_antes</b>, <b>precio_ahora</b>, <b>cuota_semanal</b>,
             <b>fecha_vigencia</b> y <b>Fecha_impresion</b> (o <b>fecha_impresion</b>).
+          </p>
+
+          <p class="help">
+            Excel esperado:
+            <span class="pill">Plantilla</span>
+            <span class="pill">Tamaño</span>
+            <span class="pill">Nombre</span>
+            <span class="pill">Antes</span>
+            <span class="pill">Ahora</span>
+            <span class="pill">Cuota</span>
+            <span class="pill">Cantidad</span>
+            <span class="pill">AgregarVigencia</span>
+            <span class="pill">VigenciaInicio</span>
+            <span class="pill">VigenciaFin</span>
           </p>
         </div>
       </div>
@@ -418,8 +532,8 @@
               <label>Plantilla (SVG)</label>
               <select id="fTemplate" required>
                 <option value="" selected disabled>Selecciona una plantilla…</option>
-                <option value="promocion1.SVG">Promoción</option>
-                <option value="normal1.SVG">Normal</option>
+                <option value="promocion1.svg">Promoción</option>
+                <option value="normal1.svg">Normal</option>
                 <option value="liquidacion1.svg">Liquidación</option>
                 <option value="oferta1.svg">Oferta</option>
               </select>
@@ -444,20 +558,20 @@
             </div>
 
             <div class="field">
-              <label>Antes (entero, máx 6 dígitos)</label>
-              <input id="fAntes" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 3999" autocomplete="off">
+              <label>Antes (entero, máx 5 dígitos)</label>
+              <input id="fAntes" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="Ej: 39999" autocomplete="off">
               <div class="fieldError" id="eAntes"></div>
             </div>
 
             <div class="field">
-              <label>Ahora (entero, máx 6 dígitos)</label>
-              <input id="fAhora" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 2999" autocomplete="off">
+              <label>Ahora (entero, máx 5 dígitos)</label>
+              <input id="fAhora" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="Ej: 29999" autocomplete="off">
               <div class="fieldError" id="eAhora"></div>
             </div>
 
             <div class="field span2">
-              <label>Cuota (entero, máx 6 dígitos)</label>
-              <input id="fCuota" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 199" autocomplete="off">
+              <label>Cuota (entero, máx 5 dígitos)</label>
+              <input id="fCuota" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="Ej: 19999" autocomplete="off">
               <div class="fieldError" id="eCuota"></div>
             </div>
 
@@ -531,11 +645,30 @@
     <div class="ctxHint">Tip: click derecho en una etiqueta o producto.</div>
   </div>
 
+  <!-- ✅ Modal -->
+  <div class="modalOverlay" id="modalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal">
+      <div class="modalHead">
+        <h4 id="modalTitle">Título</h4>
+        <button class="btnIcon" id="modalX" type="button" title="Cerrar" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modalBody" id="modalBody"></div>
+      <div class="modalActions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <!-- ✅ Input archivo -->
+  <input id="fileImport" type="file" accept=".xlsx,.xls" style="display:none">
+
 <script>
   /* ============================
      Persistencia + alerta salida
   ============================ */
-  const STORAGE_KEY = "editor_etiquetas_state_v5";
+  const STORAGE_KEY = "editor_etiquetas_state_v6";
   let saveTimer = null;
 
   function requestSaveState(){
@@ -574,8 +707,6 @@
           ? "Al guardar, se actualiza la fecha y hora de impresión"
           : "Completa todo para guardar";
         fillFormFromProduct(draft);
-
-        // ✅ al entrar a form, que el preview se vaya a la tarjeta (draft/edit)
         pendingFocus = { id: editingId ? editingId : "__draft__", scroll: true };
       } else {
         setView("list");
@@ -631,29 +762,22 @@
 
   let previewTimer = null;
 
-  // Índices / resaltes
   let previewSlotsByProduct = new Map();
   let activeItemEl = null;
 
-  // SOLO 1 DESPLEGADO
   let expandedId = null;
-
-  // selección “pegada”
   let selectedProductId = null;
 
-  // Hover con delay
   let hoverTimer = null;
   let hoverOutTimer = null;
   let hoverPid = null;
 
-  // Context menu
   let ctxPid = null;
 
-  // foco a hoja
   let pendingFocus = null;
 
-  // export loading
   let exporting = false;
+  let importing = false;
 
   const $ = (id) => document.getElementById(id);
 
@@ -678,11 +802,14 @@
   }
 
   function onlyDigits(str){ return (str ?? "").toString().replace(/[^\d]/g, ""); }
+
+  /* ✅ 5 dígitos */
   function sanitizeIntStr(raw){
-    let cleaned = onlyDigits(raw).slice(0, 6);
+    let cleaned = onlyDigits(raw).slice(0, 5);
     if (cleaned.length > 1) cleaned = cleaned.replace(/^0+/, "") || "0";
     return cleaned;
   }
+
   function formatThousands(num){
     try { return Number(num).toLocaleString("en-US"); }
     catch { return String(num||"").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
@@ -726,12 +853,47 @@
   }
 
   /* ============================
-     ✅ COLORES: paleta distinta + variantes cuando se agota
+     ✅ MODAL
+  ============================ */
+  function openModal({ title, bodyHtml, actions }){
+    $("modalTitle").textContent = title || "Mensaje";
+    $("modalBody").innerHTML = bodyHtml || "";
+    const actionsWrap = $("modalActions");
+    actionsWrap.innerHTML = "";
+
+    (actions || []).forEach(a => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = a.className || "btnNeutral";
+      btn.textContent = a.text || "OK";
+      btn.addEventListener("click", () => {
+        if (a.onClick) a.onClick();
+      });
+      actionsWrap.appendChild(btn);
+    });
+
+    $("modalOverlay").style.display = "flex";
+    $("modalOverlay").setAttribute("aria-hidden","false");
+  }
+  function closeModal(){
+    $("modalOverlay").style.display = "none";
+    $("modalOverlay").setAttribute("aria-hidden","true");
+    $("modalBody").innerHTML = "";
+    $("modalActions").innerHTML = "";
+  }
+  $("modalX").addEventListener("click", closeModal);
+  $("modalOverlay").addEventListener("click", (e)=>{
+    if (e.target === $("modalOverlay")) closeModal();
+  });
+  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeModal(); });
+
+  /* ============================
+     ✅ COLORES
   ============================ */
   const COLOR_HUES = [210,150,35,0,270,190,95,235,25,330];
 
-  function allocateColorIdx(){
-    const used = new Set(products.map(p => p.colorIdx).filter(n => Number.isFinite(n)));
+  function allocateColorIdx(baseProducts = products){
+    const used = new Set(baseProducts.map(p => p.colorIdx).filter(n => Number.isFinite(n)));
     let idx = 0;
     while (used.has(idx)) idx++;
     return idx;
@@ -822,9 +984,6 @@
     $("btnResetAll").style.display = has ? "inline-flex" : "none";
   }
 
-  /* ============================
-     ✅ LIMPIAR HOVER/RESALTADO al entrar a edición/agregar
-  ============================ */
   function clearAllHoverState(){
     clearTimeout(hoverTimer);
     clearTimeout(hoverOutTimer);
@@ -893,7 +1052,6 @@
     if (!item) return;
     setActiveListItem(item);
 
-    // ✅ scroll correcto: en el contenedor real del listado
     if (scroll){
       const container = $("listScrollArea");
       if (container) scrollToChild(container, item, 24);
@@ -919,7 +1077,6 @@
       slot.style.setProperty("--pairColor", c);
       slot.style.setProperty("--pairGlowStrong", g);
 
-      // ✅ “AQUÍ” SOLO en modo listado (no en agregar/editar)
       if (canShowTag && idx === 0){
         const tag = document.createElement("div");
         tag.className = "hlTag";
@@ -941,7 +1098,6 @@
     }
   }
 
-  // ✅ foco para el “draft” (AGREGANDO/EDITANDO) en modo formulario
   function ensureDraftVisible(){
     if (isListView()) return;
     const wrap = $("paperPreviewWrap");
@@ -950,7 +1106,6 @@
     const shell = slot.closest(".page-shell");
     if (!shell) return;
 
-    // solo scrollea si no está a la vista (para que no “brinque” sin necesidad)
     if (!isElementInView(wrap, shell, 18)){
       scrollToChild(wrap, shell, 24);
     }
@@ -1065,7 +1220,7 @@
     if (pid) onDeleteProduct(pid);
   });
 
-  /* ===== Iconos SVG (reutilizables) ===== */
+  /* ===== Iconos ===== */
   const ICONS = {
     chevronRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`,
     chevronDown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>`,
@@ -1081,7 +1236,7 @@
       wrap.innerHTML = `
         <div class="listEmpty">
           No hay productos agregados todavía.<br>
-          Presiona <b>“Agregar”</b> para comenzar.
+          Presiona <b>“Agregar”</b> o usa <b>Importar Excel</b>.
         </div>
       `;
       return;
@@ -1152,7 +1307,6 @@
     markSelectedInList();
   }
 
-  // Delegación lista
   $("itemsWrap").addEventListener("mouseover", (e)=>{
     const item = e.target.closest?.(".item[data-id]");
     if (!item || !isListView()) return;
@@ -1188,12 +1342,21 @@
       if (action === "toggle"){
         e.stopPropagation();
         selectedProductId = pid;
+
         toggleExpanded(pid);
         renderItemsList();
-        requestAnimationFrame(() => applySelectionHighlight());
+
+        const opened = (expandedId === pid);
+        requestAnimationFrame(() => {
+          markSelectedInList();
+          highlightProductInPreview(pid, opened, true);
+          highlightProductInList(pid, false);
+        });
+
         requestSaveState();
         return;
       }
+
       if (action === "edit"){
         e.stopPropagation();
         onEditProduct(pid, { fromCtx:false });
@@ -1232,7 +1395,6 @@
     requestSaveState();
   });
 
-  // Preview -> lista
   $("paperPreview").addEventListener("mouseover", (e)=>{
     const slot = e.target.closest?.(".slot[data-product-id]");
     if (!slot || !isListView()) return;
@@ -1277,7 +1439,6 @@
     renderItemsList();
 
     requestAnimationFrame(()=>{
-      // ✅ si el item no está visible, scrollear lista para verlo
       highlightProductInList(pid, true);
       markSelectedInList();
       highlightProductInPreview(pid, false, true);
@@ -1307,40 +1468,72 @@
     draft.vigEnd = $("fVigEnd").value || "";
   }
 
+  function validateProductData(p){
+    const errs = [];
+
+    if (!p.template) errs.push("Plantilla requerida.");
+    if (!p.size) errs.push("Tamaño requerido.");
+    if (!p.nombre || !p.nombre.trim()) errs.push("Nombre requerido.");
+
+    const antes = sanitizeIntStr(p.antes || "");
+    const ahora = sanitizeIntStr(p.ahora || "");
+    const cuota = sanitizeIntStr(p.cuota || "");
+
+    if (!antes) errs.push("Antes requerido (máx 5 dígitos).");
+    if (!ahora) errs.push("Ahora requerido (máx 5 dígitos).");
+    if (!cuota) errs.push("Cuota requerida (máx 5 dígitos).");
+
+    const qty = parseInt(p.qty, 10);
+    if (!Number.isFinite(qty) || qty < 1) errs.push("Cantidad debe ser mayor a 0.");
+
+    if (antes && ahora){
+      const aN = parseInt(antes, 10);
+      const hN = parseInt(ahora, 10);
+      if (Number.isFinite(aN) && Number.isFinite(hN) && hN > aN){
+        errs.push("'Ahora' no puede ser mayor que 'Antes'.");
+      }
+    }
+
+    if (p.useVig){
+      if (!p.vigStart) errs.push("VigenciaInicio requerida.");
+      if (!p.vigEnd) errs.push("VigenciaFin requerida.");
+      if (p.vigStart && p.vigEnd && p.vigEnd < p.vigStart) errs.push("VigenciaFin no puede ser menor que VigenciaInicio.");
+    }
+
+    return errs;
+  }
+
   function validateDraft(){
     clearAllErrors();
     syncDraftFromForm();
 
-    let ok = true;
+    const errs = validateProductData(draft);
 
-    if (!draft.template){ setFieldError("fTemplate","eTemplate","Selecciona una plantilla."); ok = false; }
-    if (!draft.size){ setFieldError("fSize","eSize","Selecciona un tamaño."); ok = false; }
-    if (!draft.nombre){ setFieldError("fNombre","eNombre","Este campo es obligatorio."); ok = false; }
-
-    if (!draft.antes){ setFieldError("fAntes","eAntes","Ingresa 'Antes' (máx 6 dígitos)."); ok = false; }
-    if (!draft.ahora){ setFieldError("fAhora","eAhora","Ingresa 'Ahora' (máx 6 dígitos)."); ok = false; }
-    if (!draft.cuota){ setFieldError("fCuota","eCuota","Ingresa 'Cuota' (máx 6 dígitos)."); ok = false; }
-
-    if (!draft.qty || draft.qty < 1){ setFieldError("fQty","eQty","Cantidad debe ser mayor a 0."); ok = false; }
+    if (!draft.template) setFieldError("fTemplate","eTemplate","Selecciona una plantilla.");
+    if (!draft.size) setFieldError("fSize","eSize","Selecciona un tamaño.");
+    if (!draft.nombre) setFieldError("fNombre","eNombre","Este campo es obligatorio.");
+    if (!draft.antes) setFieldError("fAntes","eAntes","Ingresa 'Antes' (máx 5 dígitos).");
+    if (!draft.ahora) setFieldError("fAhora","eAhora","Ingresa 'Ahora' (máx 5 dígitos).");
+    if (!draft.cuota) setFieldError("fCuota","eCuota","Ingresa 'Cuota' (máx 5 dígitos).");
+    if (!draft.qty || draft.qty < 1) setFieldError("fQty","eQty","Cantidad debe ser mayor a 0.");
 
     if (draft.antes && draft.ahora){
       const antesN = parseInt(draft.antes, 10);
       const ahoraN = parseInt(draft.ahora, 10);
       if (Number.isFinite(antesN) && Number.isFinite(ahoraN) && ahoraN > antesN){
         setFieldError("fAhora","eAhora","'Ahora' no puede ser mayor que 'Antes'.");
-        ok = false;
       }
     }
 
     if (draft.useVig){
-      if (!draft.vigStart){ setFieldError("fVigStart","eVigStart","Selecciona fecha inicial."); ok = false; }
-      if (!draft.vigEnd){ setFieldError("fVigEnd","eVigEnd","Selecciona fecha final."); ok = false; }
+      if (!draft.vigStart) setFieldError("fVigStart","eVigStart","Selecciona fecha inicial.");
+      if (!draft.vigEnd) setFieldError("fVigEnd","eVigEnd","Selecciona fecha final.");
       if (draft.vigStart && draft.vigEnd && draft.vigEnd < draft.vigStart){
         setFieldError("fVigEnd","eVigEnd","La fecha final no puede ser menor que la inicial.");
-        ok = false;
       }
     }
 
+    const ok = errs.length === 0;
     $("btnSave").disabled = !ok;
     requestSaveState();
     return ok;
@@ -1387,7 +1580,6 @@
 
     setView("form");
 
-    // ✅ al editar: llevar preview a donde esté la tarjeta editada
     pendingFocus = { id, scroll:true };
     schedulePreviewRebuild();
     requestSaveState();
@@ -1445,7 +1637,6 @@
 
     setView("form");
 
-    // ✅ en agregar: cuando exista el draft, scrollear al lugar
     pendingFocus = { id: "__draft__", scroll:true };
     schedulePreviewRebuild();
     requestSaveState();
@@ -1514,7 +1705,522 @@
     clearState();
   }
 
-  /* ===== SVG helpers ===== */
+  /* ============================
+     ✅ Helpers: Plantillas sin extensión
+  ============================ */
+  function normalizeText(s){
+    const t = (s ?? "").toString().trim().toLowerCase();
+    try{
+      return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }catch{
+      return t;
+    }
+  }
+  function stripExt(name){
+    const s = (name ?? "").toString().trim();
+    const dot = s.lastIndexOf(".");
+    return (dot > 0) ? s.slice(0, dot) : s;
+  }
+  function normalizeTemplateBase(v){
+    return normalizeText(stripExt(v)).replace(/\s+/g,"");
+  }
+
+  function getAllowedTemplates(){
+    const sel = $("fTemplate");
+    const vals = Array.from(sel.options).map(o => o.value).filter(Boolean);
+    return vals;
+  }
+  function getAllowedTemplateBases(){
+    return getAllowedTemplates().map(t => stripExt(t));
+  }
+
+  /* ============================
+     ✅ Plantilla Excel (DESCARGA)
+     - Plantilla sin .svg
+     - Tamaño en español
+     - Fechas DD/MM/AAAA
+     - 1 ejemplo por cada plantilla
+     - Nombre incluye [DAF###########]
+  ============================ */
+  function downloadExcelTemplate(){
+    if (!window.XLSX){
+      alert("No se pudo cargar XLSX. Revisa el CDN.");
+      return;
+    }
+
+    const headers = ["Plantilla","Tamaño","Nombre","Antes","Ahora","Cuota","Cantidad","AgregarVigencia","VigenciaInicio","VigenciaFin"];
+
+    // ✅ 1 ejemplo por cada plantilla
+    // Plantilla: SOLO nombre sin .svg
+    // Tamaño: en español (mejor guía)
+    // Fechas: DD/MM/AAAA
+    const examples = [
+      ["normal1","1/4","AUDÍFONOS BLUETOOTH [DAF4561546401]","199","149","25","4","NO","",""],
+      ["promocion1","MEDIA HORIZONTAL","LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","9999","8999","250","2","SI","01/01/2026","31/01/2026"],
+      ["liquidacion1","1/4","TENIS NIKE AIR MAX [DAF4561546403]","1299","999","75","4","SI","05/02/2026","20/02/2026"],
+      ["oferta1","CARTA COMPLETA","SMART TV 55 PULGADAS [DAF4561546404]","15000","12999","450","1","SI","01/03/2026","15/03/2026"]
+    ];
+
+    const aoaImportar = [headers, ...examples];
+    const wsImportar = XLSX.utils.aoa_to_sheet(aoaImportar);
+    wsImportar["!cols"] = [
+      { wch: 14 }, { wch: 18 }, { wch: 44 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+      { wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 16 }
+    ];
+
+    const allowedBases = getAllowedTemplateBases().join(" | ");
+    const notes = [
+      ["NOTAS / AYUDA"],
+      [""],
+      ["Objetivo:", "Rellenar la hoja 'Importar' y luego usar el botón 'Importar Excel' en el sistema."],
+      [""],
+      ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Antes, Ahora, Cuota, Cantidad"],
+      [""],
+      ["PLANTILLA (sin .svg):", "Escribe solo el nombre. Ej: promocion1"],
+      ["Plantillas disponibles en este sistema:", allowedBases || "promocion1 | normal1 | liquidacion1 | oferta1"],
+      ["También se aceptan alias:", "Normal | Promoción | Liquidación | Oferta"],
+      [""],
+      ["TAMAÑO (recomendado en español):", "1/4 | MEDIA HORIZONTAL | CARTA COMPLETA"],
+      ["También se aceptan:", "quarter | half_h | full, y variantes como 'media', 'carta', 'mitad', 'cuarto'"],
+      [""],
+      ["ANTES / AHORA / CUOTA:", "Solo números enteros, máximo 5 dígitos. Ej: 9999"],
+      ["CANTIDAD:", "Entero > 0. Ej: 4"],
+      [""],
+      ["AGREGAR VIGENCIA:", "SI / NO. Si es SI, VigenciaInicio y VigenciaFin son obligatorias."],
+      ["FECHAS (VigenciaInicio/VigenciaFin):", "Formato recomendado: DD/MM/AAAA. Ej: 31/01/2026"],
+      ["Reglas de fechas:", "VigenciaFin no puede ser menor que VigenciaInicio."],
+      [""],
+      ["Reglas de precio:", "AHORA no puede ser mayor que ANTES."],
+      [""],
+      ["Importante:", "Si una fila tiene error, se rechaza todo el archivo (no se crea nada)."]
+    ];
+    const wsNotas = XLSX.utils.aoa_to_sheet(notes);
+    wsNotas["!cols"] = [{ wch: 30 }, { wch: 78 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, wsImportar, "Importar");
+    XLSX.utils.book_append_sheet(wb, wsNotas, "Notas");
+
+    XLSX.writeFile(wb, "plantilla_importacion_etiquetas.xlsx");
+  }
+
+  /* ============================
+     ✅ IMPORTACIÓN EXCEL
+     - Plantilla sin extensión
+     - Tamaño en español
+     - Fechas DD/MM/AAAA
+  ============================ */
+  function setBtnLoading(btn, loading){
+    if (!btn) return;
+    if (loading){
+      if (!btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+      btn.innerHTML = `<span class="spin" aria-hidden="true"></span>`;
+      btn.disabled = true;
+    } else {
+      if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
+      btn.disabled = false;
+    }
+  }
+
+  function normalizeHeader(h){
+    return normalizeText(h).replace(/[\s\-_]+/g, "");
+  }
+
+  function truthyCell(v){
+    const t = normalizeText(v);
+    return t === "si" || t === "sí" || t === "s" || t === "1" || t === "true" || t === "x" || t === "yes";
+  }
+
+  function parseSizeCell(v){
+    const t = normalizeText(v);
+    if (!t) return "";
+
+    // Español claro
+    if (t.includes("1/4") || t.includes("cuarto") || t.includes("1-4")) return "quarter";
+    if (t.includes("media") || t.includes("mitad") || t.includes("horizontal")) return "half_h";
+    if (t.includes("carta") || t.includes("completa") || t.includes("pagina completa") || t.includes("página completa")) return "full";
+
+    // Inglés / interno
+    if (t.includes("quarter")) return "quarter";
+    if (t.includes("half_h") || (t.includes("half") && !t.includes("quarter"))) return "half_h";
+    if (t.includes("full")) return "full";
+
+    if (t === "quarter" || t === "half_h" || t === "full") return t;
+    return "";
+  }
+
+  // ✅ Acepta plantilla base sin extensión
+  const TEMPLATE_ALIASES = {
+    "promocion": "promocion1.svg",
+    "promoción": "promocion1.svg",
+    "normal": "normal1.svg",
+    "liquidacion": "liquidacion1.svg",
+    "liquidación": "liquidacion1.svg",
+    "oferta": "oferta1.svg",
+
+    // base exacta sin ext (lo que verá el personal)
+    "promocion1": "promocion1.SVG",
+    "normal1": "normal1.SVG",
+    "liquidacion1": "liquidacion1.svg",
+    "liquidación1": "liquidacion1.svg",
+    "oferta1": "oferta1.svg",
+  };
+
+  function parseTemplateCell(v){
+    const raw = (v ?? "").toString().trim();
+    if (!raw) return "";
+
+    const allowed = getAllowedTemplates();
+    const rawNorm = normalizeText(raw);
+
+    // 1) Alias (incluye base sin extensión)
+    if (TEMPLATE_ALIASES[rawNorm]) return TEMPLATE_ALIASES[rawNorm];
+
+    // 2) Match exacto (con o sin extensión)
+    const foundExact = allowed.find(a => normalizeText(a) === rawNorm);
+    if (foundExact) return foundExact;
+
+    // 3) Match por base (sin extensión)
+    const rawBase = normalizeTemplateBase(raw);
+    const foundByBase = allowed.find(a => normalizeTemplateBase(a) === rawBase);
+    if (foundByBase) return foundByBase;
+
+    // 4) Si alguien escribió "normal1svg" o parecido: intentar limpiar
+    const maybe = rawNorm.replace(/[^a-z0-9]/g,"");
+    const foundByLoose = allowed.find(a => normalizeTemplateBase(a).replace(/[^a-z0-9]/g,"") === maybe);
+    return foundByLoose || "";
+  }
+
+  function parseNumberCell(v){
+    if (v === null || v === undefined) return "";
+    const s = (typeof v === "number") ? String(Math.trunc(v)) : String(v);
+    return sanitizeIntStr(s.replace(/[^\d]/g, ""));
+  }
+
+  function pad2num(n){ return String(n).padStart(2,"0"); }
+  function toISODateFromDate(d){
+    const y = d.getFullYear();
+    const m = pad2num(d.getMonth()+1);
+    const day = pad2num(d.getDate());
+    return `${y}-${m}-${day}`;
+  }
+
+  // ✅ Ahora soporta DD/MM/AAAA (lo que pide el Excel)
+  function parseDateCell(v){
+    if (!v) return "";
+
+    if (v instanceof Date && !isNaN(v.getTime())) return toISODateFromDate(v);
+
+    // Excel serial date
+    if (typeof v === "number" && Number.isFinite(v)){
+      const ms = Math.round((v - 25569) * 86400 * 1000);
+      const d = new Date(ms);
+      if (!isNaN(d.getTime())) return toISODateFromDate(d);
+      return "";
+    }
+
+    const s = String(v).trim();
+    if (!s) return "";
+
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+    // DD/MM/YYYY
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m){
+      const dd = pad2num(parseInt(m[1],10));
+      const mm = pad2num(parseInt(m[2],10));
+      const yy = m[3];
+      return `${yy}-${mm}-${dd}`;
+    }
+
+    return "";
+  }
+
+  function buildHeaderMap(headers){
+    const map = {};
+    headers.forEach((h, idx)=>{
+      map[normalizeHeader(h)] = idx;
+    });
+    return map;
+  }
+
+  function cellBy(map, rowArr, keys){
+    for (const k of keys){
+      const idx = map[k];
+      if (idx === 0 || idx) return rowArr[idx];
+    }
+    return "";
+  }
+
+  function parseExcelRowsToProducts(rows){
+    if (!rows || rows.length < 2) return { products: [], errors: ["El archivo no tiene datos (mínimo encabezados + 1 fila)."] };
+
+    const headerRow = rows[0].map(h => (h ?? "").toString().trim());
+    const map = buildHeaderMap(headerRow);
+
+    const K = {
+      template: ["plantilla","template","svg"],
+      size: ["tamano","tamaño","size"],
+      nombre: ["nombre","producto","name"],
+      antes: ["antes","precioantes","before"],
+      ahora: ["ahora","precioahora","now"],
+      cuota: ["cuota","cuotasemanal","weekly"],
+      qty: ["cantidad","qty","cant"],
+      useVig: ["agregarvigencia","vigencia","usevig"],
+      vigStart: ["vigenciainicio","fechainicial","inicio","vigenciadesde"],
+      vigEnd: ["vigenciafin","fechafinal","fin","vigenciahasta"]
+    };
+
+    const requiredCols = [
+      ["Plantilla", K.template],
+      ["Tamaño", K.size],
+      ["Nombre", K.nombre],
+      ["Antes", K.antes],
+      ["Ahora", K.ahora],
+      ["Cuota", K.cuota],
+      ["Cantidad", K.qty],
+    ];
+
+    const missing = requiredCols.filter(([_, keys]) => !keys.some(k => map[k] === 0 || map[k]));
+    if (missing.length){
+      return {
+        products: [],
+        errors: missing.map(([label]) => `Falta la columna requerida: "${label}".`)
+      };
+    }
+
+    const allowedTemplates = getAllowedTemplates();
+    const allowedBases = getAllowedTemplateBases();
+
+    const errors = [];
+    const out = [];
+
+    for (let r = 1; r < rows.length; r++){
+      const row = rows[r];
+      if (!row || !row.length) continue;
+
+      const hasAny = row.some(x => String(x ?? "").trim() !== "");
+      if (!hasAny) continue;
+
+      const rawTemplate = cellBy(map, row, K.template);
+      const rawSize = cellBy(map, row, K.size);
+      const rawNombre = cellBy(map, row, K.nombre);
+      const rawAntes = cellBy(map, row, K.antes);
+      const rawAhora = cellBy(map, row, K.ahora);
+      const rawCuota = cellBy(map, row, K.cuota);
+      const rawQty = cellBy(map, row, K.qty);
+      const rawUseVig = cellBy(map, row, K.useVig);
+      const rawVigStart = cellBy(map, row, K.vigStart);
+      const rawVigEnd = cellBy(map, row, K.vigEnd);
+
+      const p = emptyProduct();
+      p.template = parseTemplateCell(rawTemplate);
+      p.size = parseSizeCell(rawSize);
+      p.nombre = (rawNombre ?? "").toString().trim();
+
+      p.antes = parseNumberCell(rawAntes);
+      p.ahora = parseNumberCell(rawAhora);
+      p.cuota = parseNumberCell(rawCuota);
+
+      const qtyN = parseInt(String(rawQty ?? "").replace(/[^\d]/g,""), 10);
+      p.qty = Number.isFinite(qtyN) ? qtyN : 0;
+
+      p.useVig = truthyCell(rawUseVig);
+      p.vigStart = p.useVig ? parseDateCell(rawVigStart) : "";
+      p.vigEnd = p.useVig ? parseDateCell(rawVigEnd) : "";
+
+      const rowErrs = [];
+
+      if (!p.template){
+        rowErrs.push(`Plantilla inválida. Usa solo el nombre (sin .svg). Permitidas: ${allowedBases.join(", ")}.`);
+      }
+      if (!p.size){
+        rowErrs.push(`Tamaño inválido. Recomendado: 1/4, MEDIA HORIZONTAL, CARTA COMPLETA.`);
+      }
+
+      const baseErrs = validateProductData(p);
+      baseErrs.forEach(e => rowErrs.push(e));
+
+      if (rowErrs.length){
+        errors.push(`Fila ${r+1}: ${rowErrs.join(" ")}`);
+      } else {
+        out.push(p);
+      }
+    }
+
+    if (errors.length) return { products: [], errors };
+
+    if (!out.length){
+      return { products: [], errors: ["No hay filas válidas para importar."] };
+    }
+
+    return { products: out, errors: [] };
+  }
+
+  async function readExcelFile(file){
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:"array" });
+
+    const sheetName = wb.SheetNames[0];
+    if (!sheetName) throw new Error("El archivo no contiene hojas.");
+
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
+    return rows;
+  }
+
+  function askImportModeIfNeeded(onChoose){
+    if (products.length === 0){
+      onChoose("merge");
+      return;
+    }
+
+    openModal({
+      title: "Importación masiva",
+      bodyHtml: `
+        <div class="modalText">
+          Ya tienes <b>${products.length}</b> producto(s) guardado(s).<br>
+          ¿Qué deseas hacer?
+          <div style="margin-top:10px">
+            <span class="pill">Mantener y agregar</span>
+            <span class="pill">Reemplazar todo</span>
+          </div>
+        </div>
+      `,
+      actions: [
+        { text:"Cancelar", className:"btnNeutral", onClick: ()=>{ closeModal(); } },
+        { text:"Reemplazar todo", className:"btnNeutral", onClick: ()=>{ closeModal(); onChoose("replace"); } },
+        { text:"Mantener y agregar", className:"btnSuccess", onClick: ()=>{ closeModal(); onChoose("merge"); } },
+      ]
+    });
+  }
+
+  function showImportErrors(errs){
+    const list = `
+      <ul class="errList">
+        ${errs.slice(0, 80).map(e => `<li>${escapeHtml(e)}</li>`).join("")}
+      </ul>
+      ${errs.length > 80 ? `<div class="modalText" style="margin-top:10px;color:#64748b">Se muestran 80 errores. Corrige el Excel y vuelve a importar.</div>` : ""}
+    `;
+
+    openModal({
+      title: "Importación rechazada",
+      bodyHtml: `
+        <div class="modalText">
+          El archivo tiene errores. No se creó ningún producto.
+          <div style="margin-top:10px" class="pill">Corrige y reintenta</div>
+        </div>
+        ${list}
+      `,
+      actions: [
+        { text:"Cerrar", className:"btnNeutral", onClick: ()=> closeModal() }
+      ]
+    });
+  }
+
+  function showImportSuccess(count){
+    openModal({
+      title: "Importación completada",
+      bodyHtml: `
+        <div class="modalText">
+          Se importaron <b>${count}</b> producto(s) correctamente.
+        </div>
+      `,
+      actions: [
+        { text:"OK", className:"btnSuccess", onClick: ()=> closeModal() }
+      ]
+    });
+  }
+
+  async function handleImportFile(file){
+    if (!file) return;
+
+    importing = true;
+    setBtnLoading($("btnImport"), true);
+
+    try{
+      const rows = await readExcelFile(file);
+      const parsed = parseExcelRowsToProducts(rows);
+
+      if (parsed.errors && parsed.errors.length){
+        showImportErrors(parsed.errors);
+        return;
+      }
+
+      const imported = parsed.products;
+
+      askImportModeIfNeeded((mode)=>{
+        const nowText = formatDateTimeNow();
+
+        let base = (mode === "replace") ? [] : [...products];
+
+        const newOnes = imported.map(p => {
+          const pp = { ...p };
+          pp.id = uid();
+          pp.impresionAt = nowText;
+          pp.colorIdx = allocateColorIdx(base);
+          base.push(pp);
+          return pp;
+        });
+
+        if (mode === "replace"){
+          products = newOnes;
+          renderCache.clear();
+          templateTextCache.clear();
+          previewSlotsByProduct.clear();
+          expandedId = null;
+          selectedProductId = null;
+        } else {
+          products = [...products, ...newOnes];
+        }
+
+        const firstId = newOnes[0]?.id || null;
+        if (firstId){
+          selectedProductId = firstId;
+          expandedId = firstId;
+        }
+
+        updateTopButtonsVisibility();
+        renderItemsList();
+        schedulePreviewRebuild();
+        requestAnimationFrame(()=> applySelectionHighlight());
+        requestSaveState();
+
+        showImportSuccess(newOnes.length);
+      });
+
+    } catch (e){
+      console.error(e);
+      openModal({
+        title: "Error al importar",
+        bodyHtml: `<div class="modalText">No se pudo leer el archivo. Asegúrate que sea Excel (.xlsx/.xls) y que tenga encabezados correctos.</div>`,
+        actions: [{ text:"Cerrar", className:"btnNeutral", onClick: ()=> closeModal() }]
+      });
+    } finally {
+      importing = false;
+      setBtnLoading($("btnImport"), false);
+      $("fileImport").value = "";
+    }
+  }
+
+  $("btnImport").addEventListener("click", ()=>{
+    if (!isListView()) return;
+    if (importing) return;
+    $("fileImport").click();
+  });
+
+  $("fileImport").addEventListener("change", async (e)=>{
+    const file = e.target.files?.[0];
+    await handleImportFile(file);
+  });
+
+  $("btnTemplate").addEventListener("click", ()=>{
+    if (!isListView()) return;
+    downloadExcelTemplate();
+  });
+
+  /* ===== SVG helpers (render) ===== */
   async function loadTemplateText(file){
     if (templateTextCache.has(file)) return templateTextCache.get(file);
     const res = await fetch(file, { cache: "no-store" });
@@ -1769,7 +2475,7 @@
       replaceTokenInSvg(svg, "[Fecha_vigencia]", "");
     }
 
-    // ✅ Fecha impresión REAL SIEMPRE
+    // ✅ Fecha impresión SIEMPRE real
     const impTxt = (p.impresionAt && p.impresionAt.trim()) ? p.impresionAt.trim() : formatDateTimeNow();
     const impEl = findByAnyId(svg, SVG_IDS.impresionCandidates);
     setSvgText(impEl, impTxt);
@@ -1785,7 +2491,7 @@
     return out;
   }
 
-  /* ===== Packing (mezcla quarter + half_h + full) ===== */
+  /* ===== Packing ===== */
   function makeGridPage(){ return { type: "grid", occ: [[null,null],[null,null]], placements: [] }; }
   function rowEmpty(page, r){ return !page.occ[r][0] && !page.occ[r][1]; }
 
@@ -1997,22 +2703,18 @@
       preview.appendChild(shell);
     });
 
-    // ✅ foco: edición o agregar
     if (pendingFocus && pendingFocus.id){
       const { id, scroll } = pendingFocus;
       pendingFocus = null;
 
       if (id === "__draft__"){
-        // solo scroll al draft, sin “AQUÍ”
         ensureDraftVisible();
       } else {
-        // scroll al producto editado, sin “AQUÍ” en modo form
         highlightProductInPreview(id, !!scroll, false);
       }
     }
 
     if (includeDraft){
-      // ✅ mientras agrega/edita: que siempre se vea dónde quedó
       ensureDraftVisible();
     } else {
       applySelectionHighlight();
@@ -2024,7 +2726,32 @@
     previewTimer = setTimeout(() => buildPreview().catch(console.error), 160);
   }
 
-  /* ===== Print ===== */
+  /* ============================
+     Impresión (multi páginas ok)
+  ============================ */
+  async function waitForImages(container){
+    const imgs = Array.from(container.querySelectorAll("img"));
+    if (!imgs.length) return;
+
+    await Promise.all(imgs.map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+    }));
+
+    await Promise.all(imgs.map(img => {
+      if (img.decode) return img.decode().catch(()=>{});
+      return Promise.resolve();
+    }));
+  }
+
+  async function nextFrame(){
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+  }
+
   async function printNow(){
     if (products.length === 0) return;
 
@@ -2067,6 +2794,9 @@
       wrap.appendChild(paper);
       root.appendChild(wrap);
     }
+
+    await waitForImages(root);
+    await nextFrame();
 
     const cleanup = () => {
       root.style.display = "none";
@@ -2188,7 +2918,6 @@
     setIconLoading(btn, true);
 
     try{
-      // pequeño delay para que se “vea” el loader
       await new Promise(r => setTimeout(r, 60));
       await exportPdf();
     } catch (e){
@@ -2250,16 +2979,16 @@
 
     if (!restored){
       setView("list");
-      showEmptyPreview("Sin previsualización", "Agrega productos para ver cómo se acomodan en las hojas.");
+      showEmptyPreview("Sin previsualización", "Agrega productos o importa un Excel para ver cómo se acomodan.");
     }
 
-    // ✅ asegurar colorIdx a productos viejos
     let changed = false;
     for (const p of products){
       if (!Number.isFinite(p.colorIdx)){
         p.colorIdx = allocateColorIdx();
         changed = true;
       }
+      if (!p.impresionAt) p.impresionAt = formatDateTimeNow();
     }
     if (changed) requestSaveState();
 
