@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Editor Etiqueta</title>
+
+  <!-- ✅ Exportar a PDF (jsPDF) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
     :root{
       --bg:#f6f7f9;
@@ -11,36 +15,44 @@
       --border:#e5e7eb;
       --text:#111827;
       --muted:#6b7280;
-      --blue:#2563eb;
-      --blue2:#1d4ed8;
-      --gray:#e5e7eb;
       --radius:14px;
       --shadow:0 10px 24px rgba(0,0,0,.06);
+
       --danger:#b91c1c;
       --dangerBorder:#fecaca;
       --dangerBg:#fef2f2;
-      --ok:#166534;
-      --okBg:#f0fdf4;
-      --okBorder:#bbf7d0;
 
-      /* Base layout (mezcla tamaños sin desperdiciar) */
-      --cols:2;
-      --rows:2;
-      --pagePad:6mm;
-      --gap:6mm;
-      --previewScale:0.58;
+      --padGrid: 6mm;
+      --gapGrid: 6mm;
+      --padFull: 10mm; /* ✅ margen extra para FULL */
+
+      --focus: rgba(59,130,246,.18);
     }
+
     *{box-sizing:border-box}
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px;background:var(--bg);color:var(--text)}
+    html, body{height:100%}
+    body{
+      font-family:system-ui,Segoe UI,Roboto,Arial;
+      margin:20px;
+      background:var(--bg);
+      color:var(--text);
+      height:100vh;
+      overflow:hidden;
+    }
     h2{margin:0 0 14px;font-size:18px}
 
     .wrap{
       display:grid;
-      grid-template-columns: minmax(320px, 520px) 1fr;
+      grid-template-columns: minmax(320px, 460px) 1fr;
       gap:16px;
-      align-items:start;
+      align-items:stretch;
+      height: calc(100vh - 20px - 20px - 32px);
+      min-height: 520px;
     }
-    @media (max-width: 980px){ .wrap{grid-template-columns: 1fr} }
+    @media (max-width: 980px){
+      body{overflow:auto;height:auto;}
+      .wrap{grid-template-columns:1fr;height:auto;min-height:auto;}
+    }
 
     .card{
       background:var(--card);
@@ -49,118 +61,168 @@
       padding:14px;
       box-shadow:var(--shadow);
       overflow:hidden;
+      min-height:0;
     }
 
-    .cardHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    /* ✅ panel izquierdo */
+    #leftCard{display:flex;flex-direction:column;height:100%;min-height:0}
+    #listView, #formView{display:flex;flex-direction:column;flex:1;min-height:0}
+    .leftScrollArea{flex:1;min-height:0;overflow:auto;padding-right:4px}
+
+    /* ✅ panel derecho (preview) */
+    #paperPreviewWrap{
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      overflow:auto;
+      height:100%;
+      min-height:0;
+    }
+
+    .cardHeader{
+      display:flex;align-items:center;justify-content:space-between;
+      gap:10px;margin-bottom:12px
+    }
     .cardHeader h3{margin:0;font-size:14px}
     .subtle{font-size:12px;color:var(--muted)}
-    .divider{height:1px;background:var(--border);margin:12px 0}
 
-    /* Botones */
+    /* ===== Botones ===== */
+    button{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:1000;
+      border:1px solid transparent;
+      transition: background .15s ease, border-color .15s ease, transform .05s ease, box-shadow .15s ease, opacity .15s ease;
+      user-select:none;
+      background:#fff;
+    }
+    button:active{ transform: translateY(1px); }
+    button:focus-visible{ outline:none; box-shadow:0 0 0 4px var(--focus); }
+    button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
     .btnRow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    button{padding:10px 12px;border:0;border-radius:12px;cursor:pointer;font-weight:900}
-    .btnBlue{background:var(--blue);color:#fff}
-    .btnBlue:hover{background:var(--blue2)}
-    .btn2{background:var(--gray);color:var(--text)}
-    .btnDanger{background:#ef4444;color:#fff}
-    .btnDanger:hover{background:#dc2626}
-    .btnGhost{background:transparent;border:1px solid var(--border);color:var(--text)}
-    .btnSm{padding:8px 10px;border-radius:10px;font-weight:900;font-size:12px}
+    .btnPrimary{ background:#2563eb; color:#fff; }
+    .btnPrimary:hover{ background:#1d4ed8; }
 
-    /* ✅ Edit más visible */
-    .btnEdit{
-      background:#eff6ff;
-      color:#1d4ed8;
-      border:1px solid #bfdbfe;
-    }
-    .btnEdit:hover{background:#dbeafe}
+    .btnSuccess{ background:#16a34a; color:#fff; }
+    .btnSuccess:hover{ background:#15803d; }
 
-    /* Form */
-    .form{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px 10px;
+    .btnNeutral{ background:#eef2f7; color:#0f172a; border-color:#dbe3ee; }
+    .btnNeutral:hover{ background:#e5e7eb; }
+
+    /* ✅ Icon buttons (menos saturación visual) */
+    .btnIcon{
+      width:40px;height:40px;padding:0;border-radius:12px;
+      background:#ffffff;border:1px solid #e5e7eb;color:#0f172a;
     }
+    .btnIcon:hover{background:#f8fafc;border-color:#dbe3ee}
+    .btnIcon:focus-visible{ box-shadow:0 0 0 4px rgba(148,163,184,.22); }
+    .btnIcon.danger{ color:#b91c1c; background:#fff; border-color:#fee2e2; }
+    .btnIcon.danger:hover{ background:#fef2f2; border-color:#fecaca; }
+    .btnIcon.warning{ color:#92400e; background:#fff; border-color:#fde68a; }
+    .btnIcon.warning:hover{ background:#fffbeb; border-color:#fcd34d; }
+    .btnIcon.success{ color:#166534; background:#fff; border-color:#bbf7d0; }
+    .btnIcon.success:hover{ background:#f0fdf4; border-color:#86efac; }
+    .btnIcon.primary{ color:#1d4ed8; background:#fff; border-color:#bfdbfe; }
+    .btnIcon.primary:hover{ background:#eff6ff; border-color:#93c5fd; }
+
+    .btnIcon svg{width:18px;height:18px;display:block}
+
+    /* ✅ spinner (export) */
+    .spin{
+      width:18px;height:18px;border-radius:999px;
+      border:2px solid currentColor;border-top-color:transparent;
+      animation:spin .8s linear infinite;
+      display:block;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    /* ===== Form ===== */
+    .form{display:grid;grid-template-columns: 1fr 1fr;gap:12px 10px;}
     .field{min-width:0}
     .span2{grid-column:1 / -1}
-
     label{display:block;font-size:12px;color:#374151;margin:0 0 6px}
+
     input,select{
-      width:100%;
-      padding:10px 12px;
-      border:1px solid #d1d5db;
-      border-radius:12px;
-      font-size:14px;
-      background:#fff;
-      outline:none;
+      width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;
+      font-size:14px;background:#fff;outline:none;
     }
     input:focus,select:focus{border-color:#93c5fd; box-shadow:0 0 0 3px rgba(59,130,246,.15)}
     select:invalid{color:#9ca3af}
     option{color:#111827}
-
-    /* UX: el nombre se ve en mayúsculas mientras escribes */
     #fNombre{ text-transform: uppercase; }
 
     .fieldError{
-      display:none;
-      margin-top:6px;
-      padding:8px 10px;
-      border-radius:12px;
-      border:1px solid var(--dangerBorder);
-      background:var(--dangerBg);
-      color:var(--danger);
-      font-size:12px;
-      line-height:1.35;
+      display:none;margin-top:6px;padding:8px 10px;border-radius:12px;
+      border:1px solid var(--dangerBorder);background:var(--dangerBg);color:var(--danger);
+      font-size:12px;line-height:1.35;
     }
     .fieldError.show{display:block}
     .isInvalid{border-color:#fca5a5 !important; box-shadow:0 0 0 3px rgba(239,68,68,.12) !important;}
 
     .help{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.35}
 
-    /* Lista productos */
-    .list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+    .toggleRow{
+      display:flex;align-items:center;gap:10px;padding:10px 12px;
+      border:1px solid #e5e7eb;border-radius:12px;background:#fafafa;
+    }
+    .toggleRow input{width:auto;padding:0;margin:0}
+    .toggleRow span{font-size:13px;color:#0f172a;font-weight:1000}
+    .toggleRow small{display:block;font-size:12px;color:#64748b;font-weight:600}
+
+    /* ===== Lista ===== */
+    .listEmpty{
+      border:1px dashed #cbd5e1;border-radius:14px;background:#fafafa;padding:14px;
+      color:#334155;font-size:13px;line-height:1.4;
+    }
+    .items{display:flex;flex-direction:column;gap:10px;overflow:auto;padding-right:2px}
+
     .item{
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-      justify-content:space-between;
+      border:1px solid #e5e7eb;border-radius:14px;padding:10px 12px;background:#fff;
+      transition: border-color .12s ease, box-shadow .12s ease, transform .05s ease;
+      cursor:pointer;
+      --pairColor:#93c5fd;
+      --pairGlow: rgba(37,99,235,.12);
+      --pairGlowStrong: rgba(37,99,235,.18);
     }
-    .itemLeft{min-width:0}
-    .itemTitle{margin:0;font-size:13px;font-weight:1000}
-    .itemMeta{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.35}
-    .itemActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-
-    .badge{
-      display:inline-block;
-      font-size:11px;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background:#fafafa;
-      color:#334155;
-      margin-right:6px;
-      font-weight:900;
+    .item:hover, .item.activeHover{
+      border-color: var(--pairColor);
+      box-shadow:0 10px 24px var(--pairGlow);
     }
-
-    .notice{
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid var(--okBorder);
-      background:var(--okBg);
-      color:var(--ok);
-      font-size:12px;
-      line-height:1.35;
-      display:none;
+    .item.selected{
+      border-color: var(--pairColor);
+      box-shadow:0 12px 28px var(--pairGlowStrong);
     }
-    .notice.show{display:block}
+    .item:active{ transform: translateY(1px); }
 
-    /* Preview */
-    #paperPreviewWrap{display:flex;justify-content:center;align-items:flex-start;overflow:auto;min-height:520px}
+    .itemHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .itemTitleRow{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+
+    .pairDot{
+      width:10px;height:10px;border-radius:999px;background:var(--pairColor);
+      box-shadow:0 0 0 3px rgba(15,23,42,.06);
+      flex:0 0 auto;
+    }
+    .itemName{
+      font-weight:1000;font-size:13px;letter-spacing:.2px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%;
+    }
+    .itemActions{display:flex;gap:8px;flex-wrap:nowrap;align-items:center}
+
+    .itemDetails{
+      display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eef2f7;
+      color:#475569;font-size:12px;line-height:1.45;
+    }
+    .item.expanded .itemDetails{ display:block; }
+
+    .metaGrid{display:grid;grid-template-columns: 1fr 1fr;gap:6px 10px}
+    .metaGrid .span2{grid-column:1/-1}
+    .metaPill{
+      display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;
+      border:1px solid #e5e7eb;background:#f8fafc;color:#0f172a;font-weight:900;font-size:11px;margin-top:10px;
+    }
+    .miniHint{font-size:11px;color:#64748b;margin-top:8px}
+
+    /* ===== Preview ===== */
     #paperPreview{
       width:100%;
       display:flex;
@@ -172,129 +234,113 @@
     }
 
     .emptyPreview{
-      width:100%;
-      border:1px dashed #cbd5e1;
-      border-radius:16px;
-      background:#fafafa;
-      padding:18px;
-      max-width:980px;
-      text-align:center;
-      color:#334155;
+      width:100%;border:1px dashed #cbd5e1;border-radius:16px;background:#fafafa;
+      padding:18px;max-width:760px;text-align:center;color:#334155;
     }
     .emptyPreview h4{margin:0 0 6px;font-size:14px}
     .emptyPreview p{margin:0;font-size:12px;color:#64748b;line-height:1.4}
 
-    .summaryBar{
-      width:100%;
-      max-width:980px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      font-size:12px;
-      font-weight:1000;
-      color:#334155;
-    }
-    .summaryBar span{color:#64748b;font-weight:900}
-    .summaryBar .hint{
-      font-weight:900;
-      color:#475569;
-      background:#f1f5f9;
-      border:1px solid #e2e8f0;
-      border-radius:999px;
-      padding:6px 10px;
-      font-size:11px;
-      white-space:nowrap;
-    }
-
-    /* Preview sin mega-espacio entre hojas */
     .page-shell{
-      width: calc(215.9mm * var(--previewScale));
-      height: calc(279.4mm * var(--previewScale));
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:12px;
+      position:relative;
+      width: calc(215.9mm * var(--previewScale, 0.58));
+      height: calc(279.4mm * var(--previewScale, 0.58));
+      background:#fff;border:1px solid var(--border);border-radius:12px;
       box-shadow:0 8px 20px rgba(0,0,0,.06);
       overflow:hidden;
-      position:relative;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      --pairColor:#93c5fd;
+      --pairGlowStrong: rgba(37,99,235,.18);
     }
+    .page-shell.hlpage{
+      border-color: var(--pairColor);
+      box-shadow:0 12px 28px var(--pairGlowStrong);
+    }
+    .pageLabel{
+      position:absolute;top:10px;right:10px;
+      font-size:11px;font-weight:1000;padding:5px 10px;border-radius:999px;
+      background:rgba(15,23,42,.86);color:#fff;pointer-events:none;letter-spacing:.3px;
+    }
+
     .page-inner{
-      width:215.9mm;
-      height:279.4mm;
-      transform: scale(var(--previewScale));
+      width:215.9mm;height:279.4mm;
+      transform: scale(var(--previewScale, 0.58));
       transform-origin: top left;
     }
 
     .paper-page{
-      width:215.9mm;
-      height:279.4mm;
-      padding: var(--pagePad);
+      width:215.9mm;height:279.4mm;
+      padding: var(--pad, var(--padGrid));
       display:grid;
-      grid-template-columns: repeat(var(--cols), 1fr);
-      grid-template-rows: repeat(var(--rows), 1fr);
-      gap: var(--gap);
+      gap: var(--gap, var(--gapGrid));
       background:#fff;
-      position:relative;
+    }
+    .paper-grid{ grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .paper-full{ --pad: var(--padFull); --gap: 0mm; grid-template-columns: 1fr; grid-template-rows: 1fr; }
+
+    .slot{
+      position:relative;display:flex;justify-content:center;align-items:center;
+      overflow:hidden;border-radius:10px;cursor:pointer;
+      --pairColor:#93c5fd;
+      --pairGlowStrong: rgba(37,99,235,.18);
+    }
+    .slot img{width:100%;height:100%;object-fit:contain;display:block}
+
+    .paper-full .slot{ padding: 2mm; }
+
+    .pairMark{
+      position:absolute;top:8px;left:8px;width:10px;height:10px;border-radius:999px;
+      background: var(--pairColor);
+      box-shadow:0 0 0 3px rgba(15,23,42,.06);
+      pointer-events:none;
     }
 
-    .label-cell{
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      overflow:hidden;
-      position:relative;
-      border-radius:10px;
+    .slot.draft{
+      outline:3px dashed #2563eb;outline-offset:-3px;
+      box-shadow:0 0 0 4px rgba(37,99,235,.12);
     }
-    /* Para mezclar tamaños: siempre fill */
-    .label-img{
-      width:100%;
-      height:100%;
-      display:block;
-      object-fit: contain;
+    .draftTag{
+      position:absolute;top:8px;left:8px;font-size:11px;font-weight:1000;
+      padding:4px 8px;border-radius:999px;background:rgba(37,99,235,.92);color:#fff;pointer-events:none;
     }
 
-    /* ✅ Resaltado del que estás agregando/editando (solo preview) */
-    .hl{
-      outline:4px solid #f59e0b;
-      box-shadow:0 0 0 6px rgba(245,158,11,.20);
+    .slot.hl{
+      outline:4px solid var(--pairColor);
+      outline-offset:-4px;
+      box-shadow:0 0 0 4px var(--pairGlowStrong);
     }
-    .hl::after{
-      content:"EDITANDO";
-      position:absolute;
-      top:8px;
-      left:8px;
-      font-size:10px;
-      font-weight:1000;
-      letter-spacing:.08em;
-      color:#ffffff;
-      background:rgba(7, 26, 243, 0.95);
-      border:1px solid #9b00f4;
-      padding:4px 8px;
-      border-radius:999px;
+    .hlTag{
+      position:absolute;bottom:8px;right:8px;font-size:11px;font-weight:1000;
+      padding:4px 8px;border-radius:999px;background:var(--pairColor);color:#fff;pointer-events:none;
+      box-shadow:0 6px 14px rgba(0,0,0,.12);
     }
 
     #workCanvas{display:none}
+    #__svgHostHidden{position:absolute;left:-99999px;top:-99999px}
 
-    /* Print */
+    /* ===== Context menu ===== */
+    .ctxMenu{
+      position:fixed;z-index:99999;min-width:220px;background:#fff;border:1px solid #e5e7eb;
+      border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.16);
+      padding:8px;display:none;
+    }
+    .ctxTop{
+      display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;
+      background:#f8fafc;border:1px solid #eef2f7;margin-bottom:8px;
+    }
+    .ctxDot{width:10px;height:10px;border-radius:999px;background:var(--pairColor,#93c5fd);flex:0 0 auto}
+    .ctxTitle{font-weight:1000;font-size:12px;color:#0f172a;line-height:1.2;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ctxBtns{display:flex;flex-direction:column;gap:8px}
+    .ctxBtns button{width:100%}
+    .ctxHint{font-size:11px;color:#64748b;margin-top:6px;padding:0 4px}
+
+    /* ===== Print ===== */
     @media print{
       body *{visibility:hidden}
       #printRoot, #printRoot *{visibility:visible}
-
-      #printRoot{
-        position:absolute;left:0;top:0;
-        width:215.9mm;margin:0;padding:0;
-        display:block !important;
-      }
-
+      #printRoot{position:absolute;left:0;top:0;width:215.9mm;margin:0;padding:0;display:block !important;}
       *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
-
       .print-page{ page-break-after: always; break-after: page; }
       .print-page:last-child{ page-break-after: auto; break-after: auto; }
-
-      /* ✅ NO imprimir resaltados */
-      .hl{ outline:none !important; box-shadow:none !important; }
-      .hl::after{ display:none !important; }
-
       @page{ size: letter portrait; margin:0; }
     }
   </style>
@@ -303,104 +349,161 @@
 
   <h2>Editor de etiqueta</h2>
 
-  <div class="wrap">
-
+  <div class="wrap" id="workspace">
     <!-- IZQUIERDA -->
-    <div class="card">
-      <div class="cardHeader">
-        <h3>Productos</h3>
-        <span class="subtle" id="countHint">0 guardados</span>
-      </div>
+    <div class="card" id="leftCard">
+      <!-- LISTA -->
+      <div id="listView">
+        <div class="cardHeader">
+          <div>
+            <h3 style="margin:0">Productos</h3>
+            <div class="subtle">Hover resalta · Click mueve · 1 desplegado</div>
+          </div>
 
-      <div class="btnRow" id="topActions">
-        <button class="btnBlue" id="btnShowForm" type="button">+ Agregar</button>
-        <button class="btnBlue" id="btnPrint" type="button" style="display:none">Imprimir</button>
-        <button class="btn2" id="btnResetAll" type="button" style="display:none">Limpiar todo</button>
-      </div>
+          <!-- ✅ Acciones compactas -->
+          <div class="btnRow" style="gap:8px">
+            <button class="btnPrimary" id="btnShowForm" type="button">➕ Agregar</button>
 
-      <div class="notice" id="noticeOk">✅ Guardado.</div>
+            <button class="btnIcon primary" id="btnPdf" type="button" style="display:none" title="Exportar PDF" aria-label="Exportar PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6"/>
+                <path d="M8 13h8"/>
+                <path d="M8 17h5"/>
+              </svg>
+            </button>
 
-      <div class="divider"></div>
+            <button class="btnIcon success" id="btnPrint" type="button" style="display:none" title="Imprimir" aria-label="Imprimir">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9V2h12v7"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <path d="M6 14h12v8H6z"/>
+              </svg>
+            </button>
 
-      <!-- Formulario -->
-      <div id="formWrap" style="display:none">
-        <div class="cardHeader" style="margin-bottom:10px">
-          <h3 id="formTitle">Agregar producto</h3>
-          <span class="subtle">Se previsualiza en vivo</span>
+            <!-- ✅ icono distinto a “eliminar” -->
+            <button class="btnIcon danger" id="btnResetAll" type="button" style="display:none" title="Limpiar todo" aria-label="Limpiar todo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 21h10"/>
+                <path d="M16 3l5 5-11 11H5L2 16 16 3z"/>
+                <path d="M15 4l5 5"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <div class="form">
-          <div class="field">
-            <label>Plantilla (SVG)</label>
-            <select id="fTemplate" required>
-              <option value="" selected disabled>Selecciona una plantilla…</option>
-              <option value="promocion1.SVG">Promoción</option>
-              <option value="normal1.SVG">Normal</option>
-              <option value="liquidacion1.svg">Liquidación</option>
-              <option value="oferta1.svg">Oferta</option>
-            </select>
-            <div class="fieldError" id="eTemplate"></div>
+        <div class="leftScrollArea" id="listScrollArea">
+          <div id="itemsWrap"></div>
+
+          <p class="help">
+            IDs en SVG:
+            <b>nombre_producto</b>, <b>precio_antes</b>, <b>precio_ahora</b>, <b>cuota_semanal</b>,
+            <b>fecha_vigencia</b> y <b>Fecha_impresion</b> (o <b>fecha_impresion</b>).
+          </p>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div id="formView" style="display:none">
+        <div class="cardHeader">
+          <div>
+            <h3 id="formTitle" style="margin:0">Agregar producto</h3>
+            <div class="subtle" id="formSubtitle">Completa todo para guardar</div>
+          </div>
+        </div>
+
+        <div class="leftScrollArea" id="formScrollArea">
+          <div class="form" id="formGrid">
+            <div class="field">
+              <label>Plantilla (SVG)</label>
+              <select id="fTemplate" required>
+                <option value="" selected disabled>Selecciona una plantilla…</option>
+                <option value="promocion1.SVG">Promoción</option>
+                <option value="normal1.SVG">Normal</option>
+                <option value="liquidacion1.svg">Liquidación</option>
+                <option value="oferta1.svg">Oferta</option>
+              </select>
+              <div class="fieldError" id="eTemplate"></div>
+            </div>
+
+            <div class="field">
+              <label>Tamaño</label>
+              <select id="fSize" required>
+                <option value="" selected disabled>Selecciona un tamaño…</option>
+                <option value="quarter">1/4 (4 por hoja)</option>
+                <option value="half_h">Media hoja horizontal (2 por hoja)</option>
+                <option value="full">Carta completa (1 por hoja)</option>
+              </select>
+              <div class="fieldError" id="eSize"></div>
+            </div>
+
+            <div class="field span2">
+              <label>Nombre</label>
+              <input id="fNombre" placeholder="Ej: Laptop color rojo y verde" autocomplete="off">
+              <div class="fieldError" id="eNombre"></div>
+            </div>
+
+            <div class="field">
+              <label>Antes (entero, máx 6 dígitos)</label>
+              <input id="fAntes" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 3999" autocomplete="off">
+              <div class="fieldError" id="eAntes"></div>
+            </div>
+
+            <div class="field">
+              <label>Ahora (entero, máx 6 dígitos)</label>
+              <input id="fAhora" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 2999" autocomplete="off">
+              <div class="fieldError" id="eAhora"></div>
+            </div>
+
+            <div class="field span2">
+              <label>Cuota (entero, máx 6 dígitos)</label>
+              <input id="fCuota" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 199" autocomplete="off">
+              <div class="fieldError" id="eCuota"></div>
+            </div>
+
+            <div class="field">
+              <label>Cantidad</label>
+              <input id="fQty" type="number" min="1" step="1" value="1">
+              <div class="fieldError" id="eQty"></div>
+            </div>
+
+            <div class="field">
+              <label>Vigencia</label>
+              <div class="toggleRow">
+                <input id="fUseVig" type="checkbox">
+                <div>
+                  <span>Agregar fecha de vigencia</span>
+                  <small>Si lo marcas, debes elegir inicio y fin</small>
+                </div>
+              </div>
+              <div class="fieldError" id="eVig"></div>
+            </div>
+
+            <div class="field span2" id="vigDates" style="display:none">
+              <div class="form" style="grid-template-columns:1fr 1fr; gap:10px">
+                <div class="field">
+                  <label>Fecha inicial</label>
+                  <input id="fVigStart" type="date">
+                  <div class="fieldError" id="eVigStart"></div>
+                </div>
+                <div class="field">
+                  <label>Fecha final</label>
+                  <input id="fVigEnd" type="date">
+                  <div class="fieldError" id="eVigEnd"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="field">
-            <label>Tamaño</label>
-            <select id="fSize" required>
-              <option value="" selected disabled>Selecciona un tamaño…</option>
-              <option value="quarter">1/4 (4 por hoja)</option>
-              <option value="half_h">Media hoja horizontal (2 por hoja)</option>
-              <option value="full">Carta completa (1 por hoja)</option>
-            </select>
-            <div class="fieldError" id="eSize"></div>
-          </div>
-
-          <div class="field span2">
-            <label>Nombre</label>
-            <input id="fNombre" placeholder="Ej: Laptop color rojo y verde" autocomplete="off">
-            <div class="fieldError" id="eNombre"></div>
-          </div>
-
-          <div class="field">
-            <label>Antes (entero, máx 6 dígitos)</label>
-            <input id="fAntes" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 3999" autocomplete="off">
-            <div class="fieldError" id="eAntes"></div>
-          </div>
-
-          <div class="field">
-            <label>Ahora (entero, máx 6 dígitos)</label>
-            <input id="fAhora" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 2999" autocomplete="off">
-            <div class="fieldError" id="eAhora"></div>
-          </div>
-
-          <div class="field">
-            <label>Cuota (entero, máx 6 dígitos)</label>
-            <input id="fCuota" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ej: 199" autocomplete="off">
-            <div class="fieldError" id="eCuota"></div>
-          </div>
-
-          <div class="field">
-            <label>Cantidad</label>
-            <input id="fQty" type="number" min="1" step="1" value="1">
-            <div class="fieldError" id="eQty"></div>
-          </div>
+          <p class="help">
+            En edición/agregado, la previsualización marca el producto como guía (no se imprime).
+          </p>
         </div>
 
         <div class="btnRow" style="margin-top:12px">
-          <button class="btnBlue" id="btnSave" type="button">Guardar producto</button>
-          <button class="btnGhost" id="btnCancel" type="button">Volver</button>
+          <button class="btnSuccess" id="btnSave" type="button" disabled>💾 Guardar</button>
+          <button class="btnNeutral" id="btnCancel" type="button">↩️ Volver</button>
         </div>
-
-        <p class="help">
-          El producto que estás agregando/editando se marca en la previsualización (no se imprime).<br>
-          Para que el nombre se adapte: en cada SVG crea un rect con ID <b>box_nombre_producto</b>.
-        </p>
-
-        <div class="divider"></div>
-      </div>
-
-      <!-- Lista -->
-      <div id="listWrap">
-        <div class="subtle">Guardados</div>
-        <div class="list" id="productsList"></div>
       </div>
     </div>
 
@@ -408,75 +511,212 @@
     <div class="card" id="paperPreviewWrap">
       <div id="paperPreview"></div>
     </div>
-
   </div>
 
   <div id="printRoot" style="display:none"></div>
   <canvas id="workCanvas"></canvas>
+  <div id="__svgHostHidden"></div>
+
+  <!-- Context menu -->
+  <div id="ctxMenu" class="ctxMenu" role="menu" aria-hidden="true">
+    <div class="ctxTop" id="ctxTop" style="--pairColor:#93c5fd">
+      <div class="ctxDot" aria-hidden="true"></div>
+      <div class="ctxTitle" id="ctxTitle">Producto</div>
+    </div>
+    <div class="ctxBtns">
+      <button class="btnNeutral" id="ctxEdit" type="button">✏️ Editar</button>
+      <button class="btnNeutral" id="ctxDelete" type="button" style="border-color:#fee2e2;color:#b91c1c;background:#fff">🗑️ Eliminar</button>
+      <button class="btnNeutral" id="ctxClose" type="button">✖️ Cerrar</button>
+    </div>
+    <div class="ctxHint">Tip: click derecho en una etiqueta o producto.</div>
+  </div>
 
 <script>
-  /* =========================
-     CONFIG
-     ========================= */
-  const IDS = {
+  /* ============================
+     Persistencia + alerta salida
+  ============================ */
+  const STORAGE_KEY = "editor_etiquetas_state_v5";
+  let saveTimer = null;
+
+  function requestSaveState(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveState, 180);
+  }
+
+  function saveState(){
+    try{
+      if (!isListView()) syncDraftFromForm();
+      const state = { products, selectedProductId, expandedId, view: isListView()?"list":"form", formMode, editingId, draft };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){ console.warn("No se pudo guardar estado:", e); }
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const state = JSON.parse(raw);
+
+      if (Array.isArray(state.products)) products = state.products;
+
+      selectedProductId = state.selectedProductId || null;
+      expandedId = state.expandedId || null;
+
+      formMode = state.formMode || "add";
+      editingId = state.editingId || null;
+      draft = state.draft ? { ...emptyProduct(), ...state.draft } : emptyProduct();
+
+      if (state.view === "form"){
+        draft.impresionAt = draft.impresionAt || formatDateTimeNow();
+        setView("form");
+        $("formTitle").textContent = (formMode === "edit") ? "Editar producto" : "Agregar producto";
+        $("formSubtitle").textContent = (formMode === "edit")
+          ? "Al guardar, se actualiza la fecha y hora de impresión"
+          : "Completa todo para guardar";
+        fillFormFromProduct(draft);
+
+        // ✅ al entrar a form, que el preview se vaya a la tarjeta (draft/edit)
+        pendingFocus = { id: editingId ? editingId : "__draft__", scroll: true };
+      } else {
+        setView("list");
+      }
+      return true;
+    }catch(e){
+      console.warn("Estado corrupto:", e);
+      return false;
+    }
+  }
+
+  function clearState(){
+    try{ localStorage.removeItem(STORAGE_KEY); }catch{}
+  }
+
+  function hasWork(){
+    if (products.length > 0) return true;
+    if (!isListView()){
+      syncDraftFromForm();
+      return !!(draft.template || draft.size || draft.nombre || draft.antes || draft.ahora || draft.cuota || draft.useVig || (draft.qty && draft.qty > 1));
+    }
+    return false;
+  }
+
+  window.addEventListener("beforeunload", (e) => {
+    if (!hasWork()) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
+
+  /* ============================
+     App
+  ============================ */
+  const SVG_IDS = {
     nombre: "nombre_producto",
-    antes:  "precio_antes",
-    ahora:  "precio_ahora",
-    cuota:  "cuota_semanal"
+    antes: "precio_antes",
+    ahora: "precio_ahora",
+    cuota: "cuota_semanal",
+    vigencia: "fecha_vigencia",
+    impresionCandidates: ["Fecha_impresion", "fecha_impresion", "FECHA_IMPRESION"],
   };
 
-  // Piezas:
-  // quarter = 1x1, half_h = 2x1, full = 2x2
-  const PIECES = {
-    quarter: { w:1, h:1, area:1, useRotated:false, label:"1/4" },
-    half_h:  { w:2, h:1, area:2, useRotated:true,  label:"1/2 horizontal" },
-    full:    { w:2, h:2, area:4, useRotated:false, label:"Carta completa" }
-  };
+  const PREVIEW_SCALE = 0.58;
+
+  let products = [];
+  let editingId = null;
+  let formMode = "add";
+  let draft = emptyProduct();
+
+  const templateTextCache = new Map();
+  const renderCache = new Map();
+  const imgDimCache = new Map();
+
+  let previewTimer = null;
+
+  // Índices / resaltes
+  let previewSlotsByProduct = new Map();
+  let activeItemEl = null;
+
+  // SOLO 1 DESPLEGADO
+  let expandedId = null;
+
+  // selección “pegada”
+  let selectedProductId = null;
+
+  // Hover con delay
+  let hoverTimer = null;
+  let hoverOutTimer = null;
+  let hoverPid = null;
+
+  // Context menu
+  let ctxPid = null;
+
+  // foco a hoja
+  let pendingFocus = null;
+
+  // export loading
+  let exporting = false;
 
   const $ = (id) => document.getElementById(id);
 
-  /* =========================
-     STATE
-     ========================= */
-  let products = []; // {id, template, size, nombre, antesD, ahoraD, cuotaD, qty}
-  let editingId = null;
+  function cssEsc(s){
+    try{
+      return (window.CSS && CSS.escape) ? CSS.escape(String(s)) : String(s).replace(/[^a-zA-Z0-9_\-]/g, "\\$&");
+    }catch{
+      return String(s);
+    }
+  }
+  function uid(){ return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16); }
 
-  // Draft (lo que estás escribiendo) para preview en vivo
-  let draft = null; // {id:"__draft__", template,size,nombre,antesD,ahoraD,cuotaD,qty, __isDraft:true}
+  function emptyProduct(){
+    return {
+      id: null, template: "", size: "",
+      nombre: "", antes: "", ahora: "", cuota: "",
+      qty: 1,
+      useVig: false, vigStart: "", vigEnd: "",
+      impresionAt: "",
+      colorIdx: null,
+    };
+  }
 
-  const templateCache = new Map(); // file -> svgText
-  const pngCache = new Map();      // key -> {normal, rotated}
-
-  let renderTimer = null;
-  let isRendering = false;
-
-  /* =========================
-     INPUT HELPERS
-     ========================= */
   function onlyDigits(str){ return (str ?? "").toString().replace(/[^\d]/g, ""); }
-
-  function sanitizeDigitsMax6(el){
-    let cleaned = onlyDigits(el.value).slice(0, 6);
+  function sanitizeIntStr(raw){
+    let cleaned = onlyDigits(raw).slice(0, 6);
     if (cleaned.length > 1) cleaned = cleaned.replace(/^0+/, "") || "0";
-    el.value = cleaned;
     return cleaned;
   }
-
-  function formatThousands(n){
-    const num = Number(n);
-    if (!Number.isFinite(num)) return "";
-    return num.toLocaleString("en-US");
+  function formatThousands(num){
+    try { return Number(num).toLocaleString("en-US"); }
+    catch { return String(num||"").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   }
-
-  function toQuetzalesFromDigits(d){
-    if (!d) return "";
-    const n = parseInt(d, 10);
+  function toQuetzales(digits){
+    if (!digits) return "";
+    const n = parseInt(digits, 10);
     if (!Number.isFinite(n)) return "";
     return "Q " + formatThousands(n);
   }
+  function formatDMY(iso){
+    if (!iso) return "";
+    const [y,m,d] = iso.split("-");
+    if (!y || !m || !d) return iso;
+    return `${d}/${m}/${y}`;
+  }
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function formatDateTimeNow(){
+    const dt = new Date();
+    const d = pad2(dt.getDate());
+    const m = pad2(dt.getMonth()+1);
+    const y = dt.getFullYear();
+    const hh = pad2(dt.getHours());
+    const mm = pad2(dt.getMinutes());
+    return `${d}/${m}/${y} ${hh}:${mm}`;
+  }
 
-  function uid(){
-    return "p_" + Math.random().toString(36).slice(2,10) + "_" + Date.now().toString(36);
+  function showEmptyPreview(title, body){
+    $("paperPreview").innerHTML = `
+      <div class="emptyPreview">
+        <h4>${title}</h4>
+        <p>${body}</p>
+      </div>
+    `;
   }
 
   function escapeHtml(s){
@@ -485,19 +725,72 @@
       .replaceAll('"',"&quot;").replaceAll("'","&#039;");
   }
 
-  function templateLabel(file){
-    const map = {
-      "promocion1.SVG":"Promoción",
-      "normal1.SVG":"Normal",
-      "liquidacion1.svg":"Liquidación",
-      "oferta1.svg":"Oferta"
-    };
-    return map[file] || file || "";
+  /* ============================
+     ✅ COLORES: paleta distinta + variantes cuando se agota
+  ============================ */
+  const COLOR_HUES = [210,150,35,0,270,190,95,235,25,330];
+
+  function allocateColorIdx(){
+    const used = new Set(products.map(p => p.colorIdx).filter(n => Number.isFinite(n)));
+    let idx = 0;
+    while (used.has(idx)) idx++;
+    return idx;
   }
 
-  /* =========================
-     UI: ERRORS
-     ========================= */
+  function colorFromIdx(idx){
+    const base = idx % COLOR_HUES.length;
+    const variant = Math.floor(idx / COLOR_HUES.length);
+    const hue = (COLOR_HUES[base] + (variant * 7)) % 360;
+
+    const satArr = [82, 78, 86, 80];
+    const litArr = [46, 56, 38, 50];
+    const sat = satArr[variant % satArr.length];
+    const lit = litArr[variant % litArr.length];
+
+    return `hsl(${hue} ${sat}% ${lit}%)`;
+  }
+
+  function glowFromIdx(idx, strong=false){
+    const base = idx % COLOR_HUES.length;
+    const variant = Math.floor(idx / COLOR_HUES.length);
+    const hue = (COLOR_HUES[base] + (variant * 7)) % 360;
+    const a = strong ? 0.22 : 0.14;
+    return `hsla(${hue} 85% 45% / ${a})`;
+  }
+
+  function findProduct(pid){
+    if (!pid) return null;
+    if (editingId && pid === editingId) return draft;
+    return products.find(p => p.id === pid) || null;
+  }
+
+  function pairColor(pid){
+    const p = findProduct(pid);
+    const idx = Number.isFinite(p?.colorIdx) ? p.colorIdx : 0;
+    return colorFromIdx(idx);
+  }
+  function pairGlow(pid, strong=false){
+    const p = findProduct(pid);
+    const idx = Number.isFinite(p?.colorIdx) ? p.colorIdx : 0;
+    return glowFromIdx(idx, strong);
+  }
+
+  /* ========= Scroll SOLO dentro de contenedores ========= */
+  function scrollToChild(container, child, pad=16){
+    if (!container || !child) return;
+    const c = container.getBoundingClientRect();
+    const r = child.getBoundingClientRect();
+    const target = container.scrollTop + (r.top - c.top) - pad;
+    container.scrollTo({ top: target, behavior: "smooth" });
+  }
+
+  function isElementInView(container, el, margin=10){
+    if (!container || !el) return false;
+    const c = container.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return (r.top >= c.top + margin) && (r.bottom <= c.bottom - margin);
+  }
+
   function setFieldError(inputId, errorId, msg){
     const input = $(inputId);
     const err = $(errorId);
@@ -507,7 +800,6 @@
     err.classList.toggle("show", has);
     input.classList.toggle("isInvalid", has);
   }
-
   function clearAllErrors(){
     setFieldError("fTemplate","eTemplate","");
     setFieldError("fSize","eSize","");
@@ -516,237 +808,722 @@
     setFieldError("fAhora","eAhora","");
     setFieldError("fCuota","eCuota","");
     setFieldError("fQty","eQty","");
+    setFieldError("fUseVig","eVig","");
+    setFieldError("fVigStart","eVigStart","");
+    setFieldError("fVigEnd","eVigEnd","");
   }
 
-  /* =========================
-     FORM SHOW/HIDE
-     ========================= */
-  function setTopButtonsForMode(mode){
-    if (mode === "form"){
-      $("btnPrint").style.display = "none";
-      $("btnResetAll").style.display = "none";
+  function isListView(){ return $("listView").style.display !== "none"; }
+
+  function updateTopButtonsVisibility(){
+    const has = products.length > 0;
+    $("btnPrint").style.display = has ? "inline-flex" : "none";
+    $("btnPdf").style.display   = has ? "inline-flex" : "none";
+    $("btnResetAll").style.display = has ? "inline-flex" : "none";
+  }
+
+  /* ============================
+     ✅ LIMPIAR HOVER/RESALTADO al entrar a edición/agregar
+  ============================ */
+  function clearAllHoverState(){
+    clearTimeout(hoverTimer);
+    clearTimeout(hoverOutTimer);
+    hoverPid = null;
+
+    if (activeItemEl) activeItemEl.classList.remove("activeHover");
+    activeItemEl = null;
+
+    clearPreviewHighlight();
+  }
+
+  function setView(view){
+    if (view === "list"){
+      $("listView").style.display = "flex";
+      $("formView").style.display = "none";
+      updateTopButtonsVisibility();
+      renderItemsList();
+      schedulePreviewRebuild();
     } else {
-      $("btnPrint").style.display = products.length > 0 ? "inline-block" : "none";
-      $("btnResetAll").style.display = products.length > 0 ? "inline-block" : "none";
+      clearAllHoverState();
+      $("listView").style.display = "none";
+      $("formView").style.display = "flex";
+      $("btnPrint").style.display = "none";
+      $("btnPdf").style.display   = "none";
+      $("btnResetAll").style.display = "none";
+      hideCtxMenu();
+      schedulePreviewRebuild();
+    }
+    requestSaveState();
+  }
+
+  function isExpanded(id){ return expandedId === id; }
+  function setExpanded(id){ expandedId = id || null; }
+  function toggleExpanded(id){ expandedId = (expandedId === id) ? null : id; }
+
+  function clearPreviewHighlight(){
+    document.querySelectorAll(".slot.hl").forEach(el => {
+      el.classList.remove("hl");
+      const tag = el.querySelector(".hlTag");
+      if (tag) tag.remove();
+    });
+    document.querySelectorAll(".page-shell.hlpage").forEach(el => {
+      el.classList.remove("hlpage");
+      el.style.removeProperty("--pairColor");
+      el.style.removeProperty("--pairGlowStrong");
+    });
+  }
+
+  function setActiveListItem(el){
+    if (activeItemEl && activeItemEl !== el) activeItemEl.classList.remove("activeHover");
+    activeItemEl = el || null;
+    if (activeItemEl) activeItemEl.classList.add("activeHover");
+  }
+  function clearListHover(){ setActiveListItem(null); }
+
+  function markSelectedInList(){
+    document.querySelectorAll(".item.selected").forEach(el => el.classList.remove("selected"));
+    if (!selectedProductId) return;
+    const item = document.querySelector(`.item[data-id="${cssEsc(selectedProductId)}"]`);
+    if (item) item.classList.add("selected");
+  }
+
+  function highlightProductInList(productId, scroll=false){
+    if (!productId) return;
+    const item = document.querySelector(`.item[data-id="${cssEsc(productId)}"]`);
+    if (!item) return;
+    setActiveListItem(item);
+
+    // ✅ scroll correcto: en el contenedor real del listado
+    if (scroll){
+      const container = $("listScrollArea");
+      if (container) scrollToChild(container, item, 24);
+      else item.scrollIntoView({ behavior:"smooth", block:"center" });
     }
   }
 
-  function showForm(editId = null){
-    $("formWrap").style.display = "block";
-    $("listWrap").style.display = "none";
-    $("btnShowForm").style.display = "none";
-    $("noticeOk").classList.remove("show");
+  function highlightProductInPreview(productId, scroll=false, showTag=null){
+    if (!productId) return;
 
-    setTopButtonsForMode("form");
+    clearPreviewHighlight();
 
-    editingId = editId;
+    const slots = previewSlotsByProduct.get(productId) || [];
+    if (!slots.length) return;
 
-    if (!editId){
-      $("formTitle").textContent = "Agregar producto";
-      $("btnSave").textContent = "Guardar producto";
-      clearAllErrors();
+    const c = pairColor(productId);
+    const g = pairGlow(productId, true);
 
-      $("fTemplate").value = "";
-      $("fSize").value = "";
-      $("fNombre").value = "";
-      $("fAntes").value = "";
-      $("fAhora").value = "";
-      $("fCuota").value = "";
-      $("fQty").value = "1";
+    const canShowTag = (showTag === null) ? isListView() : !!showTag;
 
-      // crea draft vacío y resalta en preview cuando ya haya template/size
-      draft = {
-        id: "__draft__",
-        template: "",
-        size: "",
-        nombre: "",
-        antesD: "",
-        ahoraD: "",
-        cuotaD: "",
-        qty: 1,
-        __isDraft: true
-      };
-      scheduleRebuildAll(true);
+    slots.forEach((slot, idx) => {
+      slot.classList.add("hl");
+      slot.style.setProperty("--pairColor", c);
+      slot.style.setProperty("--pairGlowStrong", g);
+
+      // ✅ “AQUÍ” SOLO en modo listado (no en agregar/editar)
+      if (canShowTag && idx === 0){
+        const tag = document.createElement("div");
+        tag.className = "hlTag";
+        tag.textContent = "AQUÍ";
+        slot.appendChild(tag);
+      }
+
+      const shell = slot.closest(".page-shell");
+      if (shell){
+        shell.classList.add("hlpage");
+        shell.style.setProperty("--pairColor", c);
+        shell.style.setProperty("--pairGlowStrong", g);
+      }
+    });
+
+    if (scroll){
+      const shell = slots[0].closest(".page-shell");
+      if (shell) scrollToChild($("paperPreviewWrap"), shell, 24);
+    }
+  }
+
+  // ✅ foco para el “draft” (AGREGANDO/EDITANDO) en modo formulario
+  function ensureDraftVisible(){
+    if (isListView()) return;
+    const wrap = $("paperPreviewWrap");
+    const slot = document.querySelector(".slot.draft");
+    if (!wrap || !slot) return;
+    const shell = slot.closest(".page-shell");
+    if (!shell) return;
+
+    // solo scrollea si no está a la vista (para que no “brinque” sin necesidad)
+    if (!isElementInView(wrap, shell, 18)){
+      scrollToChild(wrap, shell, 24);
+    }
+  }
+
+  function applySelectionHighlight(){
+    if (!selectedProductId){
+      clearPreviewHighlight();
+      clearListHover();
+      markSelectedInList();
+      return;
+    }
+    highlightProductInPreview(selectedProductId, false);
+    highlightProductInList(selectedProductId, false);
+    markSelectedInList();
+  }
+
+  function scheduleHover(pid){
+    if (!pid) return;
+    clearTimeout(hoverTimer);
+    clearTimeout(hoverOutTimer);
+    hoverPid = pid;
+
+    hoverTimer = setTimeout(() => {
+      if (hoverPid !== pid) return;
+      highlightProductInPreview(pid, false, true);
+      highlightProductInList(pid, false);
+    }, 140);
+  }
+  function scheduleHoverClear(){
+    clearTimeout(hoverTimer);
+    clearTimeout(hoverOutTimer);
+
+    hoverOutTimer = setTimeout(() => {
+      hoverPid = null;
+      applySelectionHighlight();
+    }, 180);
+  }
+
+  /* ===== Context Menu ===== */
+  function placeCtxMenu(x, y){
+    const menu = $("ctxMenu");
+    const pad = 10;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    menu.style.display = "block";
+    menu.style.left = "0px";
+    menu.style.top = "0px";
+
+    const rect = menu.getBoundingClientRect();
+    let nx = x;
+    let ny = y;
+
+    if (nx + rect.width + pad > vw) nx = vw - rect.width - pad;
+    if (ny + rect.height + pad > vh) ny = vh - rect.height - pad;
+    if (nx < pad) nx = pad;
+    if (ny < pad) ny = pad;
+
+    menu.style.left = nx + "px";
+    menu.style.top = ny + "px";
+  }
+
+  function showCtxMenu(pid, x, y){
+    if (!pid || !isListView()) return;
+    ctxPid = pid;
+
+    const p = products.find(pp => pp.id === pid);
+    const name = p?.nombre || "Producto";
+
+    const c = pairColor(pid);
+    $("ctxTop").style.setProperty("--pairColor", c);
+    $("ctxTitle").textContent = name;
+
+    selectedProductId = pid;
+    setExpanded(pid);
+    renderItemsList();
+    requestAnimationFrame(() => applySelectionHighlight());
+
+    placeCtxMenu(x, y);
+    $("ctxMenu").setAttribute("aria-hidden","false");
+    requestSaveState();
+  }
+
+  function hideCtxMenu(){
+    ctxPid = null;
+    const menu = $("ctxMenu");
+    menu.style.display = "none";
+    menu.setAttribute("aria-hidden","true");
+  }
+
+  document.addEventListener("click", (e)=>{
+    const menu = $("ctxMenu");
+    if (menu.style.display === "none") return;
+    if (menu.contains(e.target)) return;
+    hideCtxMenu();
+  });
+  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") hideCtxMenu(); });
+  window.addEventListener("scroll", ()=> hideCtxMenu(), true);
+
+  $("ctxClose").addEventListener("click", (e)=>{ e.stopPropagation(); hideCtxMenu(); });
+  $("ctxEdit").addEventListener("click", (e)=>{
+    e.stopPropagation();
+    const pid = ctxPid;
+    hideCtxMenu();
+    if (pid) onEditProduct(pid, { fromCtx: true });
+  });
+  $("ctxDelete").addEventListener("click", (e)=>{
+    e.stopPropagation();
+    const pid = ctxPid;
+    hideCtxMenu();
+    if (pid) onDeleteProduct(pid);
+  });
+
+  /* ===== Iconos SVG (reutilizables) ===== */
+  const ICONS = {
+    chevronRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`,
+    chevronDown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>`,
+    edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+    trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 16h10l1-16"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`
+  };
+
+  /* ===== List UI ===== */
+  function renderItemsList(){
+    const wrap = $("itemsWrap");
+
+    if (products.length === 0){
+      wrap.innerHTML = `
+        <div class="listEmpty">
+          No hay productos agregados todavía.<br>
+          Presiona <b>“Agregar”</b> para comenzar.
+        </div>
+      `;
       return;
     }
 
-    const p = products.find(x => x.id === editId);
-    if (!p) return;
+    wrap.innerHTML = `
+      <div class="items" id="itemsList">
+        ${products.map(p => {
+          const isOpen = isExpanded(p.id);
+          const chevron = isOpen ? ICONS.chevronDown : ICONS.chevronRight;
 
-    $("formTitle").textContent = "Editar producto";
-    $("btnSave").textContent = "Guardar cambios";
-    clearAllErrors();
+          const sizeLabel = p.size === "quarter" ? "1/4" : (p.size === "half_h" ? "Media horiz." : "Carta");
+          const vigLabel = p.useVig ? `Vigencia: ${formatDMY(p.vigStart)} → ${formatDMY(p.vigEnd)}` : "Sin vigencia";
+          const impLabel = p.impresionAt ? `Impresión: ${p.impresionAt}` : "Impresión: (pendiente)";
 
-    $("fTemplate").value = p.template;
-    $("fSize").value = p.size;
-    $("fNombre").value = p.nombre;
-    $("fAntes").value = p.antesD;
-    $("fAhora").value = p.ahoraD;
-    $("fCuota").value = p.cuotaD;
-    $("fQty").value = String(p.qty);
+          const c = pairColor(p.id);
+          const g = pairGlow(p.id, false);
+          const gs = pairGlow(p.id, true);
 
-    // draft clonado del producto editado (para marcar y ver el acomodo)
-    draft = { ...p, __isDraft: true };
-    scheduleRebuildAll(true);
+          return `
+            <div class="item ${isOpen ? "expanded" : ""}"
+                 data-id="${p.id}"
+                 style="--pairColor:${c}; --pairGlow:${g}; --pairGlowStrong:${gs}"
+                 tabindex="0">
+
+              <div class="itemHead">
+                <div class="itemTitleRow" data-role="title">
+                  <button class="btnIcon" type="button" data-action="toggle" title="${isOpen ? "Plegar" : "Desplegar"}" aria-label="${isOpen ? "Plegar" : "Desplegar"}">
+                    ${chevron}
+                  </button>
+                  <div class="pairDot" aria-hidden="true"></div>
+                  <div class="itemName" data-role="name" title="${escapeHtml(p.nombre || "(Sin nombre)")}">
+                    ${escapeHtml(p.nombre || "(Sin nombre)")}
+                  </div>
+                </div>
+
+                <div class="itemActions">
+                  <button class="btnIcon warning" type="button" data-action="edit" title="Editar" aria-label="Editar">
+                    ${ICONS.edit}
+                  </button>
+                  <button class="btnIcon danger" type="button" data-action="delete" title="Eliminar" aria-label="Eliminar">
+                    ${ICONS.trash}
+                  </button>
+                </div>
+              </div>
+
+              <div class="itemDetails">
+                <div class="metaGrid">
+                  <div><b>Plantilla:</b> ${escapeHtml(p.template)}</div>
+                  <div><b>Tamaño:</b> ${escapeHtml(sizeLabel)}</div>
+                  <div><b>Cantidad:</b> ${p.qty}</div>
+                  <div><b>Cuota:</b> ${escapeHtml(toQuetzales(p.cuota))}</div>
+                  <div><b>Antes:</b> ${escapeHtml(toQuetzales(p.antes))}</div>
+                  <div><b>Ahora:</b> ${escapeHtml(toQuetzales(p.ahora))}</div>
+                  <div class="span2"><b>${escapeHtml(vigLabel)}</b></div>
+                  <div class="span2">${escapeHtml(impLabel)}</div>
+                </div>
+
+                <div class="metaPill">💡 Hover = resalta · Click = mover</div>
+                <div class="miniHint">Click en una etiqueta del preview: abre este producto aquí.</div>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+
+    markSelectedInList();
   }
 
-  function hideForm(){
-    $("formWrap").style.display = "none";
-    $("listWrap").style.display = "block";
-    $("btnShowForm").style.display = "inline-block";
-    editingId = null;
+  // Delegación lista
+  $("itemsWrap").addEventListener("mouseover", (e)=>{
+    const item = e.target.closest?.(".item[data-id]");
+    if (!item || !isListView()) return;
+    scheduleHover(item.dataset.id);
+  });
 
-    // al salir del form: ya no hay draft en preview
-    draft = null;
+  $("itemsWrap").addEventListener("mouseout", (e)=>{
+    const item = e.target.closest?.(".item[data-id]");
+    if (!item) return;
+    if (item.contains(e.relatedTarget)) return;
+    const toSlot = e.relatedTarget?.closest?.(".slot[data-product-id]");
+    if (toSlot) return;
+    scheduleHoverClear();
+  });
 
-    clearAllErrors();
-    setTopButtonsForMode("list");
-    scheduleRebuildAll(true);
+  $("itemsWrap").addEventListener("contextmenu", (e)=>{
+    const item = e.target.closest?.(".item[data-id]");
+    if (!item || !isListView()) return;
+    e.preventDefault();
+    showCtxMenu(item.dataset.id, e.clientX, e.clientY);
+  });
+
+  $("itemsWrap").addEventListener("click", (e)=>{
+    const item = e.target.closest?.(".item[data-id]");
+    if (!item || !isListView()) return;
+
+    const pid = item.dataset.id;
+    const actionBtn = e.target.closest?.("[data-action]");
+
+    if (actionBtn){
+      const action = actionBtn.dataset.action;
+
+      if (action === "toggle"){
+        e.stopPropagation();
+        selectedProductId = pid;
+        toggleExpanded(pid);
+        renderItemsList();
+        requestAnimationFrame(() => applySelectionHighlight());
+        requestSaveState();
+        return;
+      }
+      if (action === "edit"){
+        e.stopPropagation();
+        onEditProduct(pid, { fromCtx:false });
+        return;
+      }
+      if (action === "delete"){
+        e.stopPropagation();
+        onDeleteProduct(pid);
+        return;
+      }
+    }
+
+    const inTitle = !!e.target.closest?.('[data-role="title"]') || !!e.target.closest?.('[data-role="name"]');
+    selectedProductId = pid;
+
+    if (inTitle){
+      toggleExpanded(pid);
+      renderItemsList();
+      const opened = (expandedId === pid);
+      requestAnimationFrame(() => {
+        markSelectedInList();
+        highlightProductInPreview(pid, opened, true);
+        highlightProductInList(pid, false);
+      });
+      requestSaveState();
+      return;
+    }
+
+    setExpanded(pid);
+    renderItemsList();
+    requestAnimationFrame(() => {
+      markSelectedInList();
+      highlightProductInPreview(pid, true, true);
+      highlightProductInList(pid, false);
+    });
+    requestSaveState();
+  });
+
+  // Preview -> lista
+  $("paperPreview").addEventListener("mouseover", (e)=>{
+    const slot = e.target.closest?.(".slot[data-product-id]");
+    if (!slot || !isListView()) return;
+    const pid = slot.dataset.productId || "";
+    if (!pid || pid === "__draft__") return;
+    scheduleHover(pid);
+  });
+
+  $("paperPreview").addEventListener("mouseout", (e)=>{
+    const fromSlot = e.target.closest?.(".slot[data-product-id]");
+    if (!fromSlot) return;
+
+    const toSlot = e.relatedTarget?.closest?.(".slot[data-product-id]");
+    if (toSlot) return;
+
+    const toItem = e.relatedTarget?.closest?.(".item[data-id]");
+    if (toItem) return;
+
+    scheduleHoverClear();
+  });
+
+  $("paperPreview").addEventListener("contextmenu", (e)=>{
+    const slot = e.target.closest?.(".slot[data-product-id]");
+    if (!slot || !isListView()) return;
+
+    const pid = slot.dataset.productId || "";
+    if (!pid || pid === "__draft__") return;
+
+    e.preventDefault();
+    showCtxMenu(pid, e.clientX, e.clientY);
+  });
+
+  $("paperPreview").addEventListener("click", (e)=>{
+    const slot = e.target.closest?.(".slot[data-product-id]");
+    if (!slot || !isListView()) return;
+
+    const pid = slot.dataset.productId || "";
+    if (!pid || pid === "__draft__") return;
+
+    selectedProductId = pid;
+    setExpanded(pid);
+    renderItemsList();
+
+    requestAnimationFrame(()=>{
+      // ✅ si el item no está visible, scrollear lista para verlo
+      highlightProductInList(pid, true);
+      markSelectedInList();
+      highlightProductInPreview(pid, false, true);
+    });
+    requestSaveState();
+  });
+
+  /* ===== Form sync/validation ===== */
+  function syncDraftFromForm(){
+    draft.template = $("fTemplate").value || "";
+    draft.size = $("fSize").value || "";
+    draft.nombre = ($("fNombre").value || "").trim();
+
+    draft.antes = sanitizeIntStr($("fAntes").value);
+    draft.ahora = sanitizeIntStr($("fAhora").value);
+    draft.cuota = sanitizeIntStr($("fCuota").value);
+    $("fAntes").value = draft.antes;
+    $("fAhora").value = draft.ahora;
+    $("fCuota").value = draft.cuota;
+
+    const q = parseInt($("fQty").value, 10);
+    draft.qty = Number.isFinite(q) && q > 0 ? q : 0;
+
+    draft.useVig = !!$("fUseVig").checked;
+    $("vigDates").style.display = draft.useVig ? "block" : "none";
+    draft.vigStart = $("fVigStart").value || "";
+    draft.vigEnd = $("fVigEnd").value || "";
   }
 
-  /* =========================
-     VALIDATION (SAVE)
-     ========================= */
-  function validateFormForSave(){
+  function validateDraft(){
     clearAllErrors();
-
-    const template = $("fTemplate").value;
-    const size = $("fSize").value;
-
-    const nombre = ($("fNombre").value || "").trim();
-    const antesD = sanitizeDigitsMax6($("fAntes"));
-    const ahoraD = sanitizeDigitsMax6($("fAhora"));
-    const cuotaD = sanitizeDigitsMax6($("fCuota"));
-
-    const qtyRaw = parseInt($("fQty").value, 10);
-    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 0;
+    syncDraftFromForm();
 
     let ok = true;
 
-    if (!template){ setFieldError("fTemplate","eTemplate","Selecciona una plantilla."); ok = false; }
-    if (!size){ setFieldError("fSize","eSize","Selecciona un tamaño."); ok = false; }
+    if (!draft.template){ setFieldError("fTemplate","eTemplate","Selecciona una plantilla."); ok = false; }
+    if (!draft.size){ setFieldError("fSize","eSize","Selecciona un tamaño."); ok = false; }
+    if (!draft.nombre){ setFieldError("fNombre","eNombre","Este campo es obligatorio."); ok = false; }
 
-    if (!nombre){ setFieldError("fNombre","eNombre","Este campo es obligatorio."); ok = false; }
-    if (!antesD){ setFieldError("fAntes","eAntes","Ingresa 'Antes' (máx 6 dígitos)."); ok = false; }
-    if (!ahoraD){ setFieldError("fAhora","eAhora","Ingresa 'Ahora' (máx 6 dígitos)."); ok = false; }
-    if (!cuotaD){ setFieldError("fCuota","eCuota","Ingresa 'Cuota' (máx 6 dígitos)."); ok = false; }
-    if (!qty){ setFieldError("fQty","eQty","Cantidad debe ser mayor a 0."); ok = false; }
+    if (!draft.antes){ setFieldError("fAntes","eAntes","Ingresa 'Antes' (máx 6 dígitos)."); ok = false; }
+    if (!draft.ahora){ setFieldError("fAhora","eAhora","Ingresa 'Ahora' (máx 6 dígitos)."); ok = false; }
+    if (!draft.cuota){ setFieldError("fCuota","eCuota","Ingresa 'Cuota' (máx 6 dígitos)."); ok = false; }
 
-    if (antesD && ahoraD){
-      const antesN = parseInt(antesD, 10);
-      const ahoraN = parseInt(ahoraD, 10);
+    if (!draft.qty || draft.qty < 1){ setFieldError("fQty","eQty","Cantidad debe ser mayor a 0."); ok = false; }
+
+    if (draft.antes && draft.ahora){
+      const antesN = parseInt(draft.antes, 10);
+      const ahoraN = parseInt(draft.ahora, 10);
       if (Number.isFinite(antesN) && Number.isFinite(ahoraN) && ahoraN > antesN){
         setFieldError("fAhora","eAhora","'Ahora' no puede ser mayor que 'Antes'.");
         ok = false;
       }
     }
 
-    if (!ok) return { ok:false };
-
-    return {
-      ok:true,
-      data: { template, size, nombre, antesD, ahoraD, cuotaD, qty }
-    };
-  }
-
-  /* =========================
-     DRAFT LIVE UPDATE
-     ========================= */
-  function syncDraftFromForm(){
-    if (!draft) return;
-
-    draft.template = $("fTemplate").value || "";
-    draft.size = $("fSize").value || "";
-    draft.nombre = ($("fNombre").value || "").trim();
-    draft.antesD = onlyDigits($("fAntes").value || "").slice(0,6);
-    draft.ahoraD = onlyDigits($("fAhora").value || "").slice(0,6);
-    draft.cuotaD = onlyDigits($("fCuota").value || "").slice(0,6);
-
-    const qtyRaw = parseInt($("fQty").value, 10);
-    draft.qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
-
-    // si está editando un producto guardado, el highlight será ese ID
-    // si está agregando, se resalta "__draft__"
-  }
-
-  /* =========================
-     LIST UI
-     ========================= */
-  function updateTopUI(){
-    $("countHint").textContent = `${products.length} guardados`;
-    if (!editingId && $("formWrap").style.display === "none"){
-      $("btnPrint").style.display = products.length > 0 ? "inline-block" : "none";
-      $("btnResetAll").style.display = products.length > 0 ? "inline-block" : "none";
-    }
-  }
-
-  function renderProductsList(){
-    const wrap = $("productsList");
-    wrap.innerHTML = "";
-
-    if (products.length === 0){
-      wrap.innerHTML = `
-        <div class="emptyPreview" style="max-width:none">
-          <h4>Sin productos guardados</h4>
-          <p>Haz clic en <b>Agregar producto</b> para empezar.</p>
-        </div>
-      `;
-      return;
+    if (draft.useVig){
+      if (!draft.vigStart){ setFieldError("fVigStart","eVigStart","Selecciona fecha inicial."); ok = false; }
+      if (!draft.vigEnd){ setFieldError("fVigEnd","eVigEnd","Selecciona fecha final."); ok = false; }
+      if (draft.vigStart && draft.vigEnd && draft.vigEnd < draft.vigStart){
+        setFieldError("fVigEnd","eVigEnd","La fecha final no puede ser menor que la inicial.");
+        ok = false;
+      }
     }
 
-    products.forEach(p => {
-      const before = toQuetzalesFromDigits(p.antesD);
-      const now = toQuetzalesFromDigits(p.ahoraD);
-      const cuota = toQuetzalesFromDigits(p.cuotaD);
-      const piece = PIECES[p.size];
-
-      const el = document.createElement("div");
-      el.className = "item";
-      el.innerHTML = `
-        <div class="itemLeft">
-          <p class="itemTitle">${escapeHtml(p.nombre).toUpperCase()}</p>
-          <p class="itemMeta">
-            <span class="badge">${escapeHtml(templateLabel(p.template))}</span>
-            <span class="badge">${escapeHtml(piece?.label || p.size)}</span>
-            <span class="badge">Qty: ${p.qty}</span><br/>
-            Antes: <b>${escapeHtml(before)}</b> · Ahora: <b>${escapeHtml(now)}</b> · Cuota: <b>${escapeHtml(cuota)}</b>
-          </p>
-        </div>
-        <div class="itemActions">
-          <button class="btnEdit btnSm" type="button" data-act="edit" data-id="${p.id}">✏️ Editar</button>
-          <button class="btnDanger btnSm" type="button" data-act="del" data-id="${p.id}">🗑️ Eliminar</button>
-        </div>
-      `;
-      wrap.appendChild(el);
-    });
-
-    wrap.querySelectorAll("button[data-act]").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const id = btn.getAttribute("data-id");
-        const act = btn.getAttribute("data-act");
-        if (act === "edit") showForm(id);
-        if (act === "del") deleteProduct(id);
-      });
-    });
+    $("btnSave").disabled = !ok;
+    requestSaveState();
+    return ok;
   }
 
-  function deleteProduct(id){
+  function fillFormFromProduct(p){
+    $("fTemplate").value = p.template || "";
+    $("fSize").value = p.size || "";
+    $("fNombre").value = p.nombre || "";
+    $("fAntes").value = p.antes || "";
+    $("fAhora").value = p.ahora || "";
+    $("fCuota").value = p.cuota || "";
+    $("fQty").value = String(p.qty || 1);
+
+    $("fUseVig").checked = !!p.useVig;
+    $("vigDates").style.display = p.useVig ? "block" : "none";
+    $("fVigStart").value = p.vigStart || "";
+    $("fVigEnd").value = p.vigEnd || "";
+
+    syncDraftFromForm();
+    validateDraft();
+  }
+
+  /* ===== Actions ===== */
+  window.onEditProduct = (id) => {
     const p = products.find(x => x.id === id);
     if (!p) return;
 
-    const ok = confirm(`¿Eliminar este producto?\n\n${p.nombre.toUpperCase()}\nCantidad: ${p.qty}`);
-    if (!ok) return;
+    clearAllHoverState();
+    scheduleHoverClear();
+
+    setExpanded(null);
+    hideCtxMenu();
+
+    editingId = id;
+    formMode = "edit";
+
+    draft = { ...p };
+    draft.impresionAt = formatDateTimeNow();
+
+    $("formTitle").textContent = "Editar producto";
+    $("formSubtitle").textContent = "Al guardar, se actualiza la fecha y hora de impresión";
+    fillFormFromProduct(draft);
+
+    setView("form");
+
+    // ✅ al editar: llevar preview a donde esté la tarjeta editada
+    pendingFocus = { id, scroll:true };
+    schedulePreviewRebuild();
+    requestSaveState();
+  };
+
+  window.onDeleteProduct = (id) => {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    hideCtxMenu();
+
+    if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
+
+    if (expandedId === id) expandedId = null;
+    if (selectedProductId === id) selectedProductId = null;
 
     products = products.filter(x => x.id !== id);
 
-    updateTopUI();
-    renderProductsList();
-    scheduleRebuildAll(true);
+    updateTopButtonsVisibility();
+    renderItemsList();
+    schedulePreviewRebuild();
+    requestSaveState();
+  };
+
+  function openAddForm(){
+    clearAllHoverState();
+    scheduleHoverClear();
+
+    setExpanded(null);
+    selectedProductId = null;
+    clearListHover();
+    hideCtxMenu();
+
+    editingId = null;
+    formMode = "add";
+    draft = emptyProduct();
+    draft.impresionAt = formatDateTimeNow();
+
+    $("formTitle").textContent = "Agregar producto";
+    $("formSubtitle").textContent = "Completa todo para guardar";
+
+    $("fTemplate").value = "";
+    $("fSize").value = "";
+    $("fNombre").value = "";
+    $("fAntes").value = "";
+    $("fAhora").value = "";
+    $("fCuota").value = "";
+    $("fQty").value = "1";
+    $("fUseVig").checked = false;
+    $("fVigStart").value = "";
+    $("fVigEnd").value = "";
+    $("vigDates").style.display = "none";
+
+    clearAllErrors();
+    $("btnSave").disabled = true;
+
+    setView("form");
+
+    // ✅ en agregar: cuando exista el draft, scrollear al lugar
+    pendingFocus = { id: "__draft__", scroll:true };
+    schedulePreviewRebuild();
+    requestSaveState();
   }
 
-  /* =========================
-     SVG / PNG
-     ========================= */
+  function backToList(){
+    editingId = null;
+    formMode = "add";
+    draft = emptyProduct();
+    setView("list");
+    requestSaveState();
+  }
+
+  function saveDraft(){
+    if (!validateDraft()) return;
+
+    const nowText = formatDateTimeNow();
+    let savedId = null;
+
+    if (formMode === "add"){
+      const p = { ...draft };
+      p.id = uid();
+      p.impresionAt = nowText;
+      p.colorIdx = allocateColorIdx();
+      products.push(p);
+      savedId = p.id;
+    } else {
+      const idx = products.findIndex(x => x.id === editingId);
+      if (idx >= 0){
+        const p = { ...draft };
+        p.id = editingId;
+        p.impresionAt = nowText;
+        p.colorIdx = Number.isFinite(products[idx].colorIdx) ? products[idx].colorIdx : (Number.isFinite(draft.colorIdx) ? draft.colorIdx : allocateColorIdx());
+        products[idx] = p;
+        savedId = p.id;
+      }
+    }
+
+    selectedProductId = savedId;
+    setExpanded(savedId);
+
+    updateTopButtonsVisibility();
+    renderItemsList();
+    backToList();
+    schedulePreviewRebuild();
+
+    requestAnimationFrame(() => applySelectionHighlight());
+    requestSaveState();
+  }
+
+  function resetAll(){
+    if (products.length === 0) return;
+    if (!confirm("¿Eliminar TODOS los productos guardados?")) return;
+
+    hideCtxMenu();
+    products = [];
+    expandedId = null;
+    selectedProductId = null;
+
+    updateTopButtonsVisibility();
+    renderItemsList();
+    renderCache.clear();
+    previewSlotsByProduct.clear();
+    showEmptyPreview("Sin previsualización", "Agrega productos para ver cómo se acomodan en las hojas.");
+
+    clearState();
+  }
+
+  /* ===== SVG helpers ===== */
+  async function loadTemplateText(file){
+    if (templateTextCache.has(file)) return templateTextCache.get(file);
+    const res = await fetch(file, { cache: "no-store" });
+    if (!res.ok) throw new Error("No se pudo cargar " + file + ". Debe estar junto al HTML.");
+    const txt = await res.text();
+    templateTextCache.set(file, txt);
+    return txt;
+  }
+
   function getSvgViewBox(svg) {
     const vb = svg.viewBox && svg.viewBox.baseVal;
     if (vb && vb.width && vb.height) return { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
@@ -755,16 +1532,39 @@
     return { x: 0, y: 0, w: w || 1000, h: h || 1000 };
   }
 
-  function getTextBoxById(svg, textId) {
-    const box = svg.querySelector(`#box_${CSS.escape(textId)}`);
-    if (box && typeof box.getBBox === "function") {
-      const b = box.getBBox();
-      return { x: b.x, y: b.y, w: b.width, h: b.height, cx: b.x + b.width/2, cy: b.y + b.height/2 };
+  function clearSvgText(el){
+    if (!el) return;
+    while (el.firstChild) el.removeChild(el.firstChild);
+    el.textContent = "";
+  }
+  function setSvgText(el, txt){
+    if (!el) return;
+    const t = (txt ?? "").toString();
+    if (!t.trim()){ clearSvgText(el); return; }
+    const tspan = el.querySelector ? el.querySelector("tspan") : null;
+    if (tspan) tspan.textContent = t;
+    else el.textContent = t;
+  }
+  function findByAnyId(svg, ids){
+    for (const id of ids){
+      const el = svg.querySelector(`#${cssEsc(id)}`);
+      if (el) return el;
     }
-    const vb = getSvgViewBox(svg);
-    const w = vb.w * 0.85;
-    const h = vb.h * 0.18;
-    return { x: vb.x + (vb.w - w)/2, y: vb.y + vb.h*0.18, w, h, cx: vb.x + vb.w/2, cy: vb.y + vb.h*0.27 };
+    return null;
+  }
+  function replaceTokenInSvg(svg, token, value){
+    if (!svg || !token) return;
+    svg.querySelectorAll("tspan").forEach(ts => {
+      if (ts.textContent && ts.textContent.includes(token)){
+        ts.textContent = ts.textContent.split(token).join(value);
+      }
+    });
+    svg.querySelectorAll("text").forEach(t => {
+      if (t.querySelector("tspan")) return;
+      if (t.textContent && t.textContent.includes(token)){
+        t.textContent = t.textContent.split(token).join(value);
+      }
+    });
   }
 
   function getFontSizePx(textEl) {
@@ -778,10 +1578,16 @@
     return Number.isFinite(n) && n > 0 ? n : 16;
   }
 
-  function clearSvgText(textEl){
-    if (!textEl) return;
-    while (textEl.firstChild) textEl.removeChild(textEl.firstChild);
-    textEl.textContent = "";
+  function getTextBoxById(svg, textId) {
+    const box = svg.querySelector(`#box_${cssEsc(textId)}`);
+    if (box && typeof box.getBBox === "function") {
+      const b = box.getBBox();
+      return { x: b.x, y: b.y, w: b.width, h: b.height, cx: b.x + b.width/2, cy: b.y + b.height/2 };
+    }
+    const vb = getSvgViewBox(svg);
+    const w = vb.w * 0.85;
+    const h = vb.h * 0.18;
+    return { x: vb.x + (vb.w - w)/2, y: vb.y + vb.h*0.18, w, h, cx: vb.x + vb.w/2, cy: vb.y + vb.h*0.27 };
   }
 
   function setWrappedTextInBox(textEl, text, box, opts = {}) {
@@ -848,41 +1654,6 @@
       ts.textContent = txt;
       textEl.appendChild(ts);
     });
-  }
-
-  function setTextSmartCentered(textEl, value){
-    if (!textEl) return;
-    const txt = (value ?? "").toString().trim();
-    if (!txt) { clearSvgText(textEl); return; }
-    textEl.setAttribute("text-anchor", "middle");
-    const tspan = textEl.querySelector("tspan");
-    if (tspan) tspan.textContent = txt;
-    else textEl.textContent = txt;
-  }
-
-  async function getTemplateText(file){
-    if (templateCache.has(file)) return templateCache.get(file);
-    const res = await fetch(file, { cache: "no-store" });
-    if (!res.ok) throw new Error("No se pudo cargar " + file);
-    const txt = await res.text();
-    templateCache.set(file, txt);
-    return txt;
-  }
-
-  function mountHiddenSvg(svgText){
-    const old = $("__svgHostHidden");
-    if (old) old.remove();
-
-    const host = document.createElement("div");
-    host.id = "__svgHostHidden";
-    host.style.position = "absolute";
-    host.style.left = "-99999px";
-    host.style.top = "-99999px";
-    host.innerHTML = svgText;
-    document.body.appendChild(host);
-
-    const svgEl = host.querySelector("svg");
-    return { host, svgEl };
   }
 
   async function svgNodeToPng(svgNode, targetWidthPx = 2200){
@@ -952,513 +1723,492 @@
     return canvas.toDataURL("image/png");
   }
 
-  async function renderProductPngs(product){
-    // ✅ si no hay template, no se puede renderizar
-    if (!product.template) return null;
-
-    const key = JSON.stringify({
-      t: product.template,
-      n: (product.nombre||"").trim().toUpperCase(),
-      a: product.antesD,
-      b: product.ahoraD,
-      c: product.cuotaD
+  function renderKey(p){
+    return JSON.stringify({
+      template: p.template,
+      nombre: (p.nombre || "").trim().toUpperCase(),
+      antes: p.antes, ahora: p.ahora, cuota: p.cuota,
+      useVig: !!p.useVig, vigStart: p.vigStart || "", vigEnd: p.vigEnd || "",
+      impresionAt: (p.impresionAt || "").trim(),
     });
+  }
 
-    if (pngCache.has(key)) return pngCache.get(key);
+  async function renderProductToPngs(p){
+    const key = renderKey(p);
+    if (renderCache.has(key)) return renderCache.get(key);
 
-    const svgText = await getTemplateText(product.template);
-    const { host, svgEl } = mountHiddenSvg(svgText);
+    const svgText = await loadTemplateText(p.template);
+    const host = $("__svgHostHidden");
+    host.innerHTML = svgText;
 
-    const nombre = (product.nombre || "").trim().toUpperCase();
-    const antes = toQuetzalesFromDigits(product.antesD);
-    const ahora = toQuetzalesFromDigits(product.ahoraD);
-    const cuota = toQuetzalesFromDigits(product.cuotaD);
+    const svg = host.querySelector("svg");
+    if (!svg) throw new Error("El archivo no contiene un <svg> válido: " + p.template);
 
-    const nameEl = host.querySelector(`#${CSS.escape(IDS.nombre)}`);
-    if (nameEl && svgEl){
-      const box = getTextBoxById(svgEl, IDS.nombre);
-      setWrappedTextInBox(nameEl, nombre, box, { lineHeightEm: 1.10 });
+    const upperName = (p.nombre || "").trim().toUpperCase();
+    const antes = toQuetzales(p.antes);
+    const ahora = toQuetzales(p.ahora);
+    const cuota = toQuetzales(p.cuota);
+
+    const nameEl = svg.querySelector("#" + cssEsc(SVG_IDS.nombre));
+    if (nameEl){
+      const box = getTextBoxById(svg, SVG_IDS.nombre);
+      setWrappedTextInBox(nameEl, upperName, box, { lineHeightEm: 1.10 });
     }
 
-    setTextSmartCentered(host.querySelector(`#${CSS.escape(IDS.antes)}`), antes);
-    setTextSmartCentered(host.querySelector(`#${CSS.escape(IDS.ahora)}`), ahora);
-    setTextSmartCentered(host.querySelector(`#${CSS.escape(IDS.cuota)}`), cuota);
+    setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.antes)), antes);
+    setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.ahora)), ahora);
+    setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.cuota)), cuota);
 
-    const normal = await svgNodeToPng(svgEl, 2200);
-    const rotated = await rotatePng90(normal);
+    const vigEl = svg.querySelector("#" + cssEsc(SVG_IDS.vigencia));
+    if (p.useVig && p.vigStart && p.vigEnd){
+      const txt = `* VÁLIDO DESDE ${formatDMY(p.vigStart)} AL ${formatDMY(p.vigEnd)}`;
+      setSvgText(vigEl, txt);
+      replaceTokenInSvg(svg, "[Fecha_vigencia]", txt);
+    } else {
+      clearSvgText(vigEl);
+      replaceTokenInSvg(svg, "[Fecha_vigencia]", "");
+    }
 
-    host.remove();
+    // ✅ Fecha impresión REAL SIEMPRE
+    const impTxt = (p.impresionAt && p.impresionAt.trim()) ? p.impresionAt.trim() : formatDateTimeNow();
+    const impEl = findByAnyId(svg, SVG_IDS.impresionCandidates);
+    setSvgText(impEl, impTxt);
+    replaceTokenInSvg(svg, "[Fecha_impresion]", impTxt);
+    replaceTokenInSvg(svg, "[fecha_impresion]", impTxt);
+    replaceTokenInSvg(svg, "[FECHA_IMPRESION]", impTxt);
 
-    const out = { normal, rotated };
-    pngCache.set(key, out);
+    const pngNormal = await svgNodeToPng(svg, 2200);
+    const pngRotated = await rotatePng90(pngNormal);
+
+    const out = { pngNormal, pngRotated };
+    renderCache.set(key, out);
     return out;
   }
 
-  /* =========================
-     PACKING (incremental: rellena huecos primero)
-     ========================= */
-  function buildWorkingSet(){
-    // ✅ incluye draft si existe y tiene size/template seleccionados (para ver acomodo real)
-    const out = [...products];
+  /* ===== Packing (mezcla quarter + half_h + full) ===== */
+  function makeGridPage(){ return { type: "grid", occ: [[null,null],[null,null]], placements: [] }; }
+  function rowEmpty(page, r){ return !page.occ[r][0] && !page.occ[r][1]; }
 
-    if (draft && draft.size && draft.template){
-      if (editingId){
-        // si estoy editando, reemplazo temporalmente el producto por el draft
-        const idx = out.findIndex(x => x.id === editingId);
-        if (idx >= 0) out[idx] = { ...draft };
-        else out.unshift({ ...draft });
-      } else {
-        // si estoy agregando, lo añado al final (o al inicio) para verlo entrando a huecos
-        out.push({ ...draft });
-      }
+  function placeQuarter(page, item){
+    const prefer = [];
+    const any = [];
+
+    for (let r=0; r<2; r++){
+      const emptyCols = [];
+      for (let c=0; c<2; c++) if (!page.occ[r][c]) emptyCols.push(c);
+      if (!emptyCols.length) continue;
+
+      const filled = 2 - emptyCols.length;
+      if (filled === 1 && emptyCols.length === 1) prefer.push({r, c: emptyCols[0]});
+      else any.push({r, c: emptyCols[0]});
     }
+    const spot = prefer[0] || any[0];
+    if (!spot) return false;
 
-    return out;
-  }
-
-  function buildInstances(workingProducts){
-    const out = [];
-    let seq = 0;
-
-    for (const p of workingProducts){
-      const piece = PIECES[p.size];
-      if (!piece) continue;
-      const qty = Number(p.qty || 0);
-      if (!Number.isFinite(qty) || qty <= 0) continue;
-
-      for (let i=0;i<qty;i++){
-        out.push({
-          seq: seq++,
-          product: p,
-          pieceKey: p.size,
-          piece,
-          __isDraft: !!p.__isDraft
-        });
-      }
-    }
-
-    // ✅ Para minimizar hojas (y llenar huecos): grandes primero
-    // Si empate: los que ya están guardados primero, luego draft (para que el draft “entre” en huecos disponibles)
-    out.sort((a,b)=>{
-      if (b.piece.area !== a.piece.area) return b.piece.area - a.piece.area;
-      if (a.__isDraft !== b.__isDraft) return a.__isDraft ? 1 : -1;
-      return a.seq - b.seq;
-    });
-
-    return out;
-  }
-
-  function emptyOcc(){
-    return [[false,false],[false,false]];
-  }
-
-  function canPlace(occ, row, col, w, h){
-    if (row + h > 2 || col + w > 2) return false;
-    for (let r=row; r<row+h; r++){
-      for (let c=col; c<col+w; c++){
-        if (occ[r][c]) return false;
-      }
-    }
+    page.occ[spot.r][spot.c] = item;
+    page.placements.push({ item, row: spot.r+1, col: spot.c+1, rs: 1, cs: 1 });
     return true;
   }
 
-  function place(occ, row, col, w, h){
-    for (let r=row; r<row+h; r++){
-      for (let c=col; c<col+w; c++){
-        occ[r][c] = true;
+  function placeHalf(page, item){
+    const opts = [];
+    for (let r=0; r<2; r++){
+      if (rowEmpty(page, r)){
+        const other = r === 0 ? 1 : 0;
+        const otherHas = (!!page.occ[other][0] || !!page.occ[other][1]);
+        opts.push({r, score: otherHas ? 2 : 1});
       }
     }
+    if (!opts.length) return false;
+    opts.sort((a,b)=> b.score - a.score);
+
+    const r = opts[0].r;
+    page.occ[r][0] = item;
+    page.occ[r][1] = item;
+    page.placements.push({ item, row: r+1, col: 1, rs: 1, cs: 2 });
+    return true;
   }
 
-  function firstFitInPage(page, inst){
-    const { w, h } = inst.piece;
-
-    if (w === 2 && h === 2){
-      if (canPlace(page.occ, 0, 0, 2, 2)){
-        place(page.occ, 0, 0, 2, 2);
-        page.items.push({ inst, row:0, col:0, w:2, h:2 });
-        return true;
-      }
-      return false;
-    }
-
-    if (w === 2 && h === 1){
-      for (let row=0; row<2; row++){
-        if (canPlace(page.occ, row, 0, 2, 1)){
-          place(page.occ, row, 0, 2, 1);
-          page.items.push({ inst, row, col:0, w:2, h:1 });
-          return true;
-        }
-      }
-      return false;
-    }
-
-    for (let row=0; row<2; row++){
-      for (let col=0; col<2; col++){
-        if (canPlace(page.occ, row, col, 1, 1)){
-          place(page.occ, row, col, 1, 1);
-          page.items.push({ inst, row, col, w:1, h:1 });
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  function packToPages(instances){
+  function packAll(items){
     const pages = [];
-    for (const inst of instances){
-      let placed = false;
 
-      // ✅ rellena huecos en páginas existentes primero
-      for (const page of pages){
-        if (firstFitInPage(page, inst)){
-          placed = true;
-          break;
-        }
-      }
+    for (const it of items){
+      const size = it.product.size;
 
-      // si no cabe, crea nueva hoja
-      if (!placed){
-        const page = { occ: emptyOcc(), items: [] };
-        if (firstFitInPage(page, inst)){
-          pages.push(page);
-        }
-      }
-    }
-    return pages;
-  }
-
-  /* =========================
-     PREVIEW
-     ========================= */
-  function showEmptyPreview(title, body){
-    $("paperPreview").innerHTML = `
-      <div class="emptyPreview">
-        <h4>${title}</h4>
-        <p>${body}</p>
-      </div>
-    `;
-  }
-
-  function buildPageDOM(pageItems, prodToPng, highlightId){
-    const shell = document.createElement("div");
-    shell.className = "page-shell";
-
-    const inner = document.createElement("div");
-    inner.className = "page-inner";
-
-    const page = document.createElement("div");
-    page.className = "paper-page";
-
-    for (const it of pageItems){
-      const { inst, row, col, w, h } = it;
-      const cell = document.createElement("div");
-      cell.className = "label-cell";
-      cell.style.gridRow = `${row+1} / span ${h}`;
-      cell.style.gridColumn = `${col+1} / span ${w}`;
-
-      const pid = inst.product.id;
-      const isHighlight = highlightId && (pid === highlightId || (inst.__isDraft && highlightId === "__draft__"));
-      if (isHighlight) cell.classList.add("hl");
-
-      const pngs = prodToPng.get(pid);
-      if (!pngs){
-        // si no hay png (ej: draft sin template) no pintamos nada
+      if (size === "full"){
+        pages.push({ type: "full", placements: [{ item: it, row: 1, col: 1, rs: 1, cs: 1 }] });
         continue;
       }
 
-      const img = document.createElement("img");
-      img.className = "label-img";
-      img.alt = "Etiqueta";
-      img.src = inst.piece.useRotated ? pngs.rotated : pngs.normal;
-
-      cell.appendChild(img);
-      page.appendChild(cell);
-    }
-
-    inner.appendChild(page);
-    shell.appendChild(inner);
-    return shell;
-  }
-
-  async function buildAllPreview(){
-    const working = buildWorkingSet();
-
-    if (working.length === 0){
-      showEmptyPreview("Sin previsualización", "Agrega al menos un producto para ver las hojas aquí.");
-      return;
-    }
-
-    const instances = buildInstances(working);
-    if (instances.length === 0){
-      showEmptyPreview("Completa plantilla y tamaño", "Selecciona plantilla y tamaño para ver el acomodo en la hoja.");
-      return;
-    }
-
-    if (isRendering) return;
-    isRendering = true;
-
-    try{
-      // 1) PNGs por producto (incluye draft si aplica)
-      const prodToPng = new Map();
-      for (const p of working){
-        const pngs = await renderProductPngs(p);
-        if (pngs) prodToPng.set(p.id, pngs);
-      }
-
-      // 2) packing
-      const pages = packToPages(instances);
-
-      const preview = $("paperPreview");
-      preview.innerHTML = "";
-
-      // highlight id: si editando => editingId, si agregando => "__draft__"
-      const highlightId = draft ? (editingId ? editingId : "__draft__") : null;
-
-      const sum = document.createElement("div");
-      sum.className = "summaryBar";
-      sum.innerHTML = `
-        <div>Total etiquetas: ${instances.length}</div>
-        <span>Hojas: ${pages.length}</span>
-        ${draft ? `<div class="hint">Marcado: ${editingId ? "EDITANDO" : "AGREGANDO"}</div>` : `<div class="hint">Vista general</div>`}
-      `;
-      preview.appendChild(sum);
+      let placed = false;
 
       for (const page of pages){
-        preview.appendChild(buildPageDOM(page.items, prodToPng, highlightId));
+        if (page.type !== "grid") continue;
+        if (size === "quarter") placed = placeQuarter(page, it);
+        else if (size === "half_h") placed = placeHalf(page, it);
+        if (placed) break;
       }
 
-    }catch(e){
-      console.error(e);
-      showEmptyPreview("Error en previsualización", "No se pudo generar. Verifica que los SVG existan junto al HTML.");
-    }finally{
-      isRendering = false;
+      if (!placed){
+        const p = makeGridPage();
+        pages.push(p);
+        if (size === "quarter") placeQuarter(p, it);
+        else placeHalf(p, it);
+      }
+    }
+
+    return pages;
+  }
+
+  function buildItemsForPacking(includeDraft){
+    const list = [];
+
+    const d = includeDraft ? (() => {
+      syncDraftFromForm();
+
+      if (editingId) {
+        return {
+          ...draft,
+          id: editingId,
+          impresionAt: draft.impresionAt || formatDateTimeNow(),
+          qty: (Number.isFinite(draft.qty) && draft.qty > 0) ? draft.qty : (draft.qty === 0 ? 0 : 1),
+          colorIdx: Number.isFinite(draft.colorIdx) ? draft.colorIdx : (products.find(p => p.id === editingId)?.colorIdx ?? 0),
+        };
+      }
+
+      if (draft.template && draft.size) {
+        return {
+          ...draft,
+          id: "__draft__",
+          impresionAt: draft.impresionAt || formatDateTimeNow(),
+          qty: (Number.isFinite(draft.qty) && draft.qty > 0) ? draft.qty : 1,
+          colorIdx: Number.isFinite(draft.colorIdx) ? draft.colorIdx : 0,
+        };
+      }
+      return null;
+    })() : null;
+
+    for (const p of products){
+      const source = (includeDraft && editingId && p.id === editingId) ? d : p;
+      if (!source) continue;
+
+      for (let i=0; i<(source.qty || 0); i++){
+        list.push({ product: source, isDraft: false, instanceIndex: i });
+      }
+    }
+
+    if (includeDraft && !editingId && d && d.id === "__draft__"){
+      for (let i=0; i<(d.qty || 1); i++){
+        list.push({ product: d, isDraft: true, instanceIndex: i });
+      }
+    }
+
+    if (includeDraft && editingId && d){
+      for (const it of list){
+        if (it.product.id === editingId) it.isDraft = true;
+      }
+    }
+
+    return list;
+  }
+
+  /* ===== Preview ===== */
+  async function buildPreview(){
+    const includeDraft = !isListView();
+    const items = buildItemsForPacking(includeDraft);
+
+    if (items.length === 0){
+      showEmptyPreview("Sin previsualización", "Agrega productos para ver cómo se acomodan en las hojas.");
+      previewSlotsByProduct.clear();
+      return;
+    }
+
+    for (const it of items){
+      if (!it.product.template || !it.product.size) continue;
+      const r = await renderProductToPngs(it.product);
+      it._png = (it.product.size === "half_h") ? r.pngRotated : r.pngNormal;
+    }
+
+    const pages = packAll(items);
+    const preview = $("paperPreview");
+    preview.innerHTML = "";
+
+    previewSlotsByProduct = new Map();
+
+    pages.forEach((page, pageIndex) => {
+      const shell = document.createElement("div");
+      shell.className = "page-shell";
+      shell.style.setProperty("--previewScale", PREVIEW_SCALE);
+
+      const pageLabel = document.createElement("div");
+      pageLabel.className = "pageLabel";
+      pageLabel.textContent = `HOJA ${pageIndex+1}`;
+      shell.appendChild(pageLabel);
+
+      const inner = document.createElement("div");
+      inner.className = "page-inner";
+
+      const paper = document.createElement("div");
+      paper.className = "paper-page " + (page.type === "full" ? "paper-full" : "paper-grid");
+
+      for (const pl of page.placements){
+        const it = pl.item;
+        if (!it._png) continue;
+
+        const slot = document.createElement("div");
+        slot.className = "slot" + (it.isDraft ? " draft" : "");
+        slot.style.gridRow = `${pl.row} / span ${pl.rs}`;
+        slot.style.gridColumn = `${pl.col} / span ${pl.cs}`;
+        slot.dataset.productId = it.product.id || "";
+
+        const pid = it.product.id || "";
+
+        if (pid && pid !== "__draft__"){
+          const c = pairColor(pid);
+          const gs = pairGlow(pid, true);
+          slot.style.setProperty("--pairColor", c);
+          slot.style.setProperty("--pairGlowStrong", gs);
+
+          const mark = document.createElement("div");
+          mark.className = "pairMark";
+          slot.appendChild(mark);
+
+          if (!previewSlotsByProduct.has(pid)) previewSlotsByProduct.set(pid, []);
+          previewSlotsByProduct.get(pid).push(slot);
+        }
+
+        const img = document.createElement("img");
+        img.src = it._png;
+        img.alt = "Etiqueta";
+        slot.appendChild(img);
+
+        if (it.isDraft){
+          const tag = document.createElement("div");
+          tag.className = "draftTag";
+          tag.textContent = (formMode === "edit") ? "EDITANDO" : "AGREGANDO";
+          slot.appendChild(tag);
+        }
+
+        paper.appendChild(slot);
+      }
+
+      inner.appendChild(paper);
+      shell.appendChild(inner);
+      preview.appendChild(shell);
+    });
+
+    // ✅ foco: edición o agregar
+    if (pendingFocus && pendingFocus.id){
+      const { id, scroll } = pendingFocus;
+      pendingFocus = null;
+
+      if (id === "__draft__"){
+        // solo scroll al draft, sin “AQUÍ”
+        ensureDraftVisible();
+      } else {
+        // scroll al producto editado, sin “AQUÍ” en modo form
+        highlightProductInPreview(id, !!scroll, false);
+      }
+    }
+
+    if (includeDraft){
+      // ✅ mientras agrega/edita: que siempre se vea dónde quedó
+      ensureDraftVisible();
+    } else {
+      applySelectionHighlight();
     }
   }
 
-  function scheduleRebuildAll(force=false){
-    if (renderTimer) clearTimeout(renderTimer);
-    renderTimer = setTimeout(buildAllPreview, force ? 0 : 120);
+  function schedulePreviewRebuild(){
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => buildPreview().catch(console.error), 160);
   }
 
-  /* =========================
-     PRINT (sin draft / sin highlights)
-     ========================= */
-  function buildPrintPageDOM(pageItems, prodToPng){
-    const wrap = document.createElement("div");
-    wrap.className = "print-page";
-
-    const page = document.createElement("div");
-    page.className = "paper-page";
-
-    for (const it of pageItems){
-      const { inst, row, col, w, h } = it;
-      if (inst.__isDraft) continue; // ✅ NUNCA imprimir draft
-
-      const cell = document.createElement("div");
-      cell.className = "label-cell";
-      cell.style.gridRow = `${row+1} / span ${h}`;
-      cell.style.gridColumn = `${col+1} / span ${w}`;
-
-      const pngs = prodToPng.get(inst.product.id);
-      if (!pngs) continue;
-
-      const img = document.createElement("img");
-      img.className = "label-img";
-      img.alt = "Etiqueta";
-      img.src = inst.piece.useRotated ? pngs.rotated : pngs.normal;
-
-      cell.appendChild(img);
-      page.appendChild(cell);
-    }
-
-    wrap.appendChild(page);
-    return wrap;
-  }
-
+  /* ===== Print ===== */
   async function printNow(){
     if (products.length === 0) return;
 
-    try{
-      const prodToPng = new Map();
-      for (const p of products){
-        const pngs = await renderProductPngs(p);
-        if (pngs) prodToPng.set(p.id, pngs);
-      }
-
-      const instances = buildInstances(products);
-      const pages = packToPages(instances);
-
-      const printRoot = $("printRoot");
-      printRoot.innerHTML = "";
-      printRoot.style.display = "block";
-
-      for (const page of pages){
-        printRoot.appendChild(buildPrintPageDOM(page.items, prodToPng));
-      }
-
-      const cleanup = () => {
-        printRoot.style.display = "none";
-        printRoot.innerHTML = "";
-        window.removeEventListener("afterprint", cleanup);
-        scheduleRebuildAll(true);
-      };
-      window.addEventListener("afterprint", cleanup);
-
-      window.print();
-
-    }catch(e){
-      console.error(e);
-      $("printRoot").style.display = "none";
-      $("printRoot").innerHTML = "";
-      alert("No se pudo imprimir. Verifica que los SVG existan y que el navegador permita imprimir.");
-      scheduleRebuildAll(true);
+    const items = buildItemsForPacking(false);
+    for (const it of items){
+      const r = await renderProductToPngs(it.product);
+      it._png = (it.product.size === "half_h") ? r.pngRotated : r.pngNormal;
     }
+
+    const pages = packAll(items);
+
+    const root = $("printRoot");
+    root.innerHTML = "";
+    root.style.display = "block";
+
+    for (const page of pages){
+      const wrap = document.createElement("div");
+      wrap.className = "print-page";
+
+      const paper = document.createElement("div");
+      paper.className = "paper-page " + (page.type === "full" ? "paper-full" : "paper-grid");
+
+      for (const pl of page.placements){
+        const it = pl.item;
+        if (!it._png) continue;
+
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        slot.style.gridRow = `${pl.row} / span ${pl.rs}`;
+        slot.style.gridColumn = `${pl.col} / span ${pl.cs}`;
+
+        const img = document.createElement("img");
+        img.src = it._png;
+        img.alt = "Etiqueta";
+        slot.appendChild(img);
+
+        paper.appendChild(slot);
+      }
+
+      wrap.appendChild(paper);
+      root.appendChild(wrap);
+    }
+
+    const cleanup = () => {
+      root.style.display = "none";
+      root.innerHTML = "";
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+
+    window.print();
   }
 
-  /* =========================
-     SAVE / EDIT / CLEAR
-     ========================= */
-  function saveProduct(){
-    const v = validateFormForSave();
-    if (!v.ok) return;
+  /* ===== Export PDF ===== */
+  async function getImgDim(dataUrl){
+    if (imgDimCache.has(dataUrl)) return imgDimCache.get(dataUrl);
 
-    const data = v.data;
+    const p = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth || img.width, h: img.naturalHeight || img.height });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
 
-    if (!editingId){
-      products.unshift({ id: uid(), ...data });
+    imgDimCache.set(dataUrl, p);
+    return p;
+  }
+
+  function boxForPlacement(pageType, row, col, rs, cs){
+    const pageW = 215.9, pageH = 279.4;
+    const padGrid = 6, gapGrid = 6;
+    const padFull = 10;
+
+    if (pageType === "full"){
+      const pad = padFull;
+      const availW = pageW - (pad*2);
+      const availH = pageH - (pad*2);
+      return { x: pad, y: pad, w: availW, h: availH };
+    }
+
+    const pad = padGrid;
+    const gap = gapGrid;
+    const availW = pageW - (pad*2);
+    const availH = pageH - (pad*2);
+
+    const cols = 2, rows = 2;
+    const cellW = (availW - gap) / cols;
+    const cellH = (availH - gap) / rows;
+
+    const x = pad + (col-1) * (cellW + gap);
+    const y = pad + (row-1) * (cellH + gap);
+
+    const w = cellW * cs + gap * (cs-1);
+    const h = cellH * rs + gap * (rs-1);
+
+    return { x, y, w, h };
+  }
+
+  function setIconLoading(btn, loading){
+    if (!btn) return;
+    if (loading){
+      if (!btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+      btn.innerHTML = `<span class="spin" aria-hidden="true"></span>`;
+      btn.disabled = true;
     } else {
-      const idx = products.findIndex(x => x.id === editingId);
-      if (idx >= 0) products[idx] = { ...products[idx], ...data };
-    }
-
-    $("noticeOk").classList.add("show");
-    setTimeout(()=> $("noticeOk").classList.remove("show"), 1200);
-
-    // al guardar: se elimina draft y vuelve a lista
-    draft = null;
-    hideForm();
-
-    updateTopUI();
-    renderProductsList();
-    scheduleRebuildAll(true);
-  }
-
-  function clearAll(){
-    const ok = confirm("¿Eliminar todos los productos guardados?");
-    if (!ok) return;
-    products = [];
-    draft = null;
-    updateTopUI();
-    renderProductsList();
-    scheduleRebuildAll(true);
-  }
-
-  /* =========================
-     LIST UI
-     ========================= */
-  function updateTopUI(){
-    $("countHint").textContent = `${products.length} guardados`;
-    if (!editingId && $("formWrap").style.display === "none"){
-      $("btnPrint").style.display = products.length > 0 ? "inline-block" : "none";
-      $("btnResetAll").style.display = products.length > 0 ? "inline-block" : "none";
+      if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
+      btn.disabled = false;
     }
   }
 
-  function renderProductsList(){
-    const wrap = $("productsList");
-    wrap.innerHTML = "";
+  async function exportPdf(){
+    if (products.length === 0) return;
 
-    if (products.length === 0){
-      wrap.innerHTML = `
-        <div class="emptyPreview" style="max-width:none">
-          <h4>Sin productos guardados</h4>
-          <p>Haz clic en <b>Agregar producto</b> para empezar.</p>
-        </div>
-      `;
+    if (!window.jspdf || !window.jspdf.jsPDF){
+      alert("No se pudo cargar jsPDF. Revisa tu conexión o el script CDN.");
       return;
     }
+    const { jsPDF } = window.jspdf;
 
-    products.forEach(p => {
-      const before = toQuetzalesFromDigits(p.antesD);
-      const now = toQuetzalesFromDigits(p.ahoraD);
-      const cuota = toQuetzalesFromDigits(p.cuotaD);
-      const piece = PIECES[p.size];
+    const items = buildItemsForPacking(false);
+    for (const it of items){
+      const r = await renderProductToPngs(it.product);
+      it._png = (it.product.size === "half_h") ? r.pngRotated : r.pngNormal;
+    }
+    const pages = packAll(items);
 
-      const el = document.createElement("div");
-      el.className = "item";
-      el.innerHTML = `
-        <div class="itemLeft">
-          <p class="itemTitle">${escapeHtml(p.nombre).toUpperCase()}</p>
-          <p class="itemMeta">
-            <span class="badge">${escapeHtml(templateLabel(p.template))}</span>
-            <span class="badge">${escapeHtml(piece?.label || p.size)}</span>
-            <span class="badge">Qty: ${p.qty}</span><br/>
-            Antes: <b>${escapeHtml(before)}</b> · Ahora: <b>${escapeHtml(now)}</b> · Cuota: <b>${escapeHtml(cuota)}</b>
-          </p>
-        </div>
-        <div class="itemActions">
-          <button class="btnEdit btnSm" type="button" data-act="edit" data-id="${p.id}">✏️ Editar</button>
-          <button class="btnDanger btnSm" type="button" data-act="del" data-id="${p.id}">🗑️ Eliminar</button>
-        </div>
-      `;
-      wrap.appendChild(el);
-    });
+    const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"letter" });
 
-    wrap.querySelectorAll("button[data-act]").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const id = btn.getAttribute("data-id");
-        const act = btn.getAttribute("data-act");
-        if (act === "edit") showForm(id);
-        if (act === "del") deleteProduct(id);
-      });
-    });
+    for (let pi=0; pi<pages.length; pi++){
+      if (pi > 0) doc.addPage("letter", "portrait");
+
+      const page = pages[pi];
+      const pageType = page.type === "full" ? "full" : "grid";
+
+      for (const pl of page.placements){
+        const it = pl.item;
+        if (!it._png) continue;
+
+        const box = boxForPlacement(pageType, pl.row, pl.col, pl.rs, pl.cs);
+        const dim = await getImgDim(it._png);
+
+        const scale = Math.min(box.w / dim.w, box.h / dim.h);
+        const drawW = dim.w * scale;
+        const drawH = dim.h * scale;
+
+        const dx = box.x + (box.w - drawW) / 2;
+        const dy = box.y + (box.h - drawH) / 2;
+
+        doc.addImage(it._png, "PNG", dx, dy, drawW, drawH);
+      }
+    }
+
+    doc.save("etiquetas.pdf");
   }
 
-  function deleteProduct(id){
-    const p = products.find(x => x.id === id);
-    if (!p) return;
+  async function exportPdfWithLoading(){
+    if (exporting) return;
+    exporting = true;
 
-    const ok = confirm(`¿Eliminar este producto?\n\n${p.nombre.toUpperCase()}\nCantidad: ${p.qty}`);
-    if (!ok) return;
+    const btn = $("btnPdf");
+    setIconLoading(btn, true);
 
-    products = products.filter(x => x.id !== id);
-
-    updateTopUI();
-    renderProductsList();
-    scheduleRebuildAll(true);
-  }
-
-  /* =========================
-     EVENTS
-     ========================= */
-  $("btnShowForm").addEventListener("click", ()=> showForm(null));
-  $("btnCancel").addEventListener("click", hideForm);
-  $("btnSave").addEventListener("click", saveProduct);
-  $("btnPrint").addEventListener("click", printNow);
-  $("btnResetAll").addEventListener("click", clearAll);
-
-  // inputs: live draft + preview
-  function onFormChange(){
-    // sanitiza
-    sanitizeDigitsMax6($("fAntes"));
-    sanitizeDigitsMax6($("fAhora"));
-    sanitizeDigitsMax6($("fCuota"));
-
-    // draft
-    if (draft){
-      syncDraftFromForm();
-      scheduleRebuildAll();
+    try{
+      // pequeño delay para que se “vea” el loader
+      await new Promise(r => setTimeout(r, 60));
+      await exportPdf();
+    } catch (e){
+      console.error(e);
+      alert("No se pudo exportar a PDF. Revisa la consola para más detalle.");
+    } finally{
+      setIconLoading(btn, false);
+      exporting = false;
     }
   }
 
-  ["fTemplate","fSize","fNombre","fQty"].forEach(id=>{
-    $(id).addEventListener("input", onFormChange);
-    $(id).addEventListener("change", onFormChange);
-  });
+  /* ===== Eventos ===== */
+  $("btnShowForm").addEventListener("click", openAddForm);
+  $("btnCancel").addEventListener("click", backToList);
+  $("btnSave").addEventListener("click", saveDraft);
+  $("btnResetAll").addEventListener("click", resetAll);
+  $("btnPrint").addEventListener("click", printNow);
+  $("btnPdf").addEventListener("click", exportPdfWithLoading);
 
-  ["fAntes","fAhora","fCuota"].forEach(id=>{
+  ["fAntes","fAhora","fCuota"].forEach(id => {
     const el = $(id);
 
     el.addEventListener("keydown", (e)=>{
@@ -1468,18 +2218,55 @@
       if (!/^\d$/.test(e.key)) e.preventDefault();
     });
 
-    el.addEventListener("input", onFormChange);
-    el.addEventListener("paste", ()=> setTimeout(onFormChange, 0));
+    el.addEventListener("input", ()=>{
+      el.value = sanitizeIntStr(el.value);
+      validateDraft();
+      schedulePreviewRebuild();
+    });
+
+    el.addEventListener("paste", ()=>{
+      setTimeout(()=>{
+        el.value = sanitizeIntStr(el.value);
+        validateDraft();
+        schedulePreviewRebuild();
+      }, 0);
+    });
   });
 
-  /* =========================
-     INIT
-     ========================= */
+  ["fTemplate","fSize","fNombre","fQty","fUseVig","fVigStart","fVigEnd"].forEach(id=>{
+    $(id).addEventListener("input", ()=>{ validateDraft(); schedulePreviewRebuild(); });
+    $(id).addEventListener("change", ()=>{ validateDraft(); schedulePreviewRebuild(); });
+  });
+
+  $("fUseVig").addEventListener("change", ()=>{
+    $("vigDates").style.display = $("fUseVig").checked ? "block" : "none";
+    validateDraft();
+    schedulePreviewRebuild();
+  });
+
+  /* ===== Init ===== */
   (function init(){
-    updateTopUI();
-    renderProductsList();
-    setTopButtonsForMode("list");
-    showEmptyPreview("Sin previsualización", "Agrega al menos un producto para ver las hojas aquí.");
+    const restored = loadState();
+
+    if (!restored){
+      setView("list");
+      showEmptyPreview("Sin previsualización", "Agrega productos para ver cómo se acomodan en las hojas.");
+    }
+
+    // ✅ asegurar colorIdx a productos viejos
+    let changed = false;
+    for (const p of products){
+      if (!Number.isFinite(p.colorIdx)){
+        p.colorIdx = allocateColorIdx();
+        changed = true;
+      }
+    }
+    if (changed) requestSaveState();
+
+    updateTopButtonsVisibility();
+    renderItemsList();
+    schedulePreviewRebuild();
+    requestSaveState();
   })();
 </script>
 </body>

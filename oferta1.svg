@@ -23,7 +23,7 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="0.76704545"
-     inkscape:cx="403.4963"
+     inkscape:cx="400.88889"
      inkscape:cy="528.65185"
      inkscape:window-width="1920"
      inkscape:window-height="995"
@@ -97,7 +97,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan967">[Ahora]</tspan></text>
+       id="tspan1362">[Ahora]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -111,7 +111,7 @@
      xml:space="preserve"><tspan
        x="267.84598"
        y="333.75928"
-       id="tspan969">[Antes]</tspan></text>
+       id="tspan1364">[Antes]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -133,4 +133,34 @@
      ry="88.195389"
      rx="0"
      inkscape:label="box_nombre_producto" />
+  <text
+     fill="#595959"
+     font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
+     font-weight="800"
+     font-size="33.3333px"
+     id="fecha_vigencia"
+     x="715.96008"
+     y="335.06299"
+     style="font-size:13.558px;text-align:center;text-anchor:middle;white-space:pre;inline-size:133.903;display:inline"
+     transform="matrix(1.966854,0,0,1.966854,-1000.3651,292.09765)"
+     xml:space="preserve"><tspan
+       x="715.96008"
+       y="335.06299"
+       id="tspan1368">[<tspan
+   style="font-size:10.1685px"
+   id="tspan1366">Fecha_vigencia</tspan>]</tspan></text>
+  <text
+     fill="#595959"
+     font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
+     font-weight="800"
+     font-size="33.3333px"
+     id="fecha_impresion"
+     x="715.96008"
+     y="335.06299"
+     style="font-size:10.1685px;text-align:center;text-anchor:middle;white-space:pre;inline-size:133.903;display:inline"
+     transform="matrix(0,-1.966854,1.966854,0,-635.41857,1927.9117)"
+     xml:space="preserve"><tspan
+       x="715.96008"
+       y="335.06299"
+       id="tspan1370">[Fecha_impresion]</tspan></text>
 </svg>
