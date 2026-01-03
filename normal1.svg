@@ -5,7 +5,7 @@
    overflow="hidden"
    version="1.1"
    id="svg878"
-   sodipodi:docname="normal1.SVG"
+   sodipodi:docname="normal1.svg"
    inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -23,8 +23,8 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="0.76704545"
-     inkscape:cx="368.2963"
-     inkscape:cy="635.55556"
+     inkscape:cx="346.13334"
+     inkscape:cy="636.85926"
      inkscape:window-width="1920"
      inkscape:window-height="995"
      inkscape:window-x="-9"
@@ -97,7 +97,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1327">[Ahora]</tspan></text>
+       id="tspan555">[Ahora]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -111,7 +111,7 @@
      xml:space="preserve"><tspan
        x="267.84598"
        y="333.75928"
-       id="tspan1329">[Antes]</tspan></text>
+       id="tspan557">[Antes]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -143,9 +143,9 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1333">[<tspan
+       id="tspan561">[<tspan
    style="font-size:10.1685px"
-   id="tspan1331">Fecha_vigencia</tspan>]</tspan></text>
+   id="tspan559">Fecha_vigencia</tspan>]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -159,5 +159,19 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1335">[Fecha_impresion]</tspan></text>
+       id="tspan563">[Fecha_impresion]</tspan></text>
+  <text
+     fill="#595959"
+     font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
+     font-weight="800"
+     font-size="33.3333px"
+     id="restricciones"
+     x="715.96008"
+     y="335.06299"
+     style="font-size:10.1685px;text-align:center;text-anchor:middle;white-space:pre;inline-size:133.903;display:inline"
+     transform="matrix(0,-1.966854,1.966854,0,146.66409,1898.2513)"
+     xml:space="preserve"><tspan
+       x="715.96008"
+       y="335.06299"
+       id="tspan565">*Aplican Restricciones</tspan></text>
 </svg>

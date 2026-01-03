@@ -23,7 +23,7 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="0.76704545"
-     inkscape:cx="400.88889"
+     inkscape:cx="378.72593"
      inkscape:cy="528.65185"
      inkscape:window-width="1920"
      inkscape:window-height="995"
@@ -97,7 +97,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1362">[Ahora]</tspan></text>
+       id="tspan517">[Ahora]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -111,7 +111,7 @@
      xml:space="preserve"><tspan
        x="267.84598"
        y="333.75928"
-       id="tspan1364">[Antes]</tspan></text>
+       id="tspan519">[Antes]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -146,9 +146,9 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1368">[<tspan
+       id="tspan523">[<tspan
    style="font-size:10.1685px"
-   id="tspan1366">Fecha_vigencia</tspan>]</tspan></text>
+   id="tspan521">Fecha_vigencia</tspan>]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -162,5 +162,19 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1370">[Fecha_impresion]</tspan></text>
+       id="tspan525">[Fecha_impresion]</tspan></text>
+  <text
+     fill="#595959"
+     font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
+     font-weight="800"
+     font-size="33.3333px"
+     id="restricciones"
+     x="715.96008"
+     y="335.06299"
+     style="font-size:10.1685px;text-align:center;text-anchor:middle;white-space:pre;inline-size:133.903;display:inline"
+     transform="matrix(0,-1.966854,1.966854,0,144.05668,1939.9698)"
+     xml:space="preserve"><tspan
+       x="715.96008"
+       y="335.06299"
+       id="tspan527">*Aplican Restricciones</tspan></text>
 </svg>

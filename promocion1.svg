@@ -5,9 +5,32 @@
    overflow="hidden"
    version="1.1"
    id="svg1142"
+   sodipodi:docname="promocion1.svg"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview386"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="0.76704545"
+     inkscape:cx="386.54815"
+     inkscape:cy="528.65185"
+     inkscape:window-width="1920"
+     inkscape:window-height="995"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1142" />
   <defs
      id="defs1130">
     <image
@@ -74,7 +97,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan308">[Ahora]</tspan></text>
+       id="tspan480">[Ahora]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -88,7 +111,7 @@
      xml:space="preserve"><tspan
        x="267.84598"
        y="333.75928"
-       id="tspan310">[Antes]</tspan></text>
+       id="tspan482">[Antes]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -120,7 +143,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan312">[Fecha_vigencia]</tspan></text>
+       id="tspan484">[Fecha_vigencia]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -134,5 +157,19 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan314">[Fecha_impresion]</tspan></text>
+       id="tspan486">[Fecha_impresion]</tspan></text>
+  <text
+     fill="#595959"
+     font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
+     font-weight="800"
+     font-size="33.3333px"
+     id="restricciones"
+     x="715.96008"
+     y="335.06299"
+     style="font-size:10.1685px;text-align:center;text-anchor:middle;white-space:pre;inline-size:133.903;display:inline"
+     transform="matrix(0,-1.966854,1.966854,0,142.75297,1894.3402)"
+     xml:space="preserve"><tspan
+       x="715.96008"
+       y="335.06299"
+       id="tspan488">*Aplican Restricciones</tspan></text>
 </svg>
