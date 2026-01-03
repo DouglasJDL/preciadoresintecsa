@@ -5,32 +5,9 @@
    overflow="hidden"
    version="1.1"
    id="svg1142"
-   sodipodi:docname="promocion1.SVG"
-   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview377"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     showgrid="false"
-     inkscape:zoom="0.76704545"
-     inkscape:cx="665.54074"
-     inkscape:cy="582.10371"
-     inkscape:window-width="1920"
-     inkscape:window-height="995"
-     inkscape:window-x="-9"
-     inkscape:window-y="-9"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg1142" />
   <defs
      id="defs1130">
     <image
@@ -50,8 +27,7 @@
     </clipPath>
   </defs>
   <g
-     id="g1140"
-     sodipodi:insensitive="true">
+     id="g1140">
     <rect
        x="0"
        y="0"
@@ -98,7 +74,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1395">[Ahora]</tspan></text>
+       id="tspan308">[Ahora]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -112,7 +88,7 @@
      xml:space="preserve"><tspan
        x="267.84598"
        y="333.75928"
-       id="tspan1397">[Antes]</tspan></text>
+       id="tspan310">[Antes]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -130,8 +106,7 @@
      x="56.103714"
      y="129.06668"
      ry="105.09264"
-     rx="0"
-     inkscape:label="box_nombre_producto" />
+     rx="0" />
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -145,7 +120,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1399">[Fecha_vigencia]</tspan></text>
+       id="tspan312">[Fecha_vigencia]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -159,5 +134,5 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1401">[Fecha_impresion]</tspan></text>
+       id="tspan314">[Fecha_impresion]</tspan></text>
 </svg>
