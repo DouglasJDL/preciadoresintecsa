@@ -65,6 +65,13 @@ export function validateDraft() {
   if (!st.draft.antes) setFieldError("fAntes", "eAntes", "Ingresa 'Antes' (máx 5 dígitos).");
   if (!st.draft.ahora) setFieldError("fAhora", "eAhora", "Ingresa 'Ahora' (máx 5 dígitos).");
   if (!st.draft.cuota) setFieldError("fCuota", "eCuota", "Ingresa 'Cuota' (máx 5 dígitos).");
+  if (st.draft.antes && st.draft.ahora) {
+    const aN = parseInt(st.draft.antes, 10);
+    const hN = parseInt(st.draft.ahora, 10);
+    if (Number.isFinite(aN) && Number.isFinite(hN) && hN > aN) {
+      setFieldError("fAhora", "eAhora", "'Ahora' no puede ser mayor que 'Antes'.");
+    }
+  }
   if (!st.draft.qty || st.draft.qty < 1) setFieldError("fQty", "eQty", "Cantidad debe ser mayor a 0.");
 
   if (st.draft.useVig) {
