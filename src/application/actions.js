@@ -5,7 +5,7 @@ import { requestSave, clearState } from "../infrastructure/storage.js";
 import { UI } from "../presentation/ui.js";
 import { renderList } from "../presentation/list.js";
 import { scheduleRebuild } from "../presentation/preview.js";
-import { validateDraft, fillFormFromProduct } from "../presentation/form.js";
+import { validateDraft, fillFormFromProduct, applyVigEndConstraint } from "../presentation/form.js";
 import { hideContextMenu } from "../presentation/contextMenu.js";
 import { applySelectionHighlight } from "../presentation/selection.js";
 
@@ -61,14 +61,15 @@ export function openAddForm() {
   document.getElementById("fTemplate").value = "";
   document.getElementById("fSize").value = "";
   document.getElementById("fNombre").value = "";
-  document.getElementById("fAntes").value = "";
   document.getElementById("fAhora").value = "";
+  document.getElementById("fAntes").value = "";
   document.getElementById("fCuota").value = "";
   document.getElementById("fQty").value = "1";
   document.getElementById("fUseVig").checked = false;
   document.getElementById("fVigStart").value = "";
   document.getElementById("fVigEnd").value = "";
   document.getElementById("vigDates").style.display = "none";
+  applyVigEndConstraint();
 
   document.getElementById("btnSave").disabled = true;
 

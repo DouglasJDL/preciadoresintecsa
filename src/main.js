@@ -4,16 +4,16 @@ import { createCappedCache, formatDateTimeNow } from "./infrastructure/svgRender
 import { loadTemplateText } from "./infrastructure/templates.js";
 import { UI, wireBeforeUnloadGuard, wireGlobalCloseContextMenu } from "./presentation/ui.js";
 import { wireModalCommonEvents } from "./presentation/modal.js";
-import { renderList } from "./presentation/list.js";
+import { renderList, findListItem } from "./presentation/list.js";
 import { scheduleRebuild } from "./presentation/preview.js";
-import { validateDraft } from "./presentation/form.js";
+import { validateDraft, applyVigEndConstraint } from "./presentation/form.js";
 import { showContextMenu, hideContextMenu } from "./presentation/contextMenu.js";
 import { scheduleHover, scheduleHoverClear, highlightProductInList, markSelectedInList } from "./presentation/selection.js";
 import { openAddForm, backToList, onEditProduct, onDeleteProduct, saveDraft, resetAll, uid, allocateColorIdx } from "./application/actions.js";
 import { loadState, normalizeExistingState, hasWork, requestSave } from "./infrastructure/storage.js";
 import { handleImportFile, downloadExcelTemplate } from "./infrastructure/excel.js";
-import { printNow } from "./infrastructure/print.js";
-import { exportPdfWithLoading } from "./infrastructure/pdf.js";
+import { exportPdfWithLoading, printViaPdf } from "./infrastructure/pdf.js";
+import { startTour } from "./presentation/tour.js";
 
 function getAllowedTemplatesFromDom() {
   const sel = document.getElementById("fTemplate");
@@ -46,6 +46,7 @@ function buildAppState() {
 
     exporting: false,
     importing: false,
+    renderGeneration: 0,
 
     previewSlotsByProduct: new Map(),
 
@@ -98,11 +99,12 @@ function wireContextMenuButtons() {
 }
 
 function wireTopButtons() {
+  document.getElementById("btnTour").addEventListener("click", startTour);
   document.getElementById("btnShowForm").addEventListener("click", openAddForm);
   document.getElementById("btnCancel").addEventListener("click", backToList);
   document.getElementById("btnSave").addEventListener("click", saveDraft);
   document.getElementById("btnResetAll").addEventListener("click", resetAll);
-  document.getElementById("btnPrint").addEventListener("click", printNow);
+  document.getElementById("btnPrint").addEventListener("click", printViaPdf);
   document.getElementById("btnPdf").addEventListener("click", exportPdfWithLoading);
 
   document.getElementById("btnImport").addEventListener("click", () => {
@@ -162,10 +164,17 @@ function wireListEvents() {
         e.stopPropagation();
         st.selectedProductId = pid;
 
-        st.expandedId = (st.expandedId === pid) ? null : pid;
-        renderList();
+        const wasOpen = st.expandedId === pid;
+        st.expandedId = wasOpen ? null : pid;
 
-        const opened = (st.expandedId === pid);
+        // Fast path: toggle CSS class without rebuilding the whole list
+        document.querySelectorAll(".item.expanded").forEach(el => el.classList.remove("expanded"));
+        if (!wasOpen) {
+          const el = findListItem(pid);
+          if (el) el.classList.add("expanded");
+        }
+
+        const opened = !wasOpen;
         requestAnimationFrame(() => {
           markSelectedInList();
           window.__APP_STATE__.presentationPreview.highlight(pid, opened);
@@ -190,12 +199,17 @@ function wireListEvents() {
     const inTitle = !!e.target.closest?.('[data-role="title"]') || !!e.target.closest?.('[data-role="name"]');
     st.selectedProductId = pid;
 
-    // Click en el nombre/título = igual que desplegar:
-    // - abre/cierra
-    // - resalta y (si abre) hace scroll en preview
-    st.expandedId = inTitle ? ((st.expandedId === pid) ? null : pid) : pid;
-    const opened = (st.expandedId === pid);
-    renderList();
+    // Click en el nombre/título = abre/cierra; click en otra parte = siempre abre
+    const wasOpen = st.expandedId === pid;
+    st.expandedId = inTitle ? (wasOpen ? null : pid) : pid;
+    const opened = st.expandedId === pid;
+
+    // Fast path: toggle CSS class without rebuilding the whole list
+    document.querySelectorAll(".item.expanded").forEach(el => el.classList.remove("expanded"));
+    if (st.expandedId) {
+      const el = findListItem(st.expandedId);
+      if (el) el.classList.add("expanded");
+    }
 
     requestAnimationFrame(() => {
       markSelectedInList();
@@ -252,7 +266,11 @@ function wirePreviewEvents() {
 
     st.selectedProductId = pid;
     st.expandedId = pid;
-    renderList();
+
+    // Fast path: toggle CSS class without rebuilding the whole list
+    document.querySelectorAll(".item.expanded").forEach(el => el.classList.remove("expanded"));
+    const el = findListItem(pid);
+    if (el) el.classList.add("expanded");
 
     requestAnimationFrame(() => {
       highlightProductInList(pid, true);
@@ -264,7 +282,7 @@ function wirePreviewEvents() {
 }
 
 function wireNumericInputs() {
-  ["fAntes", "fAhora", "fCuota"].forEach(id => {
+  ["fAhora"].forEach(id => {
     const el = document.getElementById(id);
 
     el.addEventListener("keydown", (e) => {
@@ -297,6 +315,14 @@ function wireGeneralInputs() {
 
   document.getElementById("fUseVig").addEventListener("change", () => {
     document.getElementById("vigDates").style.display = document.getElementById("fUseVig").checked ? "block" : "none";
+    validateDraft();
+    scheduleRebuild();
+  });
+
+  // Al cambiar la fecha inicial, siempre limpiar la fecha final y obligar a elegirla de nuevo
+  document.getElementById("fVigStart").addEventListener("change", () => {
+    document.getElementById("fVigEnd").value = "";
+    applyVigEndConstraint();
     validateDraft();
     scheduleRebuild();
   });

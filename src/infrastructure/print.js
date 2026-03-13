@@ -1,12 +1,14 @@
-import { SIZE } from "../config/config.js";
+import { SIZE, CONFIG } from "../config/config.js";
 import { Dom } from "../presentation/dom.js";
 import { renderProductToPngs } from "./svgRenderer.js";
+const PRINT_PX = CONFIG.limits.renderPrintPx;
 import { packAll } from "../domain/packing.js";
 
 async function waitForImages(container) {
   const imgs = Dom.qsa("img", container);
   if (!imgs.length) return;
 
+  // Las imágenes son data URLs ya en memoria — solo verificar que estén marcadas como completas
   await Promise.all(imgs.map(img => {
     if (img.complete && img.naturalWidth > 0) return Promise.resolve();
     return new Promise(resolve => {
@@ -14,8 +16,7 @@ async function waitForImages(container) {
       img.onerror = resolve;
     });
   }));
-
-  await Promise.all(imgs.map(img => img.decode ? img.decode().catch(() => {}) : Promise.resolve()));
+  // No llamar img.decode() en masa: con cientos de imágenes grandes traba el navegador
 }
 
 async function nextFrame() {
@@ -41,7 +42,7 @@ export async function printNow() {
 
   const items = buildItemsForPackingNoDraft();
   for (const it of items) {
-    const r = await renderProductToPngs(it.product);
+    const r = await renderProductToPngs(it.product, PRINT_PX);
     it._png = (it.product.size === SIZE.halfH) ? r.pngRotated : r.pngNormal;
   }
 

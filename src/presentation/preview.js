@@ -1,9 +1,13 @@
 import { CONFIG, SIZE } from "../config/config.js";
+const PREVIEW_PX = CONFIG.limits.renderPreviewPx;
 import { $, Dom } from "./dom.js";
 import { UI } from "./ui.js";
 import { applySelectionHighlight, pairColor, pairGlow } from "./selection.js";
-import { renderProductToPngs } from "../infrastructure/svgRenderer.js";
+import { renderProductToPngs, getCachedRender } from "../infrastructure/svgRenderer.js";
 import { packAll } from "../domain/packing.js";
+
+let _lazyObserver = null;
+const EAGER_PAGES = 4;
 
 export function clearHighlight() {
   Dom.qsa(".slot.hl").forEach(el => {
@@ -88,26 +92,21 @@ function buildItemsForPacking(includeDraft) {
   const st = window.__APP_STATE__;
   const list = [];
 
-  const draft = includeDraft ? buildDraftSnapshot() : null;
+  // En modo formulario: mostrar solo la etiqueta que se está trabajando
+  if (includeDraft) {
+    const draft = buildDraftSnapshot();
+    if (draft) {
+      for (let i = 0; i < (draft.qty || 1); i++) {
+        list.push({ product: draft, isDraft: true, instanceIndex: i });
+      }
+    }
+    return list;
+  }
 
+  // En modo lista: mostrar todos los productos
   for (const p of st.products) {
-    const source = (includeDraft && st.editingId && p.id === st.editingId) ? draft : p;
-    if (!source) continue;
-
-    for (let i = 0; i < (source.qty || 0); i++) {
-      list.push({ product: source, isDraft: false, instanceIndex: i });
-    }
-  }
-
-  if (includeDraft && !st.editingId && draft && draft.id === "__draft__") {
-    for (let i = 0; i < (draft.qty || 1); i++) {
-      list.push({ product: draft, isDraft: true, instanceIndex: i });
-    }
-  }
-
-  if (includeDraft && st.editingId && draft) {
-    for (const it of list) {
-      if (it.product.id === st.editingId) it.isDraft = true;
+    for (let i = 0; i < (p.qty || 0); i++) {
+      list.push({ product: p, isDraft: false, instanceIndex: i });
     }
   }
 
@@ -131,10 +130,24 @@ export function scheduleRebuild() {
   st.timers.preview = setTimeout(() => buildPreview().catch(console.error), CONFIG.limits.previewDebounceMs);
 }
 
-async function hydratePngs(items) {
+async function hydratePngs(items, gen) {
+  const st = window.__APP_STATE__;
+
+  // Sync pass: serve from cache without async overhead
   for (const it of items) {
     if (!it.product.template || !it.product.size) continue;
-    const r = await renderProductToPngs(it.product);
+    const cached = getCachedRender(it.product, PREVIEW_PX);
+    if (cached) {
+      it._png = (it.product.size === SIZE.halfH) ? cached.pngRotated : cached.pngNormal;
+    }
+  }
+
+  // Async pass: sequential render only for uncached items
+  for (const it of items) {
+    if (st.renderGeneration !== gen) return;
+    if (!it.product.template || !it.product.size || it._png) continue;
+    const r = await renderProductToPngs(it.product, PREVIEW_PX);
+    if (st.renderGeneration !== gen) return;
     it._png = (it.product.size === SIZE.halfH) ? r.pngRotated : r.pngNormal;
   }
 }
@@ -184,7 +197,7 @@ function buildSlot(it, pl) {
   return slot;
 }
 
-function buildPageDom(page, pageIndex) {
+function buildPageShell(pageIndex) {
   const shell = document.createElement("div");
   shell.className = "page-shell";
   shell.style.setProperty("--previewScale", CONFIG.previewScale);
@@ -196,6 +209,14 @@ function buildPageDom(page, pageIndex) {
 
   const inner = document.createElement("div");
   inner.className = "page-inner";
+  shell.appendChild(inner);
+
+  return shell;
+}
+
+function fillShellSlots(shell, page) {
+  const inner = shell.querySelector(".page-inner");
+  if (!inner) return;
 
   const paper = document.createElement("div");
   paper.className = "paper-page " + (page.type === "full" ? "paper-full" : "paper-grid");
@@ -206,12 +227,15 @@ function buildPageDom(page, pageIndex) {
   }
 
   inner.appendChild(paper);
-  shell.appendChild(inner);
-  return shell;
 }
 
 export async function buildPreview() {
   const st = window.__APP_STATE__;
+
+  // Incrementar generación — cualquier render anterior en curso queda obsoleto
+  st.renderGeneration = (st.renderGeneration || 0) + 1;
+  const myGen = st.renderGeneration;
+
   const includeDraft = !UI.isListView();
   const items = buildItemsForPacking(includeDraft);
 
@@ -221,14 +245,47 @@ export async function buildPreview() {
     return;
   }
 
-  await hydratePngs(items);
+  await hydratePngs(items, myGen);
+  if (st.renderGeneration !== myGen) return;
 
   const pages = packAll(items);
   const preview = $("paperPreview");
   preview.innerHTML = "";
   st.previewSlotsByProduct = new Map();
 
-  pages.forEach((page, pageIndex) => preview.appendChild(buildPageDom(page, pageIndex)));
+  // Disconnect old lazy observer before creating new one
+  if (_lazyObserver) {
+    _lazyObserver.disconnect();
+    _lazyObserver = null;
+  }
+
+  // Create lazy observer for off-screen pages
+  const needsObserver = pages.length > EAGER_PAGES && typeof IntersectionObserver !== "undefined";
+  if (needsObserver) {
+    _lazyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting || entry.target._pageFilled) return;
+        entry.target._pageFilled = true;
+        _lazyObserver.unobserve(entry.target);
+        fillShellSlots(entry.target, entry.target._pageData);
+        applySelectionHighlight();
+      });
+    }, { rootMargin: "400px 0px" });
+  }
+
+  pages.forEach((page, pageIndex) => {
+    const shell = buildPageShell(pageIndex);
+
+    if (pageIndex < EAGER_PAGES || !_lazyObserver) {
+      shell._pageFilled = true;
+      fillShellSlots(shell, page);
+    } else {
+      shell._pageData = page;
+      _lazyObserver.observe(shell);
+    }
+
+    preview.appendChild(shell);
+  });
 
   if (st.pendingFocus?.id) {
     const { id, scroll } = st.pendingFocus;

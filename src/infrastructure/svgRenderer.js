@@ -373,8 +373,9 @@ async function rotatePng90(pngDataUrl) {
   return canvas.toDataURL("image/png");
 }
 
-function renderKey(p) {
+function renderKey(p, widthPx) {
   return JSON.stringify({
+    widthPx,
     template: p.template,
     nombre: (p.nombre || "").trim().toUpperCase(),
     antes: p.antes,
@@ -387,9 +388,15 @@ function renderKey(p) {
   });
 }
 
-export async function renderProductToPngs(p) {
+export function getCachedRender(p, widthPx) {
   const st = window.__APP_STATE__;
-  const key = renderKey(p);
+  const key = renderKey(p, widthPx);
+  return st.caches.renderCache.get(key) ?? null;
+}
+
+export async function renderProductToPngs(p, widthPx = 2200) {
+  const st = window.__APP_STATE__;
+  const key = renderKey(p, widthPx);
 
   const cached = st.caches.renderCache.get(key);
   if (cached) return cached;
@@ -446,7 +453,7 @@ export async function renderProductToPngs(p) {
   replaceTokenInSvg(svg, "[FECHA_IMPRESION]", impTxt);
 
   // ===== Rasterizar =====
-  const pngNormal = await svgNodeToPng(svg, 2200);
+  const pngNormal = await svgNodeToPng(svg, widthPx);
   const pngRotated = await rotatePng90(pngNormal);
 
   // ✅ Limpieza (no acumular SVGs)

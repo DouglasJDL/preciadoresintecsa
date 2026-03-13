@@ -1,5 +1,5 @@
 import { CONFIG, SIZE, TEMPLATE_ALIASES } from "../config/config.js";
-import { emptyProduct, sanitizeIntStr, validateProductData } from "../domain/product.js";
+import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioAntes, computeCuota } from "../domain/product.js";
 import { formatDateTimeNow, normalizeText } from "./svgRenderer.js";
 import { openModal, closeModal, buildTextBlock, buildErrorList } from "../presentation/modal.js";
 import { requestSave } from "./storage.js";
@@ -141,9 +141,7 @@ function parseExcelRowsToProducts(rows) {
     template: ["plantilla", "template", "svg"],
     size: ["tamano", "tamaño", "size"],
     nombre: ["nombre", "producto", "name"],
-    antes: ["antes", "precioantes", "before"],
-    ahora: ["ahora", "precioahora", "now"],
-    cuota: ["cuota", "cuotasemanal", "weekly"],
+    ahora: ["precionormal", "precioahora", "ahora", "now"],
     qty: ["cantidad", "qty", "cant"],
     useVig: ["agregarvigencia", "vigencia", "usevig"],
     vigStart: ["vigenciainicio", "fechainicial", "inicio", "vigenciadesde"],
@@ -154,9 +152,7 @@ function parseExcelRowsToProducts(rows) {
     ["Plantilla", K.template],
     ["Tamaño", K.size],
     ["Nombre", K.nombre],
-    ["Antes", K.antes],
-    ["Ahora", K.ahora],
-    ["Cuota", K.cuota],
+    ["Precio Normal", K.ahora],
     ["Cantidad", K.qty]
   ];
 
@@ -180,9 +176,10 @@ function parseExcelRowsToProducts(rows) {
     p.size = parseSizeCell(cellBy(map, row, K.size));
     p.nombre = (cellBy(map, row, K.nombre) ?? "").toString().trim();
 
-    p.antes = parseNumberCell(cellBy(map, row, K.antes));
     p.ahora = parseNumberCell(cellBy(map, row, K.ahora));
-    p.cuota = parseNumberCell(cellBy(map, row, K.cuota));
+    // antes y cuota se calculan automáticamente a partir del precio normal
+    p.antes = computePrecioAntes(p.ahora);
+    p.cuota = computeCuota(p.ahora);
 
     const qtyN = parseInt(String(cellBy(map, row, K.qty) ?? "").replace(/[^\d]/g, ""), 10);
     p.qty = Number.isFinite(qtyN) ? qtyN : 0;
@@ -390,17 +387,17 @@ export function downloadExcelTemplate() {
     return;
   }
 
-  const headers = ["Plantilla", "Tamaño", "Nombre", "Antes", "Ahora", "Cuota", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
+  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio Normal", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
   const examples = [
-    ["normal1", "1/4", "AUDÍFONOS BLUETOOTH [DAF4561546401]", "199", "149", "25", "4", "NO", "", ""],
-    ["promocion1", "MEDIA HORIZONTAL", "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]", "9999", "8999", "250", "2", "SI", "01/01/2026", "31/01/2026"],
-    ["liquidacion1", "1/4", "TENIS NIKE AIR MAX [DAF4561546403]", "1299", "999", "75", "4", "SI", "05/02/2026", "20/02/2026"],
-    ["oferta1", "CARTA COMPLETA", "SMART TV 55 PULGADAS [DAF4561546404]", "15000", "12999", "450", "1", "SI", "01/03/2026", "15/03/2026"]
+    ["normal1", "1/4", "AUDÍFONOS BLUETOOTH [DAF4561546401]", "149", "4", "NO", "", ""],
+    ["promocion1", "MEDIA HORIZONTAL", "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]", "8999", "2", "SI", "01/01/2026", "31/01/2026"],
+    ["liquidacion1", "1/4", "TENIS NIKE AIR MAX [DAF4561546403]", "999", "4", "SI", "05/02/2026", "20/02/2026"],
+    ["oferta1", "CARTA COMPLETA", "SMART TV 55 PULGADAS [DAF4561546404]", "12999", "1", "SI", "01/03/2026", "15/03/2026"]
   ];
 
   const wsImportar = XLSX.utils.aoa_to_sheet([headers, ...examples]);
   wsImportar["!cols"] = [
-    { wch: 14 }, { wch: 18 }, { wch: 44 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+    { wch: 14 }, { wch: 18 }, { wch: 44 }, { wch: 14 },
     { wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 16 }
   ];
 
@@ -410,7 +407,8 @@ export function downloadExcelTemplate() {
     [""],
     ["Objetivo:", "Rellenar la hoja 'Importar' y luego usar el botón 'Importar Excel' en el sistema."],
     [""],
-    ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Antes, Ahora, Cuota, Cantidad"],
+    ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio Normal, Cantidad"],
+    ["Columnas automáticas:", "Precio Antes (+10%) y Cuota Semanal se calculan automáticamente."],
     [""],
     ["PLANTILLA (sin .svg):", "Escribe solo el nombre. Ej: promocion1"],
     ["Plantillas disponibles en este sistema:", allowedBases || "promocion1 | normal1 | liquidacion1 | oferta1"],
@@ -419,14 +417,14 @@ export function downloadExcelTemplate() {
     ["TAMAÑO (recomendado en español):", "1/4 | MEDIA HORIZONTAL | CARTA COMPLETA"],
     ["También se aceptan:", "quarter | half_h | full, y variantes como 'media', 'carta', 'mitad', 'cuarto'"],
     [""],
-    ["ANTES / AHORA / CUOTA:", `Solo números enteros, máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9999`],
+    ["PRECIO NORMAL:", `Solo número entero, máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9999`],
     ["CANTIDAD:", "Entero > 0. Ej: 4"],
     [""],
     ["AGREGAR VIGENCIA:", "SI / NO. Si es SI, VigenciaInicio y VigenciaFin son obligatorias."],
     ["FECHAS (VigenciaInicio/VigenciaFin):", "Formato recomendado: DD/MM/AAAA. Ej: 31/01/2026"],
     ["Reglas de fechas:", "VigenciaFin no puede ser menor que VigenciaInicio."],
     [""],
-    ["Reglas de precio:", "AHORA no puede ser mayor que ANTES."],
+    ["Reglas de precio:", "El sistema calcula Precio Antes (Precio Normal +10%) y Cuota Semanal automáticamente."],
     [""],
     ["Importante:", "Si una fila tiene error, se rechaza todo el archivo (no se crea nada)."]
   ];

@@ -50,7 +50,7 @@ export function hasWork() {
   if (!UI.isListView()) {
     syncDraftFromForm();
     const d = st.draft;
-    return !!(d.template || d.size || d.nombre || d.antes || d.ahora || d.cuota || d.useVig || (d.qty && d.qty > 1));
+    return !!(d.template || d.size || d.nombre || d.ahora || d.useVig || (d.qty && d.qty > 1));
   }
 
   return false;

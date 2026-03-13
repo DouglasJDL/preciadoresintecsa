@@ -14,8 +14,11 @@ export const CONFIG = Object.freeze({
     maxExcelErrorsShown: 80,
 
     maxTemplateCache: 40,
-    maxRenderCache: 250,
-    maxImgDimCache: 400
+    maxRenderCache: 40,
+    maxImgDimCache: 400,
+
+    renderPreviewPx: 600,
+    renderPrintPx: 1200
   }),
 
   paper: Object.freeze({
@@ -62,3 +65,31 @@ export const TEMPLATE_ALIASES = Object.freeze({
 });
 
 export const COLOR_HUES = Object.freeze([210, 150, 35, 0, 270, 190, 95, 235, 25, 330]);
+
+/**
+ * Configuración de precios automáticos.
+ * markupPct    : % que se suma al Precio Normal para obtener Precio Antes.
+ * downPaymentPct: % que se resta al Precio Normal antes de financiar.
+ */
+export const PRICING = Object.freeze({
+  markupPct: 10,
+  downPaymentPct: 10
+});
+
+/**
+ * Plan de financiamiento.
+ * id       : monto de referencia (1000 Q).
+ * cuotaRef : cuota semanal para ese monto de referencia.
+ * cuotas   : número de cuotas del plan.
+ * total    : total a pagar para el monto de referencia.
+ */
+export const FINANCING_PLAN = Object.freeze({
+  id: 1000,
+  nombre: "Prenda Cuotas 20 Semanas",
+  periodo: "Semanal",
+  cuotas: 20,
+  cuotaRef: 110,
+  interes: 1.20,
+  total: 2200.00,
+  cobranzaDificil: 200
+});

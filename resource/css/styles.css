@@ -78,8 +78,8 @@ h2{margin:0 0 14px;font-size:18px}
 
 /* ===== Botones ===== */
 button{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:1000;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:6px 10px;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px;
   border:1px solid transparent;
   transition: background .15s ease, border-color .15s ease, transform .05s ease, box-shadow .15s ease, opacity .15s ease;
   user-select:none;
@@ -101,7 +101,7 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 
 /* ✅ Icon buttons */
 .btnIcon{
-  width:40px;height:40px;padding:0;border-radius:12px;
+  width:32px;height:32px;padding:0;border-radius:8px;
   background:#ffffff;border:1px solid #e5e7eb;color:#0f172a;
 }
 .btnIcon:hover{background:#f8fafc;border-color:#dbe3ee}
@@ -115,7 +115,23 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .btnIcon.primary{ color:#1d4ed8; background:#fff; border-color:#bfdbfe; }
 .btnIcon.primary:hover{ background:#eff6ff; border-color:#93c5fd; }
 
-.btnIcon svg{width:18px;height:18px;display:block}
+.btnIcon svg{width:15px;height:15px;display:block}
+
+/* ✅ Icon + label buttons */
+.btnIconLabel{
+  height:30px;padding:0 10px;border-radius:8px;gap:5px;
+  display:inline-flex;align-items:center;
+  background:#ffffff;border:1px solid #e5e7eb;color:#0f172a;
+  font-size:12px;font-weight:600;white-space:nowrap;
+}
+.btnIconLabel:hover{background:#f8fafc;border-color:#dbe3ee}
+.btnIconLabel.danger{ color:#b91c1c; border-color:#fee2e2; }
+.btnIconLabel.danger:hover{ background:#fef2f2; border-color:#fecaca; }
+.btnIconLabel.success{ color:#166534; border-color:#bbf7d0; }
+.btnIconLabel.success:hover{ background:#f0fdf4; border-color:#86efac; }
+.btnIconLabel.primary{ color:#1d4ed8; border-color:#bfdbfe; }
+.btnIconLabel.primary:hover{ background:#eff6ff; border-color:#93c5fd; }
+.btnIconLabel svg{width:13px;height:13px;flex-shrink:0}
 
 /* ✅ spinner */
 .spin{
@@ -148,6 +164,68 @@ option{color:#111827}
 }
 .fieldError.show{display:block}
 .isInvalid{border-color:#fca5a5 !important; box-shadow:0 0 0 3px rgba(239,68,68,.12) !important;}
+
+/* Tooltip de ayuda en labels */
+.fieldTooltip{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:50%;
+  background:#3b82f6;color:#fff;font-size:10px;font-weight:700;
+  cursor:pointer;margin-left:6px;vertical-align:middle;
+  position:relative;line-height:1;user-select:none;
+}
+.fieldTooltipText{
+  display:none;position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);
+  background:#1e293b;color:#f1f5f9;font-size:12px;font-weight:400;
+  padding:8px 12px;border-radius:10px;width:240px;line-height:1.45;
+  pointer-events:none;z-index:100;white-space:normal;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+}
+.fieldTooltipText::after{
+  content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:#1e293b;
+}
+.fieldTooltip:hover .fieldTooltipText,
+.fieldTooltip:focus .fieldTooltipText{display:block}
+
+/* Campos calculados automáticamente (readonly) */
+.calcField{background:#f0fdf4 !important;color:#166534 !important;cursor:default !important;font-weight:600}
+.calcField:focus{border-color:#86efac !important;box-shadow:0 0 0 3px rgba(34,197,94,.12) !important}
+.calcBadge{font-size:10px;font-weight:600;background:#dcfce7;color:#166534;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+
+/* Chevron dual (CSS toggle, no JS innerHTML update needed) */
+.item .chev-open{display:none;align-items:center}
+.item .chev-close{display:inline-flex;align-items:center}
+.item.expanded .chev-open{display:inline-flex}
+.item.expanded .chev-close{display:none}
+
+/* Performance warning banner */
+/* Tour: campo con error de validación */
+@keyframes tour-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.5);outline-color:#2563eb}
+  50%{box-shadow:0 0 0 7px rgba(37,99,235,0);outline-color:#93c5fd}
+}
+.tour-pulse{
+  outline:2px solid #2563eb !important;
+  animation:tour-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes tour-shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-5px)}
+  40%{transform:translateX(5px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.tour-error{
+  outline:2px solid #ef4444 !important;
+  animation:tour-shake .45s ease;
+}
+
+.perfWarning{
+  background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;
+  padding:9px 13px;font-size:12px;color:#92400e;margin-bottom:8px;line-height:1.4;
+}
 
 .help{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.35}
 
@@ -357,6 +435,156 @@ option{color:#111827}
   display:inline-flex;align-items:center;gap:6px;
   padding:4px 8px;border-radius:999px;border:1px solid #e5e7eb;
   background:#f8fafc;font-size:11px;font-weight:900;color:#0f172a;
+}
+
+/* ===== DRIVER.JS — TEMA NARANJA PROFESIONAL ===== */
+
+.driver-popover{
+  all: unset;
+  box-sizing: border-box !important;
+  position: fixed !important;
+  z-index: 1000000000 !important;
+  font-family: system-ui, Segoe UI, Roboto, Arial !important;
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22), 0 4px 16px rgba(0,0,0,.10) !important;
+  min-width: 300px !important;
+  max-width: 360px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-top: 4px solid #f97316 !important;
+}
+
+.driver-popover *{
+  font-family: system-ui, Segoe UI, Roboto, Arial !important;
+  box-sizing: border-box !important;
+}
+
+.driver-popover-title{
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  line-height: 1.35 !important;
+  padding: 18px 20px 0 20px !important;
+  margin: 0 !important;
+}
+
+.driver-popover-close-btn{
+  display: none !important;
+}
+
+.driver-popover-description{
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: #4b5563 !important;
+  line-height: 1.6 !important;
+  padding: 8px 20px 18px 20px !important;
+  margin: 0 !important;
+}
+
+.driver-popover-description b{
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+
+.driver-popover-footer{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 12px 20px !important;
+  border-top: 1px solid #f3f4f6 !important;
+  background: #f9fafb !important;
+  margin: 0 !important;
+}
+
+.driver-popover-progress-text{
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #9ca3af !important;
+  letter-spacing: .4px !important;
+}
+
+.driver-popover-navigation-btns{
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+  flex-grow: 0 !important;
+  justify-content: flex-end !important;
+}
+
+.driver-popover-footer button{
+  /* SIN all:unset ni display:... — Driver.js pone style.display="none" en el boton
+     Atras y !important lo pisaria. Solo reseteamos apariencia. */
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 9px !important;
+  padding: 7px 16px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: opacity .15s, transform .08s, background .15s !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  border: none !important;
+  text-shadow: none !important;
+  outline: none !important;
+  font-family: inherit !important;
+  text-decoration: none !important;
+  -webkit-appearance: none !important;
+}
+
+/* Bot\xF3n Siguiente / Entendido */
+.driver-popover-next-btn{
+  display: inline-flex !important;
+  background: #f97316 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(249,115,22,.35) !important;
+}
+.driver-popover-next-btn:hover{
+  background: #ea6c0a !important;
+  opacity: 1 !important;
+}
+.driver-popover-next-btn:active{
+  transform: translateY(1px) !important;
+}
+
+/* Bot\xF3n Atr\xE1s — display lo controla Driver.js, no lo forzamos */
+.driver-popover-prev-btn{
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #e5e7eb !important;
+}
+.driver-popover-prev-btn:hover{
+  background: #e5e7eb !important;
+}
+
+/* Flecha del popover — hereda color de fondo */
+.driver-popover-arrow{
+  border-color: #ffffff !important;
+}
+.driver-popover-arrow-side-left{
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+}
+.driver-popover-arrow-side-right{
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+}
+.driver-popover-arrow-side-top{
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+}
+.driver-popover-arrow-side-bottom{
+  border-left-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
 }
 
 /* ===== IMPRESIÓN ===== */

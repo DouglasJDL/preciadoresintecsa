@@ -1,7 +1,22 @@
 import { $ } from "./dom.js";
-import { sanitizeIntStr, validateProductData } from "../domain/product.js";
+import { sanitizeIntStr, validateProductData, computePrecioAntes, computeCuota } from "../domain/product.js";
 import { requestSave } from "../infrastructure/storage.js";
 import { scheduleRebuild } from "./preview.js";
+
+export function applyVigEndConstraint() {
+  const startInput = $("fVigStart");
+  const endInput = $("fVigEnd");
+  if (!startInput || !endInput) return;
+  const start = startInput.value;
+  if (start) {
+    endInput.disabled = false;
+    endInput.setAttribute("min", start);
+  } else {
+    endInput.disabled = true;
+    endInput.value = "";
+    endInput.removeAttribute("min");
+  }
+}
 
 function setFieldError(inputId, errorId, msg) {
   const input = $(inputId);
@@ -18,9 +33,7 @@ function clearAllErrors() {
   setFieldError("fTemplate", "eTemplate", "");
   setFieldError("fSize", "eSize", "");
   setFieldError("fNombre", "eNombre", "");
-  setFieldError("fAntes", "eAntes", "");
   setFieldError("fAhora", "eAhora", "");
-  setFieldError("fCuota", "eCuota", "");
   setFieldError("fQty", "eQty", "");
   setFieldError("fUseVig", "eVig", "");
   setFieldError("fVigStart", "eVigStart", "");
@@ -34,12 +47,13 @@ export function syncDraftFromForm() {
   st.draft.size = $("fSize").value || "";
   st.draft.nombre = ($("fNombre").value || "").trim();
 
-  st.draft.antes = sanitizeIntStr($("fAntes").value);
+  // Solo fAhora es ingresado por el usuario; antes y cuota se calculan automáticamente
   st.draft.ahora = sanitizeIntStr($("fAhora").value);
-  st.draft.cuota = sanitizeIntStr($("fCuota").value);
-
-  $("fAntes").value = st.draft.antes;
   $("fAhora").value = st.draft.ahora;
+
+  st.draft.antes = computePrecioAntes(st.draft.ahora);
+  st.draft.cuota = computeCuota(st.draft.ahora);
+  $("fAntes").value = st.draft.antes;
   $("fCuota").value = st.draft.cuota;
 
   const q = parseInt($("fQty").value, 10);
@@ -49,6 +63,18 @@ export function syncDraftFromForm() {
   $("vigDates").style.display = st.draft.useVig ? "block" : "none";
   st.draft.vigStart = $("fVigStart").value || "";
   st.draft.vigEnd = $("fVigEnd").value || "";
+
+  // Restringir el calendario de fecha final para no permitir fechas anteriores a la inicial
+  const vigEndInput = $("fVigEnd");
+  if (st.draft.vigStart) {
+    vigEndInput.min = st.draft.vigStart;
+    if (st.draft.vigEnd && st.draft.vigEnd < st.draft.vigStart) {
+      vigEndInput.value = st.draft.vigStart;
+      st.draft.vigEnd = st.draft.vigStart;
+    }
+  } else {
+    vigEndInput.removeAttribute("min");
+  }
 }
 
 export function validateDraft() {
@@ -62,16 +88,7 @@ export function validateDraft() {
   if (!st.draft.template) setFieldError("fTemplate", "eTemplate", "Selecciona una plantilla.");
   if (!st.draft.size) setFieldError("fSize", "eSize", "Selecciona un tamaño.");
   if (!st.draft.nombre) setFieldError("fNombre", "eNombre", "Este campo es obligatorio.");
-  if (!st.draft.antes) setFieldError("fAntes", "eAntes", "Ingresa 'Antes' (máx 5 dígitos).");
-  if (!st.draft.ahora) setFieldError("fAhora", "eAhora", "Ingresa 'Ahora' (máx 5 dígitos).");
-  if (!st.draft.cuota) setFieldError("fCuota", "eCuota", "Ingresa 'Cuota' (máx 5 dígitos).");
-  if (st.draft.antes && st.draft.ahora) {
-    const aN = parseInt(st.draft.antes, 10);
-    const hN = parseInt(st.draft.ahora, 10);
-    if (Number.isFinite(aN) && Number.isFinite(hN) && hN > aN) {
-      setFieldError("fAhora", "eAhora", "'Ahora' no puede ser mayor que 'Antes'.");
-    }
-  }
+  if (!st.draft.ahora || st.draft.ahora === "0") setFieldError("fAhora", "eAhora", "El Precio Normal debe ser mayor a 0.");
   if (!st.draft.qty || st.draft.qty < 1) setFieldError("fQty", "eQty", "Cantidad debe ser mayor a 0.");
 
   if (st.draft.useVig) {
@@ -93,15 +110,15 @@ export function fillFormFromProduct(p) {
   $("fTemplate").value = p.template || "";
   $("fSize").value = p.size || "";
   $("fNombre").value = p.nombre || "";
-  $("fAntes").value = p.antes || "";
   $("fAhora").value = p.ahora || "";
-  $("fCuota").value = p.cuota || "";
+  // antes y cuota se recalculan en syncDraftFromForm
   $("fQty").value = String(p.qty || 1);
 
   $("fUseVig").checked = !!p.useVig;
   $("vigDates").style.display = p.useVig ? "block" : "none";
   $("fVigStart").value = p.vigStart || "";
   $("fVigEnd").value = p.vigEnd || "";
+  applyVigEndConstraint();
 
   syncDraftFromForm();
   validateDraft();
