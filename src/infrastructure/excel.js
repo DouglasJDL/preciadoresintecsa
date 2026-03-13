@@ -40,6 +40,7 @@ function parseSizeCell(v) {
   const t = normalizeText(v);
   if (!t) return "";
 
+  if (t.includes("mini") || t.includes("4x7") || t === "28") return SIZE.mini;
   if (t.includes("1/4") || t.includes("cuarto") || t.includes("1-4")) return SIZE.quarter;
   if (t.includes("media") || t.includes("mitad") || t.includes("horizontal")) return SIZE.halfH;
   if (t.includes("carta") || t.includes("completa") || t.includes("pagina completa") || t.includes("página completa")) return SIZE.full;
@@ -48,7 +49,7 @@ function parseSizeCell(v) {
   if (t.includes("half_h") || (t.includes("half") && !t.includes("quarter"))) return SIZE.halfH;
   if (t.includes("full")) return SIZE.full;
 
-  if (t === SIZE.quarter || t === SIZE.halfH || t === SIZE.full) return t;
+  if (t === SIZE.quarter || t === SIZE.halfH || t === SIZE.full || t === SIZE.mini) return t;
   return "";
 }
 
@@ -190,7 +191,7 @@ function parseExcelRowsToProducts(rows) {
 
     const rowErrs = [];
     if (!p.template) rowErrs.push(`Plantilla inválida. Usa solo el nombre (sin .svg). Permitidas: ${allowedBases.join(", ")}.`);
-    if (!p.size) rowErrs.push("Tamaño inválido. Recomendado: 1/4, MEDIA HORIZONTAL, CARTA COMPLETA.");
+    if (!p.size) rowErrs.push("Tamaño inválido. Recomendado: 1/4, MEDIA HORIZONTAL, CARTA COMPLETA, MINI.");
 
     validateProductData(p).forEach(e => rowErrs.push(e));
 
@@ -392,7 +393,8 @@ export function downloadExcelTemplate() {
     ["normal1", "1/4", "AUDÍFONOS BLUETOOTH [DAF4561546401]", "149", "4", "NO", "", ""],
     ["promocion1", "MEDIA HORIZONTAL", "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]", "8999", "2", "SI", "01/01/2026", "31/01/2026"],
     ["liquidacion1", "1/4", "TENIS NIKE AIR MAX [DAF4561546403]", "999", "4", "SI", "05/02/2026", "20/02/2026"],
-    ["oferta1", "CARTA COMPLETA", "SMART TV 55 PULGADAS [DAF4561546404]", "12999", "1", "SI", "01/03/2026", "15/03/2026"]
+    ["oferta1", "CARTA COMPLETA", "SMART TV 55 PULGADAS [DAF4561546404]", "12999", "1", "SI", "01/03/2026", "15/03/2026"],
+    ["pequeño1", "MINI", "PILA DURACELL AA x4 [DAF4561546405]", "49", "28", "NO", "", ""]
   ];
 
   const wsImportar = XLSX.utils.aoa_to_sheet([headers, ...examples]);
@@ -412,10 +414,10 @@ export function downloadExcelTemplate() {
     [""],
     ["PLANTILLA (sin .svg):", "Escribe solo el nombre. Ej: promocion1"],
     ["Plantillas disponibles en este sistema:", allowedBases || "promocion1 | normal1 | liquidacion1 | oferta1"],
-    ["También se aceptan alias:", "Normal | Promoción | Liquidación | Oferta"],
+    ["También se aceptan alias:", "Normal | Promoción | Liquidación | Oferta | Pequeño"],
     [""],
-    ["TAMAÑO (recomendado en español):", "1/4 | MEDIA HORIZONTAL | CARTA COMPLETA"],
-    ["También se aceptan:", "quarter | half_h | full, y variantes como 'media', 'carta', 'mitad', 'cuarto'"],
+    ["TAMAÑO (recomendado en español):", "1/4 | MEDIA HORIZONTAL | CARTA COMPLETA | MINI"],
+    ["También se aceptan:", "quarter | half_h | full | mini, y variantes como 'media', 'carta', 'mitad', 'cuarto', 'pequeño', '4x7'"],
     [""],
     ["PRECIO NORMAL:", `Solo número entero, máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9999`],
     ["CANTIDAD:", "Entero > 0. Ej: 4"],

@@ -57,6 +57,15 @@ function boxForPlacement(pageType, row, col, rs, cs) {
   const availW = letterWmm - (pad * 2);
   const availH = letterHmm - (pad * 2);
 
+  if (pageType === "mini") {
+    const cols = 4, rows = 7;
+    const cellW = (availW - (cols - 1) * gap) / cols;
+    const cellH = (availH - (rows - 1) * gap) / rows;
+    const x = pad + (col - 1) * (cellW + gap);
+    const y = pad + (row - 1) * (cellH + gap);
+    return { x, y, w: cellW, h: cellH };
+  }
+
   const cols = 2, rows = 2;
   const cellW = (availW - gap) / cols;
   const cellH = (availH - gap) / rows;
@@ -94,7 +103,7 @@ async function buildPdfDoc() {
     if (pi > 0) doc.addPage("letter", "portrait");
 
     const page = pages[pi];
-    const pageType = (page.type === "full") ? "full" : "grid";
+    const pageType = page.type === "full" ? "full" : page.type === "mini" ? "mini" : "grid";
 
     for (const pl of page.placements) {
       const it = pl.item;
@@ -163,7 +172,7 @@ export async function printViaPdf() {
     // Construir HTML con las etiquetas posicionadas en páginas carta
     let pagesHtml = "";
     for (const page of pages) {
-      const pageType = page.type === "full" ? "full" : "grid";
+      const pageType = page.type === "full" ? "full" : page.type === "mini" ? "mini" : "grid";
       let slots = "";
       for (const pl of page.placements) {
         if (!pl.item._png) continue;

@@ -13,6 +13,7 @@ const ICONS = Object.freeze({
 function sizeLabel(size) {
   if (size === SIZE.quarter) return "1/4";
   if (size === SIZE.halfH) return "Media horiz.";
+  if (size === SIZE.mini) return "Mini 4×7";
   return "Carta";
 }
 

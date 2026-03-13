@@ -5,7 +5,7 @@ import { loadTemplateText } from "./infrastructure/templates.js";
 import { UI, wireBeforeUnloadGuard, wireGlobalCloseContextMenu } from "./presentation/ui.js";
 import { wireModalCommonEvents } from "./presentation/modal.js";
 import { renderList, findListItem } from "./presentation/list.js";
-import { scheduleRebuild } from "./presentation/preview.js";
+import { scheduleRebuild, zoomIn, zoomOut, zoomReset } from "./presentation/preview.js";
 import { validateDraft, applyVigEndConstraint } from "./presentation/form.js";
 import { showContextMenu, hideContextMenu } from "./presentation/contextMenu.js";
 import { scheduleHover, scheduleHoverClear, highlightProductInList, markSelectedInList } from "./presentation/selection.js";
@@ -106,6 +106,10 @@ function wireTopButtons() {
   document.getElementById("btnResetAll").addEventListener("click", resetAll);
   document.getElementById("btnPrint").addEventListener("click", printViaPdf);
   document.getElementById("btnPdf").addEventListener("click", exportPdfWithLoading);
+
+  document.getElementById("btnZoomIn").addEventListener("click", zoomIn);
+  document.getElementById("btnZoomOut").addEventListener("click", zoomOut);
+  document.getElementById("btnZoomReset").addEventListener("click", zoomReset);
 
   document.getElementById("btnImport").addEventListener("click", () => {
     if (!UI.isListView()) return;

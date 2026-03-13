@@ -9,6 +9,28 @@ import { packAll } from "../domain/packing.js";
 let _lazyObserver = null;
 const EAGER_PAGES = 4;
 
+const ZOOM_MIN = 0.3;
+const ZOOM_MAX = 3.0;
+const ZOOM_STEP = 0.15;
+let _zoom = CONFIG.previewScale;
+
+function applyZoom(scale) {
+  _zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(scale * 100) / 100));
+  document.querySelectorAll(".page-shell").forEach(el => {
+    el.style.setProperty("--previewScale", _zoom);
+  });
+  const label = document.getElementById("zoomLabel");
+  if (label) label.textContent = Math.round(_zoom * 100) + "%";
+  const btnIn  = document.getElementById("btnZoomIn");
+  const btnOut = document.getElementById("btnZoomOut");
+  if (btnIn)  btnIn.disabled  = _zoom >= ZOOM_MAX;
+  if (btnOut) btnOut.disabled = _zoom <= ZOOM_MIN;
+}
+
+export function zoomIn()    { applyZoom(_zoom + ZOOM_STEP); }
+export function zoomOut()   { applyZoom(_zoom - ZOOM_STEP); }
+export function zoomReset() { applyZoom(CONFIG.previewScale); }
+
 export function clearHighlight() {
   Dom.qsa(".slot.hl").forEach(el => {
     el.classList.remove("hl");
@@ -200,7 +222,7 @@ function buildSlot(it, pl) {
 function buildPageShell(pageIndex) {
   const shell = document.createElement("div");
   shell.className = "page-shell";
-  shell.style.setProperty("--previewScale", CONFIG.previewScale);
+  shell.style.setProperty("--previewScale", _zoom);
 
   const pageLabel = document.createElement("div");
   pageLabel.className = "pageLabel";
@@ -219,7 +241,7 @@ function fillShellSlots(shell, page) {
   if (!inner) return;
 
   const paper = document.createElement("div");
-  paper.className = "paper-page " + (page.type === "full" ? "paper-full" : "paper-grid");
+  paper.className = "paper-page " + (page.type === "full" ? "paper-full" : page.type === "mini" ? "paper-mini" : "paper-grid");
 
   for (const pl of page.placements) {
     const slot = buildSlot(pl.item, pl);

@@ -42,7 +42,8 @@ export const SVG_IDS = Object.freeze({
 export const SIZE = Object.freeze({
   quarter: "quarter",
   halfH: "half_h",
-  full: "full"
+  full: "full",
+  mini: "mini"
 });
 
 /**
@@ -61,7 +62,12 @@ export const TEMPLATE_ALIASES = Object.freeze({
   "normal1": "normal1.svg",
   "liquidacion1": "liquidacion1.svg",
   "liquidación1": "liquidacion1.svg",
-  "oferta1": "oferta1.svg"
+  "oferta1": "oferta1.svg",
+
+  "pequeño": "pequeño1.svg",
+  "pequeno": "pequeño1.svg",
+  "pequeño1": "pequeño1.svg",
+  "pequeno1": "pequeño1.svg"
 });
 
 export const COLOR_HUES = Object.freeze([210, 150, 35, 0, 270, 190, 95, 235, 25, 330]);

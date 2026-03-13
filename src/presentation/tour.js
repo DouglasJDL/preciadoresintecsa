@@ -276,7 +276,20 @@ export function startTour() {
         }
       },
 
-      // 14 \u2500 Lista de etiquetas
+      // 14 — Zoom
+      {
+        element: ".zoomSidebar",
+        popover: {
+          title: "🔍 Control de zoom",
+          description:
+            "Usa estos botones para acercar o alejar la vista previa.<br>" +
+            "<b>+</b> acerca · <b>−</b> aleja · <b>↺</b> restablece al tamaño original.<br>" +
+            "Muy útil con la plantilla <b>Mini (28 por hoja)</b> para ver los detalles.",
+          side: "right", align: "start"
+        }
+      },
+
+      // 15 \u2500 Lista de etiquetas
       {
         element: "#itemsWrap",
         popover: {

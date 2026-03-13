@@ -4,6 +4,24 @@ function makeGridPage() {
   return { type: "grid", occ: [[null, null], [null, null]], placements: [] };
 }
 
+function makeMiniPage() {
+  const occ = Array.from({ length: 7 }, () => Array(4).fill(null));
+  return { type: "mini", occ, placements: [] };
+}
+
+function placeMini(page, item) {
+  for (let r = 0; r < 7; r++) {
+    for (let c = 0; c < 4; c++) {
+      if (!page.occ[r][c]) {
+        page.occ[r][c] = item;
+        page.placements.push({ item, row: r + 1, col: c + 1, rs: 1, cs: 1 });
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function rowEmpty(page, r) {
   return !page.occ[r][0] && !page.occ[r][1];
 }
@@ -57,6 +75,21 @@ export function packAll(items) {
 
     if (size === SIZE.full) {
       pages.push({ type: "full", placements: [{ item: it, row: 1, col: 1, rs: 1, cs: 1 }] });
+      continue;
+    }
+
+    if (size === SIZE.mini) {
+      let placed = false;
+      for (const page of pages) {
+        if (page.type !== "mini") continue;
+        placed = placeMini(page, it);
+        if (placed) break;
+      }
+      if (!placed) {
+        const p = makeMiniPage();
+        pages.push(p);
+        placeMini(p, it);
+      }
       continue;
     }
 
