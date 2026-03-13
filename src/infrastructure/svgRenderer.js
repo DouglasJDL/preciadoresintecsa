@@ -1,4 +1,4 @@
-import { CONFIG, SVG_IDS, SIZE } from "../config/config.js";
+import { CONFIG, SVG_IDS, SIZE, PRICING } from "../config/config.js";
 
 export function normalizeText(s) {
   const t = (s ?? "").toString().trim().toLowerCase();
@@ -380,6 +380,7 @@ function renderKey(p, widthPx) {
     nombre: (p.nombre || "").trim().toUpperCase(),
     antes: p.antes,
     ahora: p.ahora,
+    efectivo: p.efectivo,
     cuota: p.cuota,
     useVig: !!p.useVig,
     vigStart: p.vigStart || "",
@@ -427,7 +428,11 @@ export async function renderProductToPngs(p, widthPx = 2200) {
   // ===== Precios =====
   setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.antes)),    antes);
   setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.ahora)),    ahora);
-  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.efectivo)), toQuetzales(p.efectivo));
+  const efectivoVal = p.efectivo || (() => {
+    const n = parseInt(p.ahora, 10);
+    return Number.isFinite(n) && n > 0 ? String(Math.round(n * (1 - PRICING.downPaymentPct / 100))) : "";
+  })();
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.efectivo)), toQuetzales(efectivoVal));
   setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.cuota)),    cuota);
 
   // ===== Vigencia =====
