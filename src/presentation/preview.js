@@ -241,7 +241,7 @@ function fillShellSlots(shell, page) {
   if (!inner) return;
 
   const paper = document.createElement("div");
-  paper.className = "paper-page " + (page.type === "full" ? "paper-full" : page.type === "mini" ? "paper-mini" : "paper-grid");
+  paper.className = "paper-page " + (page.type === "full" ? "paper-full" : "paper-universal");
 
   for (const pl of page.placements) {
     const slot = buildSlot(pl.item, pl);

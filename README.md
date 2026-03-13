@@ -2,7 +2,7 @@
 
 ⚠️ **Aviso importante – Uso bajo su responsabilidad**
 
-Este proyecto ha sido **creado 100% con Inteligencia Artificial**.  
+Este proyecto ha sido **creado 100% con Inteligencia Artificial**.
 **No ha pasado por revisión, auditoría ni validación de desarrolladores humanos**, pruebas formales de QA, ni evaluaciones de seguridad en entornos productivos.
 
 Antes de **implementar, distribuir o usar en producción**, se recomienda:
@@ -15,8 +15,8 @@ El autor **no asume responsabilidad** por fallos, pérdidas de datos, problemas 
 
 ---
 
-Aplicación web **100% frontend** (sin backend) para crear, editar e imprimir etiquetas comerciales usando plantillas **SVG**.  
-Permite **previsualizar**, **imprimir**, **exportar a PDF** e **importar productos desde Excel**.  
+Aplicación web **100% frontend** (sin backend) para crear, editar e imprimir etiquetas comerciales usando plantillas **SVG**.
+Permite **previsualizar**, **imprimir**, **exportar a PDF** e **importar productos desde Excel**.
 Todo se ejecuta en el navegador y se **guarda automáticamente en `localStorage`**.
 
 ---
@@ -24,19 +24,21 @@ Todo se ejecuta en el navegador y se **guarda automáticamente en `localStorage`
 ## Características principales
 
 - Creación y edición de etiquetas con:
-  - Plantilla SVG
+  - Plantilla SVG seleccionable
   - Tamaño de impresión
   - Nombre del producto
-  - Precio antes
-  - Precio ahora
-  - Cuota semanal
+  - Precio Normal (ingresado por el usuario)
+  - Precio Antes (calculado automáticamente: +10%)
+  - Cuota Semanal (calculada automáticamente, plan 20 semanas)
   - Cantidad de copias
-  - Vigencia opcional
+  - Vigencia opcional con fechas de inicio y fin
 - Previsualización en hojas tamaño **Carta (Letter)**
+- **Zoom de vista previa** entre 30% y 300% (pasos de 15%)
 - Impresión directa desde el navegador
 - Exportación a PDF
 - Importación masiva desde Excel
-- Persistencia automática local
+- Tour interactivo de 23 pasos para nuevos usuarios
+- Persistencia automática local (`localStorage`)
 - No requiere servidor ni base de datos
 
 ---
@@ -52,17 +54,19 @@ Todo se ejecuta en el navegador y se **guarda automáticamente en `localStorage`
 
 ## Ejecutar el proyecto en local
 
-Desde la carpeta raíz del proyecto:
+Con Node.js (recomendado):
+
+```bash
+npx serve . -p 3000
+```
+
+Con Python:
 
 ```bash
 python -m http.server 8080
 ```
 
-Abrir en el navegador:
-
-```
-http://localhost:8080
-```
+Abrir en el navegador: `http://localhost:3000` (o el puerto elegido).
 
 ---
 
@@ -72,13 +76,14 @@ Cargadas por CDN en `index.html`:
 
 - **jsPDF** → exportación a PDF
 - **SheetJS / xlsx** → importación desde Excel
+- **Driver.js** → tour interactivo
 
 ---
 
 ## Estructura del proyecto
 
 ```
-editor_etiquetas/
+preciadoresintecsa/
 ├─ index.html
 ├─ resource/
 │  ├─ css/
@@ -87,7 +92,8 @@ editor_etiquetas/
 │     ├─ normal1.svg
 │     ├─ promocion1.svg
 │     ├─ oferta1.svg
-│     └─ liquidacion1.svg
+│     ├─ liquidacion1.svg
+│     └─ pequeño1.svg
 ├─ src/
 │  ├─ main.js
 │  ├─ config/
@@ -102,7 +108,6 @@ editor_etiquetas/
 │  │  ├─ svgRenderer.js
 │  │  ├─ excel.js
 │  │  ├─ pdf.js
-│  │  ├─ print.js
 │  │  └─ storage.js
 │  └─ presentation/
 │     ├─ ui.js
@@ -112,7 +117,8 @@ editor_etiquetas/
 │     ├─ preview.js
 │     ├─ selection.js
 │     ├─ contextMenu.js
-│     └─ modal.js
+│     ├─ modal.js
+│     └─ tour.js
 └─ tests/
 ```
 
@@ -120,29 +126,53 @@ editor_etiquetas/
 
 ## Arquitectura
 
-- **presentation** → interfaz, DOM, formularios, listas, preview y modales  
-- **application** → acciones de negocio (crear, editar, eliminar)  
-- **domain** → lógica pura, validaciones y empaquetado en páginas  
-- **infrastructure** → SVG, canvas, Excel, PDF, impresión y `localStorage`  
-- **config** → configuración central del sistema  
+- **presentation** → interfaz, DOM, formularios, listas, preview, zoom y modales
+- **application** → acciones de negocio (crear, editar, eliminar)
+- **domain** → lógica pura, validaciones y empaquetado en páginas
+- **infrastructure** → SVG, canvas, Excel, PDF, impresión y `localStorage`
+- **config** → configuración central del sistema
 
 ---
 
-## Configuración principal
+## Plantillas SVG disponibles
 
-Archivo:
+| Archivo | Nombre en UI | Alias Excel aceptados |
+|---|---|---|
+| `normal1.svg` | Normal | `normal`, `normal1` |
+| `promocion1.svg` | Promoción | `promocion`, `promoción`, `promocion1` |
+| `oferta1.svg` | Oferta | `oferta`, `oferta1` |
+| `liquidacion1.svg` | Liquidación | `liquidacion`, `liquidación`, `liquidacion1` |
+| `pequeño1.svg` | Pequeño | `pequeño`, `pequeno`, `pequeño1`, `pequeno1` |
 
-```
-src/config/config.js
-```
+---
 
-Define:
+## Tamaños de etiqueta
 
-- Clave de `localStorage`
-- Límites de validación
-- Medidas del papel Carta
-- IDs obligatorios del SVG
-- Alias de plantillas para Excel
+Todos los tamaños (excepto `full`) comparten el mismo **grid universal de 4 columnas × 14 filas**, lo que permite que distintos tamaños convivan en la misma hoja sin desperdiciar espacio.
+
+| Tamaño | Clave | Span en grid | Etiquetas por hoja |
+|---|---|---|---|
+| 1/4 hoja | `quarter` | 2 col × 7 filas | 4 |
+| Media hoja horizontal | `half_h` | 4 col × 7 filas | 2 |
+| Carta completa | `full` | página dedicada | 1 |
+| Mini | `mini` | 1 col × 2 filas | 28 |
+
+- Para `half_h` el sistema rota automáticamente el PNG **90°**.
+- Los tamaños `quarter`, `half_h` y `mini` pueden coexistir en la misma hoja.
+- Márgenes de página: **8 mm** (compatibles con la mayoría de impresoras). Gap entre celdas: **2 mm**.
+
+---
+
+## Zoom de la vista previa
+
+Controles verticales fijos a la izquierda del panel de preview:
+
+- **`+`** → acercar (paso: 15%)
+- **`−`** → alejar (paso: 15%)
+- **`↺`** → restablecer al 58% predeterminado
+- Rango: **30% – 300%**
+- Los botones `+` y `−` se deshabilitan al alcanzar el límite.
+- El control permanece visible (sticky) aunque se haga scroll en el preview.
 
 ---
 
@@ -151,16 +181,16 @@ Define:
 ```js
 {
   id: string,
-  template: string,
-  size: "quarter" | "half_h" | "full",
+  template: string,           // e.g. "normal1.svg"
+  size: "quarter" | "half_h" | "full" | "mini",
   nombre: string,
-  antes: string,
-  ahora: string,
-  cuota: string,
+  antes: string,              // calculado automáticamente
+  ahora: string,              // precio normal ingresado por el usuario
+  cuota: string,              // calculado automáticamente
   qty: number,
   useVig: boolean,
-  vigStart: string,
-  vigEnd: string,
+  vigStart: string,           // ISO: YYYY-MM-DD
+  vigEnd: string,             // ISO: YYYY-MM-DD
   impresionAt: string,
   colorIdx: number
 }
@@ -170,137 +200,174 @@ Define:
 
 - Todos los campos principales son obligatorios
 - `qty ≥ 1`
-- `ahora ≤ antes`
-- Precios solo numéricos (máx. 5 dígitos)
-- Si hay vigencia, las fechas deben ser válidas
+- Precio Normal: solo numérico, máx. 5 dígitos, mayor a 0
+- Si hay vigencia, `vigEnd` no puede ser menor que `vigStart`
 
----
+### Cálculos automáticos
 
-## Tamaños de etiqueta
-
-- **quarter** → 4 etiquetas por hoja
-- **half_h** → 2 etiquetas por hoja (horizontal)
-- **full** → 1 etiqueta por hoja
-
-Para `half_h`, el sistema rota automáticamente el SVG **90°**.
+- **Precio Antes** = `ceil(Precio Normal × 1.10)` (+10%)
+- **Cuota Semanal** = `ceil(round(Precio Normal × 0.90) × 110 / 1000)` (plan 20 semanas)
 
 ---
 
 ## Funcionamiento del render SVG
 
-Archivo clave:
+Archivo clave: `src/infrastructure/svgRenderer.js`
 
-```
-src/infrastructure/svgRenderer.js
-```
-
-Proceso:
-
-1. Carga el SVG desde `resource/svg`
-2. Sanitiza el SVG (seguridad)
+1. Carga el SVG desde `resource/svg/`
+2. Sanitiza el SVG (elimina scripts, eventos y URLs externas)
 3. Inserta textos dinámicos por ID
-4. Ajusta el nombre con *wrap* automático
-5. Convierte SVG a PNG usando `canvas`
-6. Cachea el resultado
-7. Usa el PNG para preview, impresión y PDF
+4. Ajusta el nombre con *text wrap* automático
+5. Convierte el SVG a PNG usando `<canvas>`
+6. Cachea el resultado (máx. 40 entradas)
+7. Usa el PNG para preview (600 px), impresión y PDF (1200 px)
 
 ---
 
 ## IDs obligatorios en cada SVG
 
-```text
-nombre_producto
-precio_antes
-precio_ahora
-cuota_semanal
-fecha_vigencia
+```
+nombre_producto       → nombre del producto
+precio_antes          → precio antes (tachado)
+precio_ahora          → precio normal
+cuota_semanal         → cuota semanal
+fecha_vigencia        → rango de vigencia (opcional)
 ```
 
-Fecha de impresión (uno de estos):
+Fecha de impresión (cualquiera de estos):
 
-```text
+```
 Fecha_impresion
 fecha_impresion
 FECHA_IMPRESION
 ```
 
-Recomendado:
+Recomendado para ajuste automático del texto:
 
-```text
+```
 box_nombre_producto
 ```
+
+> La plantilla `pequeño1.svg` puede omitir `precio_antes` y `cuota_semanal` si su diseño no los requiere.
 
 ---
 
 ## Crear una nueva plantilla SVG
 
-1. Copiar una plantilla existente desde `resource/svg`
+1. Copiar una plantilla existente desde `resource/svg/`
 2. Editar el diseño en Inkscape o Illustrator
-3. **No modificar** los IDs obligatorios
-4. Ajustar `box_nombre_producto`
-5. Guardar el SVG
-6. Registrar la plantilla en `index.html`:
+3. **Respetar** los IDs obligatorios indicados arriba
+4. Guardar en `resource/svg/`
+5. Registrar en `index.html`:
 
 ```html
 <option value="miPlantilla1.svg">Mi Plantilla</option>
+```
+
+6. Agregar alias en `src/config/config.js` → `TEMPLATE_ALIASES`:
+
+```js
+"miplantilla":  "miPlantilla1.svg",
+"miplantilla1": "miPlantilla1.svg",
 ```
 
 ---
 
 ## Seguridad del SVG
 
-Antes de renderizar:
+Antes de renderizar se elimina:
 
-- Se eliminan scripts y objetos
-- Se eliminan eventos (`onClick`, etc.)
-- Se bloquean URLs externas
-- Solo se permiten imágenes base64 (`data:image/...`)
+- `<script>`, `<foreignObject>`, `<iframe>`, `<object>`, `<embed>`
+- Atributos de evento (`onClick`, `onLoad`, etc.)
+- URLs externas (`http://`, `https://`, `javascript:`)
+- Solo se permiten imágenes base64 `data:image/(png|jpeg|jpg|webp|gif)`
 
 ---
 
 ## Importación desde Excel
 
-Columnas requeridas:
+### Columnas requeridas
 
-- Plantilla
-- Tamaño
-- Nombre
-- Antes
-- Ahora
-- Cuota
-- Cantidad
+| Columna | Descripción |
+|---|---|
+| Plantilla | Nombre de la plantilla (sin `.svg`) |
+| Tamaño | Tamaño de impresión |
+| Nombre | Nombre del producto |
+| Precio Normal | Solo números enteros, máx. 5 dígitos |
+| Cantidad | Entero ≥ 1 |
 
-Columnas opcionales:
+### Columnas opcionales
 
-- AgregarVigencia
-- VigenciaInicio
-- VigenciaFin
+| Columna | Descripción |
+|---|---|
+| AgregarVigencia | `SI` / `NO` |
+| VigenciaInicio | Fecha inicio (`DD/MM/AAAA` o ISO) |
+| VigenciaFin | Fecha fin (`DD/MM/AAAA` o ISO) |
 
-⚠️ **Regla crítica:**  
-Si una fila tiene error, **se rechaza todo el archivo**.
+> **Precio Antes** y **Cuota Semanal** se calculan automáticamente; no es necesario incluirlos.
+
+### Alias aceptados para Tamaño
+
+| Valor en Excel | Tamaño resultante |
+|---|---|
+| `1/4`, `cuarto`, `quarter` | `quarter` |
+| `media`, `mitad`, `horizontal`, `half_h` | `half_h` |
+| `carta`, `completa`, `pagina completa`, `full` | `full` |
+| `mini`, `4x7`, `28` | `mini` |
+
+### Límites
+
+- Tamaño máximo de archivo: **6 MB**
+- Máximo de filas: **5 000**
+- Si **una fila** tiene error, se rechaza todo el archivo
+
+### Modos de importación
+
+- **Mantener y agregar** → conserva los productos existentes
+- **Reemplazar todo** → borra todo y carga los nuevos
 
 ---
 
 ## Exportación a PDF
 
 - Implementada con **jsPDF**
-- Tamaño Carta
-- Orientación vertical
-- Inserta PNGs generados desde SVG
+- Tamaño Carta, orientación vertical
+- Resolución de render: **1200 px**
+- Archivo generado: `etiquetas.pdf`
 
 ---
 
 ## Impresión
 
-- Construye páginas temporales
-- Ejecuta `window.print()`
-- Usa CSS específico para impresión
+- Genera páginas HTML con posicionamiento absoluto (unidades `mm`)
+- Ejecuta `window.print()` en una nueva pestaña
+- Usa `@page { size: letter portrait; margin: 0 }` para máxima fidelidad
+
+---
+
+## Tour interactivo
+
+23 pasos guiados, activados con el botón **Tour**:
+
+| Pasos | Contenido |
+|---|---|
+| 0 | Bienvenida |
+| 1–2 | Panel de productos y botón Nueva etiqueta |
+| 3–9 | Formulario: plantilla, tamaño, nombre, precios, cantidad |
+| 10–11 | Vigencia (condicional) |
+| 12 | Guardar |
+| 13–14 | Vista previa y controles de zoom |
+| 15–17 | Lista, editar y eliminar |
+| 18–22 | Importar/exportar Excel, PDF, imprimir |
+| 23 | Fin |
+
+Validaciones activas: no es posible avanzar sin completar cada acción requerida.
 
 ---
 
 ## Persistencia
 
-Todo el estado se guarda automáticamente en:
+Estado guardado automáticamente en:
 
 ```
 localStorage["editor_etiquetas_state_v7_secure"]
@@ -308,25 +375,31 @@ localStorage["editor_etiquetas_state_v7_secure"]
 
 ---
 
-## Extender el sistema
+## Configuración principal (`src/config/config.js`)
 
-Para agregar un nuevo campo:
-
-1. Agregar ID en `SVG_IDS`
-2. Agregar propiedad al producto
-3. Modificar formulario
-4. Modificar render SVG
-5. Modificar Excel (si aplica)
-6. Agregar el texto al SVG
+| Constante | Descripción |
+|---|---|
+| `CONFIG.storageKey` | Clave de localStorage |
+| `CONFIG.previewScale` | Escala inicial del preview (0.58 = 58%) |
+| `CONFIG.limits` | Validaciones, cachés, resoluciones |
+| `CONFIG.paper` | Medidas del papel Carta en mm |
+| `SIZE` | Claves de tamaño: `quarter`, `half_h`, `full`, `mini` |
+| `SVG_IDS` | IDs que el render inyecta en el SVG |
+| `TEMPLATE_ALIASES` | Mapeo alias → nombre de archivo |
+| `PRICING` | Porcentaje de markup y enganche |
+| `FINANCING_PLAN` | Parámetros del plan de 20 semanas |
 
 ---
 
 ## Errores comunes
 
-- La plantilla no se muestra si no está registrada
-- Las imágenes desaparecen si el SVG usa URLs externas
-- El PDF sale en blanco si faltan IDs obligatorios
-- No funciona sin servidor HTTP
+| Síntoma | Causa |
+|---|---|
+| La plantilla no se muestra | No está registrada en el `<select>` de `index.html` |
+| El PDF sale en blanco | Faltan IDs obligatorios en el SVG |
+| Las imágenes desaparecen | El SVG usa URLs externas (bloqueadas por seguridad) |
+| No carga nada | Abriste el HTML con `file://` en lugar de un servidor HTTP |
+| La impresora corta los bordes | Aumenta `U_PAD` en `src/infrastructure/pdf.js` (actualmente 8 mm) |
 
 ---
 
@@ -338,7 +411,7 @@ Se concede permiso, de forma gratuita, para usar, copiar, modificar, fusionar, p
 
 ### Condiciones
 
-- El software se proporciona **“TAL CUAL”**, sin garantía de ningún tipo.
+- El software se proporciona **"TAL CUAL"**, sin garantía de ningún tipo.
 - No se garantiza que el software sea seguro, estable o adecuado para producción.
 - El uso del software es **bajo total responsabilidad del usuario**.
 - El autor no será responsable por daños directos o indirectos, pérdida de datos, interrupciones del negocio o cualquier otro perjuicio derivado del uso del software.

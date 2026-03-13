@@ -43,38 +43,26 @@ async function getImgDim(dataUrl) {
   return p;
 }
 
+const U_PAD = 8, U_GAP = 1, U_COLS = 4, U_ROWS = 14;
+
 function boxForPlacement(pageType, row, col, rs, cs) {
-  const { letterWmm, letterHmm, padGridMm, gapGridMm, padFullMm } = CONFIG.paper;
+  const { letterWmm, letterHmm, padFullMm } = CONFIG.paper;
 
   if (pageType === "full") {
     const pad = padFullMm;
-    return { x: pad, y: pad, w: letterWmm - (pad * 2), h: letterHmm - (pad * 2) };
+    return { x: pad, y: pad, w: letterWmm - pad * 2, h: letterHmm - pad * 2 };
   }
 
-  const pad = padGridMm;
-  const gap = gapGridMm;
+  // universal: grid 4 × 14
+  const availW = letterWmm - U_PAD * 2;
+  const availH = letterHmm - U_PAD * 2;
+  const cellW = (availW - (U_COLS - 1) * U_GAP) / U_COLS;
+  const cellH = (availH - (U_ROWS - 1) * U_GAP) / U_ROWS;
 
-  const availW = letterWmm - (pad * 2);
-  const availH = letterHmm - (pad * 2);
-
-  if (pageType === "mini") {
-    const cols = 4, rows = 7;
-    const cellW = (availW - (cols - 1) * gap) / cols;
-    const cellH = (availH - (rows - 1) * gap) / rows;
-    const x = pad + (col - 1) * (cellW + gap);
-    const y = pad + (row - 1) * (cellH + gap);
-    return { x, y, w: cellW, h: cellH };
-  }
-
-  const cols = 2, rows = 2;
-  const cellW = (availW - gap) / cols;
-  const cellH = (availH - gap) / rows;
-
-  const x = pad + (col - 1) * (cellW + gap);
-  const y = pad + (row - 1) * (cellH + gap);
-
-  const w = cellW * cs + gap * (cs - 1);
-  const h = cellH * rs + gap * (rs - 1);
+  const x = U_PAD + (col - 1) * (cellW + U_GAP);
+  const y = U_PAD + (row - 1) * (cellH + U_GAP);
+  const w = cellW * cs + U_GAP * (cs - 1);
+  const h = cellH * rs + U_GAP * (rs - 1);
 
   return { x, y, w, h };
 }
@@ -103,7 +91,7 @@ async function buildPdfDoc() {
     if (pi > 0) doc.addPage("letter", "portrait");
 
     const page = pages[pi];
-    const pageType = page.type === "full" ? "full" : page.type === "mini" ? "mini" : "grid";
+    const pageType = page.type === "full" ? "full" : "universal";
 
     for (const pl of page.placements) {
       const it = pl.item;
@@ -172,7 +160,7 @@ export async function printViaPdf() {
     // Construir HTML con las etiquetas posicionadas en páginas carta
     let pagesHtml = "";
     for (const page of pages) {
-      const pageType = page.type === "full" ? "full" : page.type === "mini" ? "mini" : "grid";
+      const pageType = page.type === "full" ? "full" : "universal";
       let slots = "";
       for (const pl of page.placements) {
         if (!pl.item._png) continue;

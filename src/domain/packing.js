@@ -1,70 +1,47 @@
 import { SIZE } from "../config/config.js";
 
-function makeGridPage() {
-  return { type: "grid", occ: [[null, null], [null, null]], placements: [] };
+// Grid universal: 4 columnas × 14 filas.
+// Spans por tamaño:
+//   mini    → 1 col × 2 filas  → 28 por página
+//   quarter → 2 col × 7 filas  →  4 por página
+//   half_h  → 4 col × 7 filas  →  2 por página
+// Todos conviven en la misma hoja sin desperdiciar espacio.
+
+const U_COLS = 4;
+const U_ROWS = 14;
+
+const SPANS = {
+  [SIZE.mini]:    { cs: 1, rs: 2 },
+  [SIZE.quarter]: { cs: 2, rs: 7 },
+  [SIZE.halfH]:   { cs: 4, rs: 7 },
+};
+
+function makeUniversalPage() {
+  const occ = Array.from({ length: U_ROWS }, () => Array(U_COLS).fill(null));
+  return { type: "universal", occ, placements: [] };
 }
 
-function makeMiniPage() {
-  const occ = Array.from({ length: 7 }, () => Array(4).fill(null));
-  return { type: "mini", occ, placements: [] };
+function canPlace(occ, r, c, rs, cs) {
+  if (r + rs > U_ROWS || c + cs > U_COLS) return false;
+  for (let dr = 0; dr < rs; dr++)
+    for (let dc = 0; dc < cs; dc++)
+      if (occ[r + dr][c + dc]) return false;
+  return true;
 }
 
-function placeMini(page, item) {
-  for (let r = 0; r < 7; r++) {
-    for (let c = 0; c < 4; c++) {
-      if (!page.occ[r][c]) {
-        page.occ[r][c] = item;
-        page.placements.push({ item, row: r + 1, col: c + 1, rs: 1, cs: 1 });
+function placeInUniversal(page, item, cs, rs) {
+  for (let r = 0; r <= U_ROWS - rs; r++) {
+    for (let c = 0; c <= U_COLS - cs; c++) {
+      if (canPlace(page.occ, r, c, rs, cs)) {
+        for (let dr = 0; dr < rs; dr++)
+          for (let dc = 0; dc < cs; dc++)
+            page.occ[r + dr][c + dc] = item;
+        page.placements.push({ item, row: r + 1, col: c + 1, rs, cs });
         return true;
       }
     }
   }
   return false;
-}
-
-function rowEmpty(page, r) {
-  return !page.occ[r][0] && !page.occ[r][1];
-}
-
-function placeQuarter(page, item) {
-  const prefer = [];
-  const any = [];
-
-  for (let r = 0; r < 2; r++) {
-    const emptyCols = [];
-    for (let c = 0; c < 2; c++) if (!page.occ[r][c]) emptyCols.push(c);
-    if (!emptyCols.length) continue;
-
-    const filled = 2 - emptyCols.length;
-    if (filled === 1 && emptyCols.length === 1) prefer.push({ r, c: emptyCols[0] });
-    else any.push({ r, c: emptyCols[0] });
-  }
-
-  const spot = prefer[0] || any[0];
-  if (!spot) return false;
-
-  page.occ[spot.r][spot.c] = item;
-  page.placements.push({ item, row: spot.r + 1, col: spot.c + 1, rs: 1, cs: 1 });
-  return true;
-}
-
-function placeHalf(page, item) {
-  const opts = [];
-  for (let r = 0; r < 2; r++) {
-    if (!rowEmpty(page, r)) continue;
-    const other = r === 0 ? 1 : 0;
-    const otherHas = (!!page.occ[other][0] || !!page.occ[other][1]);
-    opts.push({ r, score: otherHas ? 2 : 1 });
-  }
-
-  if (!opts.length) return false;
-  opts.sort((a, b) => b.score - a.score);
-
-  const r = opts[0].r;
-  page.occ[r][0] = item;
-  page.occ[r][1] = item;
-  page.placements.push({ item, row: r + 1, col: 1, rs: 1, cs: 2 });
-  return true;
 }
 
 export function packAll(items) {
@@ -78,37 +55,19 @@ export function packAll(items) {
       continue;
     }
 
-    if (size === SIZE.mini) {
-      let placed = false;
-      for (const page of pages) {
-        if (page.type !== "mini") continue;
-        placed = placeMini(page, it);
-        if (placed) break;
-      }
-      if (!placed) {
-        const p = makeMiniPage();
-        pages.push(p);
-        placeMini(p, it);
-      }
-      continue;
-    }
+    const { cs, rs } = SPANS[size] || SPANS[SIZE.mini];
 
     let placed = false;
-
     for (const page of pages) {
-      if (page.type !== "grid") continue;
-
-      if (size === SIZE.quarter) placed = placeQuarter(page, it);
-      else if (size === SIZE.halfH) placed = placeHalf(page, it);
-
+      if (page.type !== "universal") continue;
+      placed = placeInUniversal(page, it, cs, rs);
       if (placed) break;
     }
 
     if (!placed) {
-      const p = makeGridPage();
+      const p = makeUniversalPage();
       pages.push(p);
-      if (size === SIZE.quarter) placeQuarter(p, it);
-      else placeHalf(p, it);
+      placeInUniversal(p, it, cs, rs);
     }
   }
 
