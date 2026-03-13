@@ -43,7 +43,7 @@ async function getImgDim(dataUrl) {
   return p;
 }
 
-const U_PAD = 8, U_GAP = 1, U_COLS = 4, U_ROWS = 14;
+const U_PAD = 8, U_GAP = 0.5, U_COLS = 4, U_ROWS = 14;
 
 function boxForPlacement(pageType, row, col, rs, cs) {
   const { letterWmm, letterHmm, padFullMm } = CONFIG.paper;

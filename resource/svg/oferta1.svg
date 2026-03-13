@@ -22,15 +22,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="0.76704545"
-     inkscape:cx="350.04445"
-     inkscape:cy="595.14074"
+     inkscape:zoom="0.54238304"
+     inkscape:cx="-174.23111"
+     inkscape:cy="747.62662"
      inkscape:window-width="1920"
      inkscape:window-height="995"
      inkscape:window-x="-9"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg18" /><defs
+     inkscape:current-layer="g16" /><defs
      id="defs6"><image
        width="1275"
        height="1650"
@@ -50,7 +50,7 @@
        height="1056"
        fill="#FFFFFF"
        id="rect8" /><g
-       transform="scale(0.000104987 0.000104987)"
+       transform="matrix(1.1014235e-4,0,0,1.04987e-4,-22.253711,0)"
        id="g14"><image
          width="7778475"
          height="10066262"
@@ -83,7 +83,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan337">[Ahora]</tspan></text><text
+       id="tspan338">[Ahora]</tspan></text><text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
      font-weight="800"
@@ -97,7 +97,7 @@
      inkscape:label="precio_efectivo"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan339">[Efectivo]</tspan></text><text
+       id="tspan340">[Efectivo]</tspan></text><text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
      font-weight="800"
@@ -129,9 +129,9 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan343">[<tspan
+       id="tspan344">[<tspan
    style="font-size:10.1685px"
-   id="tspan341">Fecha_vigencia</tspan>]</tspan></text><text
+   id="tspan342">Fecha_vigencia</tspan>]</tspan></text><text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
      font-weight="800"
@@ -144,7 +144,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan345">[Fecha_impresion]</tspan></text><text
+       id="tspan346">[Fecha_impresion]</tspan></text><text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
      font-weight="800"
@@ -157,4 +157,4 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan347">*Aplican Restricciones</tspan></text></svg>
+       id="tspan348">*Aplican Restricciones</tspan></text></svg>

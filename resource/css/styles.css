@@ -377,7 +377,7 @@ option{color:#111827}
   gap: var(--gap, var(--gapGrid));
   background:#fff;
 }
-.paper-universal{ --pad: 8mm; --gap: 1mm; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(14, 1fr); }
+.paper-universal{ --pad: 8mm; --gap: 0.5mm; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(14, 1fr); }
 .paper-full{ --pad: var(--padFull); --gap: 0mm; grid-template-columns: 1fr; grid-template-rows: 1fr; }
 
 .slot{
