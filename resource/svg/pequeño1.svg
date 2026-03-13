@@ -25,9 +25,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="0.76704545"
-     inkscape:cx="309.62963"
-     inkscape:cy="166.22222"
+     inkscape:zoom="1.5340909"
+     inkscape:cx="710.84445"
+     inkscape:cy="182.19259"
      inkscape:window-width="1902"
      inkscape:window-height="977"
      inkscape:window-x="0"
@@ -48,7 +48,8 @@
          height="10058400"
          id="rect1000" /></clipPath></defs><g
      id="g1013"
-     style="display:inline"><image
+     style="display:inline"
+     transform="matrix(0.99677969,0,0,0.98363677,2.6861489,5.6300373)"><image
        width="825.97546"
        height="580.30267"
        preserveAspectRatio="none"
@@ -85,7 +86,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan4137">[Ahora]</tspan></text><text
+       id="tspan4167">[Ahora]</tspan></text><text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
      font-weight="800"
@@ -98,9 +99,9 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan4141">[<tspan
+       id="tspan4171">[<tspan
    style="font-size:10.1685px"
-   id="tspan4139">Fecha_vigencia</tspan>]</tspan></text><text
+   id="tspan4169">Fecha_vigencia</tspan>]</tspan></text><text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
      font-weight="800"
@@ -113,7 +114,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan4143">[Fecha_impresion]</tspan></text><text
+       id="tspan4173">[Fecha_impresion]</tspan></text><text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
      font-weight="800"
@@ -126,7 +127,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan4145">*Aplican Restricciones</tspan></text><rect
+       id="tspan4175">*Aplican Restricciones</tspan></text><rect
      style="display:inline;fill:none;stroke-width:0.317219"
      id="box_nombre_producto"
      width="687.20538"
