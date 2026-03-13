@@ -425,9 +425,10 @@ export async function renderProductToPngs(p, widthPx = 2200) {
   }
 
   // ===== Precios =====
-  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.antes)), antes);
-  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.ahora)), ahora);
-  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.cuota)), cuota);
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.antes)),    antes);
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.ahora)),    ahora);
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.efectivo)), toQuetzales(p.efectivo));
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.cuota)),    cuota);
 
   // ===== Vigencia =====
   const vigEl = svg.querySelector("#" + cssEsc(SVG_IDS.vigencia));

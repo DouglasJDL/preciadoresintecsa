@@ -34,6 +34,7 @@ export const SVG_IDS = Object.freeze({
   nombre: "nombre_producto",
   antes: "precio_antes",
   ahora: "precio_ahora",
+  efectivo: "precio_efectivo",
   cuota: "cuota_semanal",
   vigencia: "fecha_vigencia",
   impresionCandidates: Object.freeze(["Fecha_impresion", "fecha_impresion", "FECHA_IMPRESION"])
@@ -67,7 +68,12 @@ export const TEMPLATE_ALIASES = Object.freeze({
   "pequeño": "pequeño1.svg",
   "pequeno": "pequeño1.svg",
   "pequeño1": "pequeño1.svg",
-  "pequeno1": "pequeño1.svg"
+  "pequeno1": "pequeño1.svg",
+
+  "superoferta": "superoferta.svg",
+  "súperoferta": "superoferta.svg",
+  "super oferta": "superoferta.svg",
+  "superoferta1": "superoferta.svg"
 });
 
 export const COLOR_HUES = Object.freeze([210, 150, 35, 0, 270, 190, 95, 235, 25, 330]);
@@ -78,7 +84,7 @@ export const COLOR_HUES = Object.freeze([210, 150, 35, 0, 270, 190, 95, 235, 25,
  * downPaymentPct: % que se resta al Precio Normal antes de financiar.
  */
 export const PRICING = Object.freeze({
-  markupPct: 10,
+  markupPct: 15,
   downPaymentPct: 10
 });
 

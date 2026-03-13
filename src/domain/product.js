@@ -8,6 +8,7 @@ export function emptyProduct() {
     nombre: "",
     antes: "",
     ahora: "",
+    efectivo: "",
     cuota: "",
     qty: 1,
     useVig: false,
@@ -33,19 +34,29 @@ export function computePrecioAntes(precioNormal) {
 }
 
 /**
- * Calcula la cuota semanal según el plan de financiamiento.
- * Pasos:
- *   1. monto = round(precioNormal * (1 - downPaymentPct/100))
- *   2. cuota = ceil(monto * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id)
- * Ejemplo: precioNormal=556 → monto=round(500.4)=500 → cuota=ceil(55)=55
- * Ejemplo: precioNormal=1111 → monto=round(999.9)=1000 → cuota=ceil(110)=110
+ * Calcula el Precio Efectivo = round(precioNormal * (1 - downPaymentPct/100)).
+ * Es el monto base que se financia a 20 semanas (precio normal menos el enganche del 10%).
+ * Ejemplo: precioNormal=1000 → efectivo=round(900)=900
  */
-export function computeCuota(precioNormal) {
+export function computePrecioEfectivo(precioNormal) {
   const n = parseInt(precioNormal, 10);
   if (!Number.isFinite(n) || n <= 0) return "";
   const monto = Math.round(n * (1 - PRICING.downPaymentPct / 100));
-  if (monto <= 0) return "";
-  return String(Math.ceil(monto * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id));
+  return monto > 0 ? String(monto) : "";
+}
+
+/**
+ * Calcula la cuota semanal según el plan de financiamiento.
+ * Pasos:
+ *   1. efectivo = round(precioNormal * (1 - downPaymentPct/100))
+ *   2. cuota = ceil(efectivo * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id)
+ * Ejemplo: precioNormal=556 → efectivo=500 → cuota=ceil(55)=55
+ * Ejemplo: precioNormal=1111 → efectivo=1000 → cuota=ceil(110)=110
+ */
+export function computeCuota(precioNormal) {
+  const efectivo = computePrecioEfectivo(precioNormal);
+  if (!efectivo) return "";
+  return String(Math.ceil(parseInt(efectivo, 10) * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id));
 }
 
 export function sanitizeIntStr(raw) {
@@ -88,10 +99,11 @@ export function sanitizeLoadedProduct(raw) {
   out.size = typeof raw?.size === "string" ? raw.size : "";
   out.nombre = typeof raw?.nombre === "string" ? raw.nombre : "";
 
-  out.ahora = sanitizeIntStr(raw?.ahora);
+  out.ahora    = sanitizeIntStr(raw?.ahora);
   // Recalcular automáticamente para garantizar consistencia con la regla actual
-  out.antes = computePrecioAntes(out.ahora) || sanitizeIntStr(raw?.antes);
-  out.cuota = computeCuota(out.ahora) || sanitizeIntStr(raw?.cuota);
+  out.antes    = computePrecioAntes(out.ahora)    || sanitizeIntStr(raw?.antes);
+  out.efectivo = computePrecioEfectivo(out.ahora) || sanitizeIntStr(raw?.efectivo);
+  out.cuota    = computeCuota(out.ahora)           || sanitizeIntStr(raw?.cuota);
 
   const qtyN = parseInt(raw?.qty, 10);
   out.qty = Number.isFinite(qtyN) && qtyN > 0 ? qtyN : 1;

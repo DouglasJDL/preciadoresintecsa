@@ -1,5 +1,5 @@
 import { $ } from "./dom.js";
-import { sanitizeIntStr, validateProductData, computePrecioAntes, computeCuota } from "../domain/product.js";
+import { sanitizeIntStr, validateProductData, computePrecioAntes, computePrecioEfectivo, computeCuota } from "../domain/product.js";
 import { requestSave } from "../infrastructure/storage.js";
 import { scheduleRebuild } from "./preview.js";
 
@@ -51,10 +51,12 @@ export function syncDraftFromForm() {
   st.draft.ahora = sanitizeIntStr($("fAhora").value);
   $("fAhora").value = st.draft.ahora;
 
-  st.draft.antes = computePrecioAntes(st.draft.ahora);
-  st.draft.cuota = computeCuota(st.draft.ahora);
-  $("fAntes").value = st.draft.antes;
-  $("fCuota").value = st.draft.cuota;
+  st.draft.antes    = computePrecioAntes(st.draft.ahora);
+  st.draft.efectivo = computePrecioEfectivo(st.draft.ahora);
+  st.draft.cuota    = computeCuota(st.draft.ahora);
+  $("fAntes").value    = st.draft.antes;
+  $("fEfectivo").value = st.draft.efectivo;
+  $("fCuota").value    = st.draft.cuota;
 
   const q = parseInt($("fQty").value, 10);
   st.draft.qty = Number.isFinite(q) && q > 0 ? q : 0;

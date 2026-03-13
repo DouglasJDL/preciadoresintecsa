@@ -86,6 +86,7 @@ export function renderList() {
             `<div><b>Cantidad:</b> ${p.qty}</div>` +
             `<div><b>Precio Normal:</b> ${escapeHtml(toQuetzales(p.ahora))}</div>` +
             `<div><b>Precio Antes:</b> ${escapeHtml(toQuetzales(p.antes))}</div>` +
+            `<div><b>Precio Efectivo:</b> ${escapeHtml(toQuetzales(p.efectivo))}</div>` +
             `<div><b>Cuota:</b> ${escapeHtml(toQuetzales(p.cuota))}</div>` +
             `<div class="span2"><b>${escapeHtml(vigLabel)}</b></div>` +
             `<div class="span2">${escapeHtml(impLabel)}</div>` +

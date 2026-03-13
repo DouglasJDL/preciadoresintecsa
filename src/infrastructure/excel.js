@@ -394,7 +394,8 @@ export function downloadExcelTemplate() {
     ["promocion1", "MEDIA HORIZONTAL", "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]", "8999", "2", "SI", "01/01/2026", "31/01/2026"],
     ["liquidacion1", "1/4", "TENIS NIKE AIR MAX [DAF4561546403]", "999", "4", "SI", "05/02/2026", "20/02/2026"],
     ["oferta1", "CARTA COMPLETA", "SMART TV 55 PULGADAS [DAF4561546404]", "12999", "1", "SI", "01/03/2026", "15/03/2026"],
-    ["pequeño1", "MINI", "PILA DURACELL AA x4 [DAF4561546405]", "49", "28", "NO", "", ""]
+    ["pequeño1", "MINI", "PILA DURACELL AA x4 [DAF4561546405]", "49", "28", "NO", "", ""],
+    ["superoferta", "1/4", "AUDÍFONOS GAMER RGB [DAF4561546406]", "599", "4", "SI", "01/04/2026", "30/04/2026"]
   ];
 
   const wsImportar = XLSX.utils.aoa_to_sheet([headers, ...examples]);
@@ -414,7 +415,7 @@ export function downloadExcelTemplate() {
     [""],
     ["PLANTILLA (sin .svg):", "Escribe solo el nombre. Ej: promocion1"],
     ["Plantillas disponibles en este sistema:", allowedBases || "promocion1 | normal1 | liquidacion1 | oferta1"],
-    ["También se aceptan alias:", "Normal | Promoción | Liquidación | Oferta | Pequeño"],
+    ["También se aceptan alias:", "Normal | Promoción | Liquidación | Oferta | Pequeño | Superoferta"],
     [""],
     ["TAMAÑO (recomendado en español):", "1/4 | MEDIA HORIZONTAL | CARTA COMPLETA | MINI"],
     ["También se aceptan:", "quarter | half_h | full | mini, y variantes como 'media', 'carta', 'mitad', 'cuarto', 'pequeño', '4x7'"],
