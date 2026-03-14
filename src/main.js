@@ -763,9 +763,7 @@ function init() {
   const TOUR_KEY = "preciadoresintecsa_tour_done";
   if (!hadUrlParams && !localStorage.getItem(TOUR_KEY)) {
     localStorage.setItem(TOUR_KEY, "1");
-    setTimeout(() => {
-      import("./presentation/tour.js").then(m => m.startTour());
-    }, 800);
+    setTimeout(() => confirmTour(), 800);
   }
 
   wireBeforeUnloadGuard(hasWork);
