@@ -1,4 +1,5 @@
 import { COLOR_HUES } from "../config/config.js";
+import { toast } from "../infrastructure/toast.js";
 import { emptyProduct } from "../domain/product.js";
 import { formatDateTimeNow } from "../infrastructure/svgRenderer.js";
 import { requestSave, clearState } from "../infrastructure/storage.js";
@@ -8,6 +9,7 @@ import { scheduleRebuild } from "../presentation/preview.js";
 import { validateDraft, fillFormFromProduct, applyVigEndConstraint } from "../presentation/form.js";
 import { hideContextMenu } from "../presentation/contextMenu.js";
 import { applySelectionHighlight } from "../presentation/selection.js";
+import { openModal, closeModal, buildTextBlock } from "../presentation/modal.js";
 
 /* ===== Colores ===== */
 
@@ -118,17 +120,31 @@ export function onDeleteProduct(id) {
   if (!p) return;
 
   hideContextMenu();
-  if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
 
-  if (st.expandedId === id) st.expandedId = null;
-  if (st.selectedProductId === id) st.selectedProductId = null;
-
-  st.products = st.products.filter(x => x.id !== id);
-
-  UI.updateTopButtonsVisibility();
-  renderList();
-  scheduleRebuild();
-  requestSave();
+  openModal({
+    title: "Eliminar etiqueta",
+    bodyNode: buildTextBlock([
+      `¿Estás seguro de que deseas eliminar "${p.nombre}"?`,
+      "Esta acción no se puede deshacer."
+    ]),
+    actions: [
+      { text: "Cancelar", className: "btnNeutral", onClick: closeModal },
+      {
+        text: "Sí, eliminar",
+        className: "btnDanger",
+        onClick: () => {
+          closeModal();
+          if (st.expandedId === id) st.expandedId = null;
+          if (st.selectedProductId === id) st.selectedProductId = null;
+          st.products = st.products.filter(x => x.id !== id);
+          UI.updateTopButtonsVisibility();
+          renderList();
+          scheduleRebuild();
+          requestSave();
+        }
+      }
+    ]
+  });
 }
 
 export function saveDraft() {
@@ -173,24 +189,36 @@ export function saveDraft() {
 export function resetAll() {
   const st = window.__APP_STATE__;
   if (st.products.length === 0) return;
-  if (!confirm("¿Eliminar TODOS los productos guardados?")) return;
 
-  hideContextMenu();
-
-  st.products = [];
-  st.expandedId = null;
-  st.selectedProductId = null;
-
-  UI.updateTopButtonsVisibility();
-  renderList();
-
-  st.caches.templateTextCache.clear();
-  st.caches.renderCache.clear();
-  st.caches.imgDimCache.clear();
-  st.previewSlotsByProduct.clear();
-
-  UI.showEmptyPreview("Sin previsualización", "Agrega productos para ver cómo se acomodan en las hojas.");
-  clearState();
+  openModal({
+    title: "Borrar todo",
+    bodyNode: buildTextBlock([
+      `Se eliminarán los ${st.products.length} producto(s) guardados.`,
+      "Esta acción no se puede deshacer."
+    ]),
+    actions: [
+      { text: "Cancelar", className: "btnNeutral", onClick: closeModal },
+      {
+        text: "Sí, borrar todo",
+        className: "btnDanger",
+        onClick: () => {
+          closeModal();
+          hideContextMenu();
+          st.products = [];
+          st.expandedId = null;
+          st.selectedProductId = null;
+          UI.updateTopButtonsVisibility();
+          renderList();
+          st.caches.templateTextCache.clear();
+          st.caches.renderCache.clear();
+          st.caches.imgDimCache.clear();
+          st.previewSlotsByProduct.clear();
+          UI.showEmptyPreview("Sin previsualización", "Agrega productos para ver cómo se acomodan en las hojas.");
+          clearState();
+        }
+      }
+    ]
+  });
 }
 
 export function uid() {

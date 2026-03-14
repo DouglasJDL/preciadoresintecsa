@@ -17,6 +17,36 @@ function sizeLabel(size) {
   return "Carta";
 }
 
+function updateListSummaryBar(txt, visibleCount, totalCount) {
+  const bar = document.getElementById("listSummaryBar");
+  if (!bar) return;
+
+  if (totalCount === 0) { bar.style.display = "none"; return; }
+  bar.style.display = "";
+
+  const filterEl = document.getElementById("filterCount");
+  if (filterEl) {
+    if (txt) {
+      filterEl.textContent = `Mostrando ${visibleCount} de ${totalCount}`;
+      filterEl.style.display = "";
+    } else {
+      filterEl.textContent = "";
+      filterEl.style.display = "none";
+    }
+  }
+
+  updateSelectionCount(totalCount);
+}
+
+export function updateSelectionCount(totalCount) {
+  const st = window.__APP_STATE__;
+  const selEl = document.getElementById("selectionCount");
+  if (!selEl) return;
+  const total = totalCount ?? st.products.length;
+  const included = st.products.filter(p => !p.excluded).length;
+  selEl.textContent = `${included} / ${total} para imprimir`;
+}
+
 export function renderList() {
   const st = window.__APP_STATE__;
   const wrap = $("itemsWrap");
@@ -25,21 +55,37 @@ export function renderList() {
     wrap.innerHTML = `
       <div class="listEmpty">
         No hay productos agregados todav\xEDa.<br>
-        Presiona <b>"Agregar"</b> o usa <b>Importar Excel</b>.
+        Presiona <b>"Nueva etiqueta"</b> o usa <b>Importar</b>.
       </div>
     `;
+    updateListSummaryBar("", 0, 0);
     return;
   }
+
+  const txt = (st.filterText || "").toLowerCase().trim();
+  const visible = txt
+    ? st.products.filter(p => (p.nombre || "").toLowerCase().includes(txt))
+    : st.products;
+
+  updateListSummaryBar(txt, visible.length, st.products.length);
 
   const perfWarning = st.products.length > 80
     ? `<div class="perfWarning">\u26A0\uFE0F ${st.products.length} etiquetas \u2014 el rendimiento puede verse afectado. Considera dividir en grupos m\xE1s peque\xF1os.</div>`
     : "";
 
+  if (visible.length === 0) {
+    wrap.innerHTML =
+      perfWarning +
+      `<div class="listEmpty">Sin coincidencias para <b>"${escapeHtml(txt)}"</b>.<br>Intenta con otro nombre.</div>`;
+    return;
+  }
+
   wrap.innerHTML =
     perfWarning +
     `<div class="items" id="itemsList">` +
-    st.products.map(p => {
+    visible.map(p => {
       const isOpen = st.expandedId === p.id;
+      const isExcluded = !!p.excluded;
 
       const vigLabel = p.useVig
         ? `Vigencia: ${formatDMY(p.vigStart)} \u2192 ${formatDMY(p.vigEnd)}`
@@ -54,12 +100,15 @@ export function renderList() {
       const gs = pairGlow(p.id, true);
 
       return (
-        `<div class="item ${isOpen ? "expanded" : ""}"` +
+        `<div class="item ${isOpen ? "expanded" : ""} ${isExcluded ? "excluded" : ""}"` +
         ` data-id="${escapeHtml(p.id)}"` +
         ` style="--pairColor:${c}; --pairGlow:${g}; --pairGlowStrong:${gs}"` +
         ` tabindex="0">` +
         `<div class="itemHead">` +
           `<div class="itemTitleRow" data-role="title">` +
+            `<input type="checkbox" class="itemCheck" data-action="check"` +
+            ` ${isExcluded ? "" : "checked"}` +
+            ` title="Incluir en PDF / Impresi\xF3n" aria-label="Incluir en PDF / Impresi\xF3n">` +
             `<button class="btnIcon" type="button" data-action="toggle"` +
             ` title="${isOpen ? "Plegar" : "Desplegar"}" aria-label="${isOpen ? "Plegar" : "Desplegar"}">` +
               `<span class="chev-close">${ICONS.chevronRight}</span>` +

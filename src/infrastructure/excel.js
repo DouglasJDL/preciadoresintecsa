@@ -1,4 +1,5 @@
 import { CONFIG, SIZE, TEMPLATE_ALIASES } from "../config/config.js";
+import { toast } from "./toast.js";
 import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioAntes, computeCuota } from "../domain/product.js";
 import { formatDateTimeNow, normalizeText } from "./svgRenderer.js";
 import { openModal, closeModal, buildTextBlock, buildErrorList } from "../presentation/modal.js";
@@ -10,6 +11,7 @@ import { allocateColorIdx } from "../application/actions.js";
 
 function getAllowedTemplates() {
   const sel = document.getElementById("fTemplate");
+  if (!sel) return [];
   return Array.from(sel.options).map(o => o.value).filter(Boolean);
 }
 
@@ -384,7 +386,7 @@ export async function handleImportFile(file) {
 
 export function downloadExcelTemplate() {
   if (!window.XLSX) {
-    alert("No se pudo cargar XLSX. Revisa el CDN.");
+    toast.error("No se pudo cargar XLSX. Revisa el CDN.");
     return;
   }
 

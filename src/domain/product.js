@@ -15,7 +15,8 @@ export function emptyProduct() {
     vigStart: "",
     vigEnd: "",
     impresionAt: "",
-    colorIdx: null
+    colorIdx: null,
+    excluded: false
   };
 }
 
@@ -114,6 +115,7 @@ export function sanitizeLoadedProduct(raw) {
 
   out.impresionAt = typeof raw?.impresionAt === "string" ? raw.impresionAt : "";
   out.colorIdx = Number.isFinite(raw?.colorIdx) ? raw.colorIdx : null;
+  out.excluded = !!raw?.excluded;
 
   return out;
 }

@@ -2,6 +2,7 @@ import { CONFIG, SIZE } from "../config/config.js";
 import { renderProductToPngs, createCappedCache } from "./svgRenderer.js";
 const PRINT_PX = CONFIG.limits.renderPrintPx;
 import { packAll } from "../domain/packing.js";
+import { toast } from "./toast.js";
 
 function setIconLoading(btn, loading) {
   if (!btn) return;
@@ -20,6 +21,7 @@ function buildItemsForPackingNoDraft() {
   const list = [];
 
   for (const p of st.products) {
+    if (p.excluded) continue;
     for (let i = 0; i < (p.qty || 0); i++) {
       list.push({ product: p, isDraft: false, instanceIndex: i });
     }
@@ -72,13 +74,17 @@ async function buildPdfDoc() {
   if (st.products.length === 0) return null;
 
   if (!window.jspdf?.jsPDF) {
-    alert("No se pudo cargar jsPDF. Revisa tu conexión o el script CDN.");
+    toast.error("No se pudo cargar jsPDF. Revisa tu conexión o el script CDN.");
     return null;
   }
 
   const { jsPDF } = window.jspdf;
 
   const items = buildItemsForPackingNoDraft();
+  if (items.length === 0) {
+    toast.error("No hay etiquetas para exportar. Incluye al menos una etiqueta.");
+    return null;
+  }
   for (const it of items) {
     const r = await renderProductToPngs(it.product, PRINT_PX);
     it._png = (it.product.size === SIZE.halfH) ? r.pngRotated : r.pngNormal;
@@ -128,7 +134,7 @@ export async function exportPdfWithLoading() {
     if (doc) doc.save("etiquetas.pdf");
   } catch (e) {
     console.error(e);
-    alert("No se pudo exportar a PDF. Revisa la consola para más detalle.");
+    toast.error("No se pudo exportar a PDF. Revisa la consola para más detalle.");
   } finally {
     st.caches.renderCache.clear();
     setIconLoading(btn, false);
@@ -179,7 +185,7 @@ export async function printViaPdf() {
 
     const win = window.open("", "_blank");
     if (!win) {
-      alert("El navegador bloqueó la nueva pestaña. Permite ventanas emergentes para este sitio.");
+      toast.error("El navegador bloqueó la nueva pestaña. Permite ventanas emergentes para este sitio.");
       return;
     }
 
@@ -194,7 +200,7 @@ export async function printViaPdf() {
 
   } catch (e) {
     console.error(e);
-    alert("No se pudo imprimir. Revisa la consola para más detalle.");
+    toast.error("No se pudo imprimir. Revisa la consola para más detalle.");
   } finally {
     st.caches.renderCache.clear();
     setIconLoading(btn, false);

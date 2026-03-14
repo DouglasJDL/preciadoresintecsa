@@ -125,8 +125,9 @@ function buildItemsForPacking(includeDraft) {
     return list;
   }
 
-  // En modo lista: mostrar todos los productos
+  // En modo lista: mostrar todos los productos no excluidos
   for (const p of st.products) {
+    if (p.excluded) continue;
     for (let i = 0; i < (p.qty || 0); i++) {
       list.push({ product: p, isDraft: false, instanceIndex: i });
     }
@@ -219,14 +220,14 @@ function buildSlot(it, pl) {
   return slot;
 }
 
-function buildPageShell(pageIndex) {
+function buildPageShell(pageIndex, totalPages) {
   const shell = document.createElement("div");
   shell.className = "page-shell";
   shell.style.setProperty("--previewScale", _zoom);
 
   const pageLabel = document.createElement("div");
   pageLabel.className = "pageLabel";
-  pageLabel.textContent = `HOJA ${pageIndex + 1}`;
+  pageLabel.textContent = `Hoja ${pageIndex + 1} de ${totalPages}`;
   shell.appendChild(pageLabel);
 
   const inner = document.createElement("div");
@@ -296,7 +297,7 @@ export async function buildPreview() {
   }
 
   pages.forEach((page, pageIndex) => {
-    const shell = buildPageShell(pageIndex);
+    const shell = buildPageShell(pageIndex, pages.length);
 
     if (pageIndex < EAGER_PAGES || !_lazyObserver) {
       shell._pageFilled = true;

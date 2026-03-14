@@ -46,12 +46,33 @@ export const UI = {
   },
 
   showEmptyPreview(title, body) {
-    $("paperPreview").innerHTML = `
-      <div class="emptyPreview">
-        <h4>${escapeHtml(title)}</h4>
-        <p>${escapeHtml(body)}</p>
-      </div>
-    `;
+    if (title || body) {
+      $("paperPreview").innerHTML = `
+        <div class="emptyPreview">
+          <h4>${escapeHtml(title ?? "")}</h4>
+          <p>${escapeHtml(body ?? "")}</p>
+          <div class="emptySteps">
+            <div class="emptyStep"><span class="stepNum">1</span> Nueva etiqueta</div>
+            <div class="emptyStep"><span class="stepNum">2</span> Elige plantilla y precio</div>
+            <div class="emptyStep"><span class="stepNum">3</span> Guarda</div>
+            <div class="emptyStep"><span class="stepNum">4</span> Imprime o descarga PDF</div>
+          </div>
+        </div>
+      `;
+    } else {
+      $("paperPreview").innerHTML = `
+        <div class="emptyPreview">
+          <h4>Vista previa de impresión</h4>
+          <p>Crea tu primera etiqueta para verla aquí distribuida en hoja carta, lista para imprimir.</p>
+          <div class="emptySteps">
+            <div class="emptyStep"><span class="stepNum">1</span> Nueva etiqueta</div>
+            <div class="emptyStep"><span class="stepNum">2</span> Elige plantilla y precio</div>
+            <div class="emptyStep"><span class="stepNum">3</span> Guarda</div>
+            <div class="emptyStep"><span class="stepNum">4</span> Imprime o descarga PDF</div>
+          </div>
+        </div>
+      `;
+    }
   },
 
   scrollToChild(container, child, pad = 16) {

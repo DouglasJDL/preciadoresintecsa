@@ -51,30 +51,81 @@ export const SIZE = Object.freeze({
  * Alias humanos (normalizados sin tildes/espacios) => nombre real del archivo
  * FIX: evitar .SVG (rompe en Linux).
  */
-export const TEMPLATE_ALIASES = Object.freeze({
-  "promocion": "promocion1.svg",
-  "promoción": "promocion1.svg",
-  "normal": "normal1.svg",
-  "liquidacion": "liquidacion1.svg",
-  "liquidación": "liquidacion1.svg",
-  "oferta": "oferta1.svg",
+/**
+ * ─── CATÁLOGO DE PLANTILLAS ──────────────────────────────────────────────────
+ *
+ * Aquí está TODO lo que necesitas cambiar sobre una plantilla:
+ *
+ *   id      → identificador estable, NUNCA lo cambies (es la llave interna).
+ *   file    → nombre del archivo SVG en /resource/templates/
+ *   label   → nombre que ve el usuario en el formulario y en Excel.
+ *   enabled → true = visible y usable | false = oculta para el usuario.
+ *   aliases → palabras extra con las que se puede reconocer al importar Excel.
+ *
+ * Si renombras el archivo SVG → cambia solo "file".
+ * Si renombras la etiqueta    → cambia solo "label".
+ * Si la quieres ocultar       → pon enabled: false.
+ * El resto del código se actualiza solo.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+export const TEMPLATES = Object.freeze([
+  {
+    id: "promocion",
+    file: "promocion1.svg",
+    label: "Promoción",
+    enabled: true,
+    aliases: ["promo", "promocion1"]
+  },
+  {
+    id: "normal",
+    file: "normal1.svg",
+    label: "Normal",
+    enabled: true,
+    aliases: ["normal1"]
+  },
+  {
+    id: "liquidacion",
+    file: "liquidacion1.svg",
+    label: "Liquidación",
+    enabled: true,
+    aliases: ["liqui", "liquidacion1"]
+  },
+  {
+    id: "super_oferta",
+    file: "oferta1.svg",
+    label: "Super Oferta",
+    enabled: true,
+    aliases: ["oferta", "oferta1", "super oferta"]
+  },
+  {
+    id: "pequeño",
+    file: "pequeño1.svg",
+    label: "Pequeño",
+    enabled: true,
+    aliases: ["pequeno", "pequeño1", "pequeno1", "mini"]
+  },
+  {
+    id: "superoferta_legacy",
+    file: "superoferta.svg",
+    label: "Super Oferta (desactivada)",
+    enabled: false,
+    aliases: ["superoferta", "superoferta1"]
+  },
+]);
 
-  "promocion1": "promocion1.svg",
-  "normal1": "normal1.svg",
-  "liquidacion1": "liquidacion1.svg",
-  "liquidación1": "liquidacion1.svg",
-  "oferta1": "oferta1.svg",
-
-  "pequeño": "pequeño1.svg",
-  "pequeno": "pequeño1.svg",
-  "pequeño1": "pequeño1.svg",
-  "pequeno1": "pequeño1.svg",
-
-  "superoferta": "superoferta.svg",
-  "súperoferta": "superoferta.svg",
-  "super oferta": "superoferta.svg",
-  "superoferta1": "superoferta.svg"
-});
+// Auto-generado desde TEMPLATES — no tocar manualmente.
+// Si cambia "file" o "label" en TEMPLATES, este mapa se actualiza solo.
+function _buildAliases() {
+  const normalize = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "");
+  const map = {};
+  TEMPLATES.forEach(({ id, file, label, aliases = [] }) => {
+    map[id]               = file;           // por id estable
+    map[normalize(label)] = file;           // por label normalizado
+    aliases.forEach(a => { map[normalize(a)] = file; });  // alias extra
+  });
+  return Object.freeze(map);
+}
+export const TEMPLATE_ALIASES = _buildAliases();
 
 export const COLOR_HUES = Object.freeze([210, 150, 35, 0, 270, 190, 95, 235, 25, 330]);
 

@@ -1,10 +1,10 @@
-import { CONFIG } from "./config/config.js";
+import { CONFIG, TEMPLATES } from "./config/config.js";
 import { emptyProduct } from "./domain/product.js";
 import { createCappedCache, formatDateTimeNow } from "./infrastructure/svgRenderer.js";
 import { loadTemplateText } from "./infrastructure/templates.js";
 import { UI, wireBeforeUnloadGuard, wireGlobalCloseContextMenu } from "./presentation/ui.js";
-import { wireModalCommonEvents } from "./presentation/modal.js";
-import { renderList, findListItem } from "./presentation/list.js";
+import { wireModalCommonEvents, openModal, closeModal } from "./presentation/modal.js";
+import { renderList, findListItem, updateSelectionCount } from "./presentation/list.js";
 import { scheduleRebuild, zoomIn, zoomOut, zoomReset } from "./presentation/preview.js";
 import { validateDraft, applyVigEndConstraint } from "./presentation/form.js";
 import { showContextMenu, hideContextMenu } from "./presentation/contextMenu.js";
@@ -15,9 +15,28 @@ import { handleImportFile, downloadExcelTemplate } from "./infrastructure/excel.
 import { exportPdfWithLoading, printViaPdf } from "./infrastructure/pdf.js";
 import { startTour } from "./presentation/tour.js";
 
-function getAllowedTemplatesFromDom() {
+// Genera las opciones del select #fTemplate desde TEMPLATES en config.js.
+// El HTML solo necesita el <option> placeholder — todo lo demás viene de aquí.
+function applyTemplateConfig() {
   const sel = document.getElementById("fTemplate");
-  return Array.from(sel.options).map(o => o.value).filter(Boolean);
+  if (!sel) return;
+
+  // Elimina todas las opciones con valor (conserva solo el placeholder vacío)
+  Array.from(sel.options).forEach(opt => { if (opt.value) opt.remove(); });
+
+  // Genera las opciones habilitadas en el orden definido en config
+  TEMPLATES.filter(t => t.enabled).forEach(({ file, label }) => {
+    const opt = document.createElement("option");
+    opt.value = file;
+    opt.textContent = label;
+    sel.appendChild(opt);
+  });
+}
+
+function getAllowedTemplatesFromDom() {
+  // Incluye TODAS las plantillas (incluso las desactivadas) para que los productos
+  // guardados con plantillas desactivadas sigan renderizando correctamente.
+  return TEMPLATES.map(t => t.file);
 }
 
 function buildServices() {
@@ -41,6 +60,7 @@ function buildAppState() {
 
     expandedId: null,
     selectedProductId: null,
+    filterText: "",
 
     pendingFocus: null,
 
@@ -98,10 +118,161 @@ function wireContextMenuButtons() {
   });
 }
 
+function openContactModal() {
+  const body = document.createElement("div");
+  body.style.cssText = "display:flex;flex-direction:column;gap:16px;";
+
+  // Select tipo
+  const tipoWrap = document.createElement("div");
+
+  const tipoLabel = document.createElement("label");
+  tipoLabel.htmlFor = "_contactTipo";
+  tipoLabel.style.cssText = "display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;";
+  tipoLabel.textContent = "¿En qué podemos ayudarte?";
+
+  const tipoSelect = document.createElement("select");
+  tipoSelect.id = "_contactTipo";
+  tipoSelect.style.cssText = "width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;font-size:13px;background:#fff;outline:none;color:#111827;";
+  [
+    ["ayuda",      "🆘  Necesito ayuda con algo"],
+    ["sugerencia", "💡  Tengo una sugerencia o mejora"],
+    ["problema",   "🐛  Encontré un problema o error"],
+    ["pregunta",   "❓  Tengo una pregunta"],
+    ["felicitacion","👏  Quiero dar un comentario positivo"],
+    ["otro",       "💬  Otro"],
+  ].forEach(([val, txt]) => {
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.textContent = txt;
+    tipoSelect.appendChild(opt);
+  });
+
+  tipoWrap.appendChild(tipoLabel);
+  tipoWrap.appendChild(tipoSelect);
+
+  // Textarea mensaje
+  const msgWrap = document.createElement("div");
+
+  const msgLabel = document.createElement("label");
+  msgLabel.htmlFor = "_contactMsg";
+  msgLabel.style.cssText = "display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;";
+  msgLabel.textContent = "Tu mensaje:";
+
+  const textarea = document.createElement("textarea");
+  textarea.id = "_contactMsg";
+  textarea.placeholder = "Escribe aquí tu mensaje con el mayor detalle posible…";
+  textarea.style.cssText = "width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;font-size:13px;font-family:inherit;resize:vertical;min-height:110px;outline:none;line-height:1.5;";
+
+  textarea.addEventListener("input", () => {
+    textarea.style.borderColor = textarea.value.trim() ? "#d1d5db" : "#fca5a5";
+  });
+
+  msgWrap.appendChild(msgLabel);
+  msgWrap.appendChild(textarea);
+
+  // Nota informativa
+  const nota = document.createElement("div");
+  nota.style.cssText = "font-size:11px;color:#64748b;display:flex;align-items:center;gap:6px;";
+  nota.innerHTML = "<span style='font-size:15px'>📲</span> Al presionar <b>Enviar</b> se abrirá WhatsApp con tu mensaje listo para enviar.";
+
+  body.appendChild(tipoWrap);
+  body.appendChild(msgWrap);
+  body.appendChild(nota);
+
+  openModal({
+    title: "💬 Contacto y ayuda",
+    bodyNode: body,
+    actions: [
+      { text: "Cancelar", className: "btnNeutral", onClick: closeModal },
+      {
+        text: "Enviar por WhatsApp",
+        className: "btnPrimary",
+        onClick: () => {
+          const msg = textarea.value.trim();
+          if (!msg) {
+            textarea.style.borderColor = "#fca5a5";
+            textarea.focus();
+            return;
+          }
+          const tipo = tipoSelect.options[tipoSelect.selectedIndex].text.replace(/^\S+\s+/, "");
+          const texto = `*${tipo}*\n\n${msg}`;
+          window.open(`https://wa.me/56355181?text=${encodeURIComponent(texto)}`, "_blank", "noopener,noreferrer");
+          closeModal();
+        }
+      }
+    ]
+  });
+
+  // Foco en el textarea tras render
+  requestAnimationFrame(() => textarea.focus());
+}
+
+function confirmTour() {
+  const body = document.createElement("div");
+  body.style.cssText = "display:flex;flex-direction:column;gap:14px;";
+
+  // Ícono decorativo
+  const icon = document.createElement("div");
+  icon.style.cssText = "text-align:center;font-size:40px;line-height:1;";
+  icon.textContent = "🎯";
+  body.appendChild(icon);
+
+  // Descripción
+  const desc = document.createElement("div");
+  desc.className = "modalText";
+  desc.style.cssText = "text-align:center;line-height:1.6;";
+  desc.innerHTML =
+    "El tutorial te guía paso a paso por <b>todas las funciones</b> del editor.<br>" +
+    "Aprenderás a crear etiquetas, elegir plantillas, imprimir y más.<br><br>" +
+    "<span style='color:#64748b;font-size:12px'>Dura aproximadamente 2 minutos y puedes cerrarlo en cualquier momento.</span>";
+  body.appendChild(desc);
+
+  openModal({
+    title: "👋 ¿Quieres iniciar el tutorial?",
+    bodyNode: body,
+    actions: [
+      { text: "Ahora no", className: "btnNeutral", onClick: closeModal },
+      {
+        text: "🚀 Sí, iniciar recorrido",
+        className: "btnPrimary",
+        onClick: () => { closeModal(); startTour(); }
+      }
+    ]
+  });
+}
+
+function wireFabHelp() {
+  const fab = document.getElementById("floatingHelp");
+  const toggle = document.getElementById("fabToggle");
+  const tourBtn = document.getElementById("fabTour");
+  if (!fab || !toggle) return;
+
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = fab.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    document.getElementById("floatingHelpMenu")?.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!fab.contains(e.target)) fab.classList.remove("open");
+  });
+
+  tourBtn?.addEventListener("click", () => {
+    fab.classList.remove("open");
+    confirmTour();
+  });
+
+  document.getElementById("fabContact")?.addEventListener("click", () => {
+    fab.classList.remove("open");
+    openContactModal();
+  });
+}
+
 function wireTopButtons() {
-  document.getElementById("btnTour").addEventListener("click", startTour);
-  document.getElementById("btnShowForm").addEventListener("click", openAddForm);
-  document.getElementById("btnCancel").addEventListener("click", backToList);
+  document.getElementById("btnTour").addEventListener("click", confirmTour);
+  document.getElementById("btnShowForm").addEventListener("click", () => { openAddForm(); updateStartHereBadge(); });
+  document.getElementById("btnCancel").addEventListener("click", () => { backToList(); updateStartHereBadge(); });
   document.getElementById("btnSave").addEventListener("click", saveDraft);
   document.getElementById("btnResetAll").addEventListener("click", resetAll);
   document.getElementById("btnPrint").addEventListener("click", printViaPdf);
@@ -163,6 +334,20 @@ function wireListEvents() {
 
     if (actionBtn) {
       const action = actionBtn.dataset.action;
+
+      if (action === "check") {
+        e.stopPropagation();
+        const p = st.products.find(q => q.id === pid);
+        if (p) {
+          p.excluded = !e.target.checked;
+          const itemEl = findListItem(pid);
+          if (itemEl) itemEl.classList.toggle("excluded", !!p.excluded);
+          updateSelectionCount();
+          scheduleRebuild();
+          requestSave();
+        }
+        return;
+      }
 
       if (action === "toggle") {
         e.stopPropagation();
@@ -332,7 +517,203 @@ function wireGeneralInputs() {
   });
 }
 
+function updateStartHereBadge() {
+  const st = window.__APP_STATE__;
+  const btn = document.getElementById("btnShowForm");
+  if (!btn) return;
+  // Quitar badge anterior si existe
+  btn.querySelector(".startHereBadge")?.remove();
+  // Agregar badge si lista vacía y estamos en vista lista
+  if (st.products.length === 0 && UI.isListView()) {
+    const badge = document.createElement("span");
+    badge.className = "startHereBadge";
+    badge.textContent = "Empieza aquí";
+    btn.appendChild(badge);
+  }
+}
+
+function wireSearchEvents() {
+  const input = document.getElementById("listSearch");
+  const btnClear = document.getElementById("btnClearSearch");
+
+  input?.addEventListener("input", () => {
+    window.__APP_STATE__.filterText = input.value;
+    renderList();
+  });
+
+  btnClear?.addEventListener("click", () => {
+    if (input) input.value = "";
+    window.__APP_STATE__.filterText = "";
+    renderList();
+  });
+
+  document.getElementById("btnIncludeAll")?.addEventListener("click", () => {
+    const st = window.__APP_STATE__;
+    st.products.forEach(p => { p.excluded = false; });
+    renderList();
+    scheduleRebuild();
+    requestSave();
+  });
+
+  document.getElementById("btnExcludeAll")?.addEventListener("click", () => {
+    const st = window.__APP_STATE__;
+    st.products.forEach(p => { p.excluded = true; });
+    renderList();
+    scheduleRebuild();
+    requestSave();
+  });
+}
+
+// ─── Helpers de normalización para URL params ─────────────────────────────────
+function _normalizeStr(s) {
+  return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[\s_\-]/g, "");
+}
+
+function _resolveTemplate(val) {
+  const norm = _normalizeStr(val.replace(/\.svg$/i, ""));
+  const aliases = {
+    "promocion": "promocion1.svg", "promo": "promocion1.svg",
+    "normal": "normal1.svg",
+    "liquidacion": "liquidacion1.svg", "liqui": "liquidacion1.svg",
+    "oferta": "oferta1.svg",
+    "pequeno": "pequeño1.svg", "pequeño": "pequeño1.svg", "pequeño1": "pequeño1.svg",
+    "superoferta": "superoferta.svg", "super": "superoferta.svg"
+  };
+  // Coincidencia directa en alias
+  for (const [key, mapped] of Object.entries(aliases)) {
+    if (_normalizeStr(key) === norm) return mapped;
+  }
+  // Coincidencia contra las opciones reales del select
+  const opts = Array.from(document.getElementById("fTemplate")?.options || []).map(o => o.value).filter(Boolean);
+  return opts.find(o => _normalizeStr(o.replace(/\.svg$/i, "")) === norm) || "";
+}
+
+function _resolveSize(val) {
+  const norm = _normalizeStr(val);
+  const map = {
+    "quarter": "quarter", "1/4": "quarter", "cuarto": "quarter",
+    "half_h": "half_h", "media": "half_h", "horizontal": "half_h",
+    "mediahorizontal": "half_h", "mediahoja": "half_h",
+    "full": "full", "carta": "full", "completa": "full", "cartacompleta": "full",
+    "mini": "mini", "pequeno": "mini", "28": "mini"
+  };
+  for (const [key, mapped] of Object.entries(map)) {
+    if (_normalizeStr(key) === norm) return mapped;
+  }
+  return "";
+}
+
+function _parseUrlDate(val) {
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;                      // YYYY-MM-DD
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`; // DD/MM/YYYY
+  return "";
+}
+
+// ─── Pre-llenado del formulario desde parámetros de URL ───────────────────────
+// Parámetros soportados:
+//   nombre    → nombre del producto
+//   precio    → precio normal  (alias: ahora)
+//   plantilla → plantilla SVG  (alias: template) — ej: "Normal", "Promocion", "normal1.svg"
+//   tamano    → tamaño de hoja (alias: size)      — ej: "1/4", "media", "carta", "mini"
+//   cantidad  → número de copias (alias: qty)     — ej: 4
+//   vigencia  → activa fechas  (si/no/1/0)        — si se omite pero hay fechas, se activa sola
+//   vigstart  → fecha inicial  (alias: inicio)    — formato YYYY-MM-DD o DD/MM/YYYY
+//   vigend    → fecha final    (alias: fin)        — formato YYYY-MM-DD o DD/MM/YYYY
+//
+// Si no viene ningún parámetro → no hace nada, devuelve false.
+// ────────────────────────────────────────────────────────────────────────────────
+function applyUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+
+  const nombre    = params.get("nombre");
+  const precio    = params.get("precio")    ?? params.get("ahora");
+  const plantilla = params.get("plantilla") ?? params.get("template");
+  const tamano    = params.get("tamano")    ?? params.get("size");
+  const cantidad  = params.get("cantidad")  ?? params.get("qty");
+  const vigencia  = params.get("vigencia");
+  const vigStart  = params.get("vigstart")  ?? params.get("inicio");
+  const vigEnd    = params.get("vigend")    ?? params.get("fin");
+
+  const hasAny = nombre || precio || plantilla || tamano || cantidad || vigencia || vigStart || vigEnd;
+  if (!hasAny) return false;
+
+  // Limpiar URL de inmediato — evita re-apertura al refrescar
+  if (window.history?.replaceState) {
+    window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+  }
+
+  // Determinar si activar vigencia:
+  // - Explícito "si/1/true" → true | "no/0/false" → false
+  // - Omitido pero hay fechas → true automáticamente
+  const vigExplicit = vigencia !== null
+    ? /^(si|s|1|true|yes|x)$/i.test((vigencia || "").trim())
+    : null;
+  const useVig = vigExplicit !== null ? vigExplicit : !!(vigStart || vigEnd);
+
+  // Abrir formulario (resetea draft y campos)
+  openAddForm();
+  updateStartHereBadge();
+
+  requestAnimationFrame(() => {
+    if (nombre) {
+      const el = document.getElementById("fNombre");
+      if (el) el.value = nombre.trim();
+    }
+    if (precio) {
+      const el = document.getElementById("fAhora");
+      if (el) el.value = precio.replace(/[^\d]/g, "").slice(0, 5);
+    }
+    if (plantilla) {
+      const resolved = _resolveTemplate(plantilla);
+      if (resolved) document.getElementById("fTemplate").value = resolved;
+    }
+    if (tamano) {
+      const resolved = _resolveSize(tamano);
+      if (resolved) document.getElementById("fSize").value = resolved;
+    }
+    if (cantidad) {
+      const q = parseInt(cantidad.replace(/[^\d]/g, ""), 10);
+      if (q >= 1) {
+        const el = document.getElementById("fQty");
+        if (el) el.value = String(q);
+      }
+    }
+    // Vigencia y fechas
+    if (vigencia !== null || vigStart || vigEnd) {
+      const chk = document.getElementById("fUseVig");
+      if (chk) {
+        chk.checked = useVig;
+        document.getElementById("vigDates").style.display = useVig ? "block" : "none";
+      }
+      if (useVig && vigStart) {
+        const parsed = _parseUrlDate(vigStart);
+        if (parsed) {
+          const el = document.getElementById("fVigStart");
+          if (el) el.value = parsed;
+          applyVigEndConstraint();
+        }
+      }
+      if (useVig && vigEnd) {
+        const parsed = _parseUrlDate(vigEnd);
+        if (parsed) {
+          const el = document.getElementById("fVigEnd");
+          if (el) { el.disabled = false; el.value = parsed; }
+        }
+      }
+    }
+    // Sincroniza el draft y calcula campos automáticos (antes, efectivo, cuota)
+    validateDraft();
+    scheduleRebuild();
+  });
+
+  return true;
+}
+
 function init() {
+  applyTemplateConfig();
+
   window.__APP_STATE__ = buildAppState();
 
   // puente mínimo para no romper wiring anterior
@@ -346,10 +727,12 @@ function init() {
   wireGlobalCloseContextMenu();
   wireContextMenuButtons();
   wireTopButtons();
+  wireFabHelp();
   wireListEvents();
   wirePreviewEvents();
   wireNumericInputs();
   wireGeneralInputs();
+  wireSearchEvents();
 
   const restored = loadState();
 
@@ -361,8 +744,29 @@ function init() {
   normalizeExistingState();
   UI.updateTopButtonsVisibility();
   renderList();
+  updateStartHereBadge();
+
+  // Auto-animate en el contenedor de la lista
+  requestAnimationFrame(() => {
+    const wrap = document.getElementById("itemsWrap");
+    if (wrap && window.autoAnimate) window.autoAnimate(wrap);
+  });
+
   scheduleRebuild();
   requestSave();
+
+  // Pre-llenar formulario desde URL (?nombre=...&precio=...)
+  // Devuelve true si se usaron parámetros → omitir el tour automático
+  const hadUrlParams = applyUrlParams();
+
+  // Tour automático en primera visita (se omite si vinieron parámetros de URL)
+  const TOUR_KEY = "preciadoresintecsa_tour_done";
+  if (!hadUrlParams && !localStorage.getItem(TOUR_KEY)) {
+    localStorage.setItem(TOUR_KEY, "1");
+    setTimeout(() => {
+      import("./presentation/tour.js").then(m => m.startTour());
+    }, 800);
+  }
 
   wireBeforeUnloadGuard(hasWork);
 }

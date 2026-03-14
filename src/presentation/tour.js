@@ -11,6 +11,28 @@ function showExportButtons() {
   });
 }
 
+/**
+ * Scrollea #listScrollArea para que `el` quede visible en la parte superior
+ * del contenedor. Driver.js no gestiona scroll de contenedores overflow:auto,
+ * solo el scroll de la página, por eso lo hacemos manualmente aquí.
+ */
+function scrollItemIntoListView(el) {
+  if (!el) return;
+  const area = document.getElementById("listScrollArea");
+  if (!area || !area.contains(el)) return;
+  const areaRect = area.getBoundingClientRect();
+  const elRect   = el.getBoundingClientRect();
+  // Posición relativa del elemento dentro del contenedor scrolleable
+  const relTop = elRect.top - areaRect.top + area.scrollTop;
+  area.scrollTop = Math.max(0, relTop - 16); // 16 px de margen superior
+}
+
+/** Scrollea la lista al inicio (para pasos que apuntan al primer .item). */
+function scrollListToTop() {
+  const area = document.getElementById("listScrollArea");
+  if (area) area.scrollTop = 0;
+}
+
 function flashError(el) {
   if (!el) return;
   el.classList.remove("tour-error");
@@ -31,8 +53,8 @@ function requireText(fieldId) {
   return true;
 }
 
-const IDX_VIG_DATES = 11;
-const IDX_SAVE      = 12;
+const IDX_VIG_DATES = 12;
+const IDX_SAVE      = 13;
 
 // showButtons global: sin bot\xF3n Atr\xE1s ni X en ning\xFAn paso
 const NB = {};
@@ -80,8 +102,9 @@ export function startTour() {
 
           title: "Panel de productos",
           description:
-            "Aqu\xED ver\xE1s la lista de etiquetas creadas. " +
-            "Puedes agregar, editar, eliminar e importar desde Excel.",
+            "Aqu\xED ver\xE1s la lista de etiquetas creadas y los controles principales. " +
+            "Puedes agregar, editar, eliminar e importar desde Excel. " +
+            "El bot\xF3n <b>?</b> en la esquina superior derecha abre este tutorial en cualquier momento.",
           side: "right", align: "start"
         }
       },
@@ -181,7 +204,17 @@ export function startTour() {
         }
       },
 
-      // 8 \u2500 Cuota
+      // 8 — Precio Efectivo
+      {
+        element: "#fEfectivo",
+        popover: {
+          title: "💵 Precio Efectivo — automático",
+          description: "Este campo <b>se genera de forma automática</b>, no necesitas ingresarlo.",
+          side: "right", align: "start"
+        }
+      },
+
+      // 9 \u2500 Cuota
       {
         element: "#fCuota",
         popover: {
@@ -194,7 +227,7 @@ export function startTour() {
         }
       },
 
-      // 9 \u2500 Cantidad
+      // 10 \u2500 Cantidad
       {
         element: "#fQty",
         popover: {
@@ -205,7 +238,7 @@ export function startTour() {
         }
       },
 
-      // 10 \u2500 Vigencia
+      // 11 \u2500 Vigencia
       {
         element: "#fUseVig",
         popover: {
@@ -243,7 +276,7 @@ export function startTour() {
         }
       },
 
-      // 12 \u2500 Guardar \u2500 resalta el bot\xF3n directamente; Siguiente simula el click
+      // 13 \u2500 Guardar \u2500 resalta el bot\xF3n directamente; Siguiente simula el click
       {
         element: "#btnSave",
         popover: {
@@ -263,7 +296,7 @@ export function startTour() {
         }
       },
 
-      // 13 \u2500 Preview
+      // 14 \u2500 Preview
       {
         element: "#paperPreviewWrap",
         popover: {
@@ -276,7 +309,7 @@ export function startTour() {
         }
       },
 
-      // 14 — Zoom
+      // 15 — Zoom
       {
         element: ".zoomSidebar",
         popover: {
@@ -284,12 +317,13 @@ export function startTour() {
           description:
             "Usa estos botones para acercar o alejar la vista previa.<br>" +
             "<b>+</b> acerca · <b>−</b> aleja · <b>↺</b> restablece al tamaño original.<br>" +
+            "El porcentaje de zoom actual se muestra en pantalla de forma legible.<br>" +
             "Muy útil con la plantilla <b>Mini (28 por hoja)</b> para ver los detalles.",
           side: "right", align: "start"
         }
       },
 
-      // 15 \u2500 Lista de etiquetas
+      // 16 \u2500 Lista de etiquetas
       {
         element: "#itemsWrap",
         popover: {
@@ -298,11 +332,62 @@ export function startTour() {
           description:
             "Aqu\xED aparecen todas tus etiquetas guardadas. " +
             "Haz click en una para expandirla y ver sus detalles.",
+          side: "right", align: "start",
+          // Scroll al inicio antes de avanzar a .searchBar (que también está arriba)
+          onNextClick: () => { scrollListToTop(); setTimeout(() => tour.moveNext(), 80); }
+        }
+      },
+
+      // Búsqueda
+      {
+        element: ".searchBar",
+        popover: {
+          title: "\uD83D\uDD0D Buscar etiquetas",
+          description:
+            "Escribe el nombre de un producto para <b>filtrar la lista al instante</b>. " +
+            "La b\xFAsqueda no afecta lo que se imprime, solo lo que ves en pantalla. " +
+            "Presiona la \xD7 para limpiar el filtro.",
           side: "right", align: "start"
         }
       },
 
-      // 15 \u2500 Bot\xF3n editar
+      // Selección para imprimir
+      {
+        element: "#listSummaryBar",
+        popover: {
+          title: "\u2611\uFE0F Seleccionar para imprimir",
+          description:
+            "Cada etiqueta tiene un <b>toggle switch</b>: desactívalo para excluirla del PDF e impresión. " +
+            "Las etiquetas excluidas muestran un badge <b style='color:#ef4444'>Sin imprimir</b> en rojo. " +
+            "El contador muestra cuántas están incluidas. " +
+            "Usa <b>Incluir todo</b> o <b>Excluir todo</b> para seleccionar rápido.",
+          side: "right", align: "start",
+          // Scroll al primer item y espera un frame antes de que Driver.js mida la posición
+          onNextClick: () => {
+            scrollItemIntoListView(document.querySelector(".item"));
+            setTimeout(() => tour.moveNext(), 80);
+          }
+        }
+      },
+
+      // Checkbox por etiqueta
+      {
+        element: ".item .itemCheck",
+        popover: {
+          title: "\u2705 Este es el toggle de impresión",
+          description:
+            "<b>Azul (activado)</b> \u2192 la etiqueta <b style='color:#16a34a'>SÍ aparece</b> en el PDF e impresión.<br>" +
+            "<b>Gris (desactivado)</b> \u2192 la etiqueta <b style='color:#ef4444'>NO se imprime</b> y muestra el badge rojo.<br><br>" +
+            "Cada etiqueta tiene su propio toggle — actívalo o desactívalo con un clic.",
+          side: "right", align: "start",
+          onNextClick: () => {
+            scrollItemIntoListView(document.querySelector(".item"));
+            setTimeout(() => tour.moveNext(), 80);
+          }
+        }
+      },
+
+      // Botón editar
       {
         element: ".item [data-action='edit']",
         popover: {
@@ -310,11 +395,15 @@ export function startTour() {
           title: "\u270F\uFE0F Editar etiqueta",
           description:
             "Abre el formulario con los datos de la etiqueta para que puedas modificarla.",
-          side: "left", align: "start"
+          side: "left", align: "start",
+          onNextClick: () => {
+            scrollItemIntoListView(document.querySelector(".item"));
+            setTimeout(() => tour.moveNext(), 80);
+          }
         }
       },
 
-      // 16 \u2500 Bot\xF3n eliminar
+      // 21 \u2500 Bot\xF3n eliminar
       {
         element: ".item [data-action='delete']",
         popover: {
@@ -326,12 +415,12 @@ export function startTour() {
         }
       },
 
-      // 17 \u2500 Plantilla Excel
+      // 22 \u2500 Plantilla Excel
       {
         element: "#btnTemplate",
         popover: {
 
-          title: "\uD83D\uDCCB Plantilla Excel",
+          title: "\uD83D\uDCCB Plantilla",
           description:
             "Descarga la plantilla para <b>crear etiquetas de forma masiva</b>. " +
             "Ll\xE9nala con todos tus productos y lu\xE9go imp\xF3rtala de una sola vez.",
@@ -339,12 +428,12 @@ export function startTour() {
         }
       },
 
-      // 18 \u2500 Importar Excel
+      // 23 \u2500 Importar Excel
       {
         element: "#btnImport",
         popover: {
 
-          title: "\uD83D\uDCCA Importar desde Excel",
+          title: "\uD83D\uDCCA Importar",
           description:
             "Carga muchas etiquetas a la vez desde un archivo Excel. " +
             "Usa primero la <b>Plantilla Excel</b> para no equivocarte.",
@@ -352,7 +441,7 @@ export function startTour() {
         }
       },
 
-      // 19 \u2500 Borrar todo
+      // 24 \u2500 Borrar todo
       {
         element: "#btnResetAll",
         popover: {
@@ -366,7 +455,7 @@ export function startTour() {
         }
       },
 
-      // 20 \u2500 Descargar PDF
+      // 25 \u2500 Descargar PDF
       {
         element: "#btnPdf",
         popover: {
@@ -377,7 +466,7 @@ export function startTour() {
         }
       },
 
-      // 21 \u2500 Imprimir
+      // 26 \u2500 Imprimir
       {
         element: "#btnPrint",
         popover: {
@@ -389,7 +478,7 @@ export function startTour() {
         }
       },
 
-      // 22 \u2500 Fin
+      // 27 \u2500 Fin
       {
         popover: {
           showButtons: ["next"],

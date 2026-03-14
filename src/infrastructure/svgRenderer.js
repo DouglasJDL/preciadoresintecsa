@@ -187,9 +187,24 @@ function setSvgText(el, txt) {
   if (!el) return;
   const t = (txt ?? "").toString();
   if (!t.trim()) { clearSvgText(el); return; }
-  const tspan = el.querySelector ? el.querySelector("tspan") : null;
-  if (tspan) tspan.textContent = t;
-  else el.textContent = t;
+
+  // Buscar el primer hijo DIRECTO que sea tspan (no un descendiente anidado).
+  // querySelector("tspan") devuelve el primero en orden de documento, que podría
+  // ser un tspan interno (ej: fecha_vigencia tiene [<tspan>Fecha_vigencia</tspan>]).
+  // Con firstElementChild + tagName evitamos ese caso.
+  const directTspan = Array.from(el.childNodes).find(
+    n => n.nodeType === 1 && n.tagName && n.tagName.toLowerCase() === "tspan"
+  ) || null;
+
+  if (directTspan) {
+    // Clonar el tspan directo (sin hijos) para preservar x, y, style, etc.
+    const fresh = directTspan.cloneNode(false);
+    fresh.textContent = t;
+    clearSvgText(el);        // elimina todo el contenido anterior (incluye tspans anidados)
+    el.appendChild(fresh);
+  } else {
+    el.textContent = t;
+  }
 }
 
 function findByAnyId(svg, ids) {
@@ -426,14 +441,23 @@ export async function renderProductToPngs(p, widthPx = 2200) {
   }
 
   // ===== Precios =====
-  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.antes)),    antes);
-  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.ahora)),    ahora);
   const efectivoVal = p.efectivo || (() => {
     const n = parseInt(p.ahora, 10);
     return Number.isFinite(n) && n > 0 ? String(Math.round(n / (1 + PRICING.downPaymentPct / 100))) : "";
   })();
-  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.efectivo)), toQuetzales(efectivoVal));
+  const efectivo = toQuetzales(efectivoVal);
+
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.antes)),    antes);
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.ahora)),    ahora);
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.efectivo)), efectivo);
   setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.cuota)),    cuota);
+
+  // Respaldo por tokens: cubre plantillas que usen [Antes]/[Ahora]/[Efectivo]/[Cuota]
+  // en elementos sin ID o donde setSvgText no alcanzó (estructura SVG inesperada).
+  replaceTokenInSvg(svg, "[Antes]",    antes);
+  replaceTokenInSvg(svg, "[Ahora]",    ahora);
+  replaceTokenInSvg(svg, "[Efectivo]", efectivo);
+  replaceTokenInSvg(svg, "[Cuota]",    cuota);
 
   // ===== Vigencia =====
   const vigEl = svg.querySelector("#" + cssEsc(SVG_IDS.vigencia));
