@@ -34,14 +34,14 @@ export function computePrecioAntes(precioNormal) {
 }
 
 /**
- * Calcula el Precio Efectivo = round(precioNormal * (1 - downPaymentPct/100)).
- * Es el monto base que se financia a 20 semanas (precio normal menos el enganche del 10%).
- * Ejemplo: precioNormal=1000 → efectivo=round(900)=900
+ * Calcula el Precio Efectivo = round(precioNormal / (1 + downPaymentPct/100)).
+ * Es el número entero que al sumarle el 10% da el Precio Normal.
+ * Ejemplo: precioNormal=1000 → efectivo=round(1000/1.10)=909 → 909*1.10≈1000
  */
 export function computePrecioEfectivo(precioNormal) {
   const n = parseInt(precioNormal, 10);
   if (!Number.isFinite(n) || n <= 0) return "";
-  const monto = Math.round(n * (1 - PRICING.downPaymentPct / 100));
+  const monto = Math.round(n / (1 + PRICING.downPaymentPct / 100));
   return monto > 0 ? String(monto) : "";
 }
 

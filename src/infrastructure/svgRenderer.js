@@ -430,7 +430,7 @@ export async function renderProductToPngs(p, widthPx = 2200) {
   setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.ahora)),    ahora);
   const efectivoVal = p.efectivo || (() => {
     const n = parseInt(p.ahora, 10);
-    return Number.isFinite(n) && n > 0 ? String(Math.round(n * (1 - PRICING.downPaymentPct / 100))) : "";
+    return Number.isFinite(n) && n > 0 ? String(Math.round(n / (1 + PRICING.downPaymentPct / 100))) : "";
   })();
   setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.efectivo)), toQuetzales(efectivoVal));
   setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.cuota)),    cuota);
