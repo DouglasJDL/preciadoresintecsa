@@ -31,6 +31,15 @@ function getNotyf() {
             tagName: "span",
             text: "✕"
           }
+        },
+        {
+          type: "info",
+          background: "#2563eb",
+          icon: {
+            className: "",
+            tagName: "span",
+            text: "ℹ"
+          }
         }
       ]
     });
@@ -48,5 +57,10 @@ export const toast = {
     const n = getNotyf();
     if (n) n.error(msg);
     else console.error("[Toast] " + msg);
+  },
+  info(msg) {
+    const n = getNotyf();
+    if (n) n.open({ type: "info", message: msg });
+    else console.info("[Toast] " + msg);
   }
 };

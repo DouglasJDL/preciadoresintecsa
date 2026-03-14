@@ -231,7 +231,30 @@ function confirmTour() {
     title: "👋 ¿Quieres iniciar el tutorial?",
     bodyNode: body,
     actions: [
-      { text: "Ahora no", className: "btnNeutral", onClick: closeModal },
+      {
+        text: "Ahora no", className: "btnNeutral",
+        onClick: () => {
+          closeModal();
+          // Pulso en el FAB
+          const fab = document.getElementById("fabToggle");
+          if (fab) {
+            fab.classList.remove("pulse");
+            void fab.offsetWidth;
+            fab.classList.add("pulse");
+            fab.addEventListener("animationend", () => fab.classList.remove("pulse"), { once: true });
+          }
+          // Callout posicionado sobre el FAB
+          const tip = document.createElement("div");
+          tip.className = "fabCallout";
+          tip.textContent = "👆 Pulsa aquí cuando quieras ver el tutorial.";
+          document.body.appendChild(tip);
+          const dismiss = () => {
+            tip.classList.add("out");
+            tip.addEventListener("animationend", () => tip.remove(), { once: true });
+          };
+          setTimeout(dismiss, 4500);
+        }
+      },
       {
         text: "🚀 Sí, iniciar recorrido",
         className: "btnPrimary",
