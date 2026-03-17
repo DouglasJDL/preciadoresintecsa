@@ -140,19 +140,68 @@ export const PRICING = Object.freeze({
 });
 
 /**
- * Plan de financiamiento.
- * id       : monto de referencia (1000 Q).
- * cuotaRef : cuota semanal para ese monto de referencia.
- * cuotas   : número de cuotas del plan.
- * total    : total a pagar para el monto de referencia.
+ * Planes de financiamiento por rango de Precio Efectivo.
+ *
+ * Cada plan se activa cuando el precio efectivo >= minEfectivo.
+ * El array debe estar ordenado de menor a mayor minEfectivo.
+ * Para agregar un nuevo plan: añade un objeto con minEfectivo, cuotas, cuotaRef, etc.
+ *
+ * Campos:
+ *   minEfectivo : precio efectivo mínimo (inclusive) para aplicar este plan.
+ *   refAmount   : monto de referencia sobre el que se calcula cuotaRef (Q).
+ *   cuotaRef    : cuota semanal para el refAmount.
+ *   cuotas      : número de cuotas (semanas).
+ *   interes     : tasa de interés del plan.
+ *   total       : total a pagar para el refAmount.
  */
-export const FINANCING_PLAN = Object.freeze({
-  id: 1000,
-  nombre: "Prenda Cuotas 20 Semanas",
-  periodo: "Semanal",
-  cuotas: 20,
-  cuotaRef: 110,
-  interes: 1.20,
-  total: 2200.00,
-  cobranzaDificil: 200
-});
+export const FINANCING_PLANS = Object.freeze([
+  {
+    minEfectivo: 200,
+    nombre: "Avanza Pay 04 Semanas",
+    periodo: "Semanal",
+    cuotas: 4,
+    refAmount: 1000,
+    cuotaRef: 315,
+    interes: 0.26,
+    total: 1260.00
+  },
+  {
+    minEfectivo: 600,
+    nombre: "Avanza Pay 08 Semanas",
+    periodo: "Semanal",
+    cuotas: 8,
+    refAmount: 1000,
+    cuotaRef: 190,
+    interes: 0.52,
+    total: 1520.00
+  },
+  {
+    minEfectivo: 1000,
+    nombre: "Avanza Pay 20 Semanas",
+    periodo: "Semanal",
+    cuotas: 20,
+    refAmount: 1000,
+    cuotaRef: 110,
+    interes: 1.20,
+    total: 2200.00,
+    cobranzaDificil: 200
+  }
+]);
+
+/**
+ * Devuelve el plan de financiamiento correspondiente al precio efectivo dado.
+ * Se selecciona el plan con el mayor minEfectivo que sea <= precioEfectivo.
+ */
+export function getPlanForEfectivo(precioEfectivo) {
+  const n = parseInt(precioEfectivo, 10);
+  let plan = FINANCING_PLANS[0];
+  if (Number.isFinite(n) && n > 0) {
+    for (const p of FINANCING_PLANS) {
+      if (n >= p.minEfectivo) plan = p;
+    }
+  }
+  return plan;
+}
+
+/** @deprecated Usa FINANCING_PLANS. Mantenido por compatibilidad. */
+export const FINANCING_PLAN = FINANCING_PLANS[FINANCING_PLANS.length - 1];

@@ -183,7 +183,7 @@ export function startTour() {
           title: "\uD83D\uDCB0 Ingresa el Precio Efectivo",
           description:
             "Escribe el <b>precio de contado</b> del art\xEDculo (solo n\xFAmeros, m\xE1x. 5 d\xEDgitos). " +
-            "El Precio Normal se calcular\xE1 autom\xE1ticamente (+10%)." +
+            "El Precio Normal se calcular\xE1 autom\xE1ticamente." +
             "<br><small style='color:#ef4444'>\u26A0\uFE0F Debes ingresar un precio para continuar.</small>",
           side: "right", align: "start",
           onNextClick: () => {
@@ -210,7 +210,7 @@ export function startTour() {
         element: "#fAhora",
         popover: {
           title: "💵 Precio Normal — automático",
-          description: "Se calcula solo sumando el <b>10%</b> al Precio Efectivo que ingresaste.",
+          description: "Se calcula solo en base al Precio Efectivo que ingresaste.",
           side: "right", align: "start"
         }
       },
@@ -222,8 +222,11 @@ export function startTour() {
 
           title: "\uD83D\uDCC5 Cuota Semanal \u2014 autom\xE1tica",
           description:
-            "Se calcula sola en base al Precio Normal. " +
-            "El cliente pagar\xE1 esta cuota cada semana durante <b>20 semanas sin enganche</b>.",
+            "Se calcula autom\xE1ticamente seg\xFAn el Precio Efectivo ingresado. " +
+            "El plan se asigna as\xED:<br>" +
+            "<b>Q200\u2013Q599</b> \u2192 <b>4 semanas</b><br>" +
+            "<b>Q600\u2013Q999</b> \u2192 <b>8 semanas</b><br>" +
+            "<b>Q1,000+</b> \u2192 <b>20 semanas</b>",
           side: "right", align: "start"
         }
       },

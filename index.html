@@ -167,7 +167,7 @@
             <div class="field span2">
               <label>
                 Precio Efectivo (entero, máx 5 dígitos)
-                <span class="fieldTooltip" tabindex="0" aria-label="¿Qué es Precio Efectivo?">?<span class="fieldTooltipText">Ingresa el precio de contado. El Precio Normal se calcula automáticamente (+10%).</span></span>
+                <span class="fieldTooltip" tabindex="0" aria-label="¿Qué es Precio Efectivo?">?<span class="fieldTooltipText">Ingresa el precio de contado. El Precio Normal se calcula automáticamente.</span></span>
               </label>
               <input id="fEfectivo" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="Ej: 27272" autocomplete="off">
               <div class="fieldError" id="eEfectivo"></div>
@@ -188,6 +188,7 @@
             <div class="field">
               <label>Cuota semanal <span class="calcBadge">automática</span></label>
               <input id="fCuota" readonly class="calcField" placeholder="Se calcula sola" autocomplete="off" tabindex="-1">
+              <div id="cuotaPlanInfo" class="cuotaPlanInfo"></div>
               <div class="fieldError" id="eCuota"></div>
             </div>
 

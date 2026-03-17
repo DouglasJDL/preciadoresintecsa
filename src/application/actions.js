@@ -63,6 +63,7 @@ export function openAddForm() {
   document.getElementById("fTemplate").value = "";
   document.getElementById("fSize").value = "";
   document.getElementById("fNombre").value = "";
+  document.getElementById("fEfectivo").value = "";
   document.getElementById("fAhora").value = "";
   document.getElementById("fAntes").value = "";
   document.getElementById("fCuota").value = "";

@@ -1,4 +1,4 @@
-import { CONFIG, PRICING, FINANCING_PLAN } from "../config/config.js";
+import { CONFIG, PRICING, getPlanForEfectivo } from "../config/config.js";
 
 export function emptyProduct() {
   return {
@@ -60,14 +60,14 @@ export function computePrecioNormal(precioEfectivo) {
 
 /**
  * Calcula la cuota semanal directamente desde el precio efectivo.
- * cuota = ceil(efectivo * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id)
- * Ejemplo: efectivo=500  → cuota=ceil(55)=55
- * Ejemplo: efectivo=1000 → cuota=ceil(110)=110
+ * Selecciona el plan según el monto: efectivo < 500 → 4 semanas, >= 500 → 20 semanas.
+ * cuota = ceil(efectivo * plan.cuotaRef / plan.refAmount)
  */
 export function computeCuotaDesdeEfectivo(precioEfectivo) {
   const n = parseInt(precioEfectivo, 10);
   if (!Number.isFinite(n) || n <= 0) return "";
-  return String(Math.ceil(n * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id));
+  const plan = getPlanForEfectivo(n);
+  return String(Math.ceil(n * plan.cuotaRef / plan.refAmount));
 }
 
 /**

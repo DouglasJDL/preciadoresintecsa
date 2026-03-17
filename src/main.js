@@ -196,7 +196,7 @@ function openContactModal() {
           }
           const tipo = tipoSelect.options[tipoSelect.selectedIndex].text.replace(/^\S+\s+/, "");
           const texto = `*${tipo}*\n\n${msg}`;
-          window.open(`https://wa.me/56355181?text=${encodeURIComponent(texto)}`, "_blank", "noopener,noreferrer");
+          window.open(`https://wa.me/79654934?text=${encodeURIComponent(texto)}`, "_blank", "noopener,noreferrer");
           closeModal();
         }
       }

@@ -1,5 +1,6 @@
 import { $ } from "./dom.js";
 import { sanitizeIntStr, validateProductData, computePrecioAntes, computePrecioNormal, computeCuotaDesdeEfectivo } from "../domain/product.js";
+import { getPlanForEfectivo } from "../config/config.js";
 import { requestSave } from "../infrastructure/storage.js";
 import { scheduleRebuild } from "./preview.js";
 
@@ -33,7 +34,7 @@ function clearAllErrors() {
   setFieldError("fTemplate", "eTemplate", "");
   setFieldError("fSize", "eSize", "");
   setFieldError("fNombre", "eNombre", "");
-  setFieldError("fAhora", "eAhora", "");
+  setFieldError("fEfectivo", "eEfectivo", "");
   setFieldError("fQty", "eQty", "");
   setFieldError("fUseVig", "eVig", "");
   setFieldError("fVigStart", "eVigStart", "");
@@ -57,6 +58,16 @@ export function syncDraftFromForm() {
   $("fAhora").value    = st.draft.ahora;
   $("fAntes").value    = st.draft.antes;
   $("fCuota").value    = st.draft.cuota;
+
+  const planInfo = $("cuotaPlanInfo");
+  if (planInfo) {
+    if (st.draft.efectivo && st.draft.efectivo !== "0") {
+      const plan = getPlanForEfectivo(st.draft.efectivo);
+      planInfo.textContent = `Plan: ${plan.cuotas} semanas (${plan.nombre})`;
+    } else {
+      planInfo.textContent = "";
+    }
+  }
 
   const q = parseInt($("fQty").value, 10);
   st.draft.qty = Number.isFinite(q) && q > 0 ? q : 0;
