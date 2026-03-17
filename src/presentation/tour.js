@@ -174,19 +174,20 @@ export function startTour() {
         }
       },
 
-      // 6 \u2500 Precio Normal
+      // 6 \u2500 Precio Efectivo
       {
-        element: "#fAhora",
+        element: "#fEfectivo",
         disableActiveInteraction: false,
         popover: {
 
-          title: "\uD83D\uDCB0 Ingresa el Precio Normal",
+          title: "\uD83D\uDCB0 Ingresa el Precio Efectivo",
           description:
-            "Escribe el <b>precio de lista</b> del art\xEDculo (solo n\xFAmeros, m\xE1x. 5 d\xEDgitos)." +
+            "Escribe el <b>precio de contado</b> del art\xEDculo (solo n\xFAmeros, m\xE1x. 5 d\xEDgitos). " +
+            "El Precio Normal se calcular\xE1 autom\xE1ticamente (+10%)." +
             "<br><small style='color:#ef4444'>\u26A0\uFE0F Debes ingresar un precio para continuar.</small>",
           side: "right", align: "start",
           onNextClick: () => {
-            const el = document.getElementById("fAhora");
+            const el = document.getElementById("fEfectivo");
             if (!el?.value?.trim() || el.value.trim() === "0") { flashError(el); return; }
             tour.moveNext();
           }
@@ -199,17 +200,17 @@ export function startTour() {
         popover: {
 
           title: "\uD83E\uDEA7 Precio Antes \u2014 autom\xE1tico",
-          description: "Se calcula solo en base al Precio Normal que ingresaste.",
+          description: "Se calcula solo en base al Precio Normal.",
           side: "right", align: "start"
         }
       },
 
-      // 8 — Precio Efectivo
+      // 8 — Precio Normal automático
       {
-        element: "#fEfectivo",
+        element: "#fAhora",
         popover: {
-          title: "💵 Precio Efectivo — automático",
-          description: "Este campo <b>se genera de forma automática</b>, no necesitas ingresarlo.",
+          title: "💵 Precio Normal — automático",
+          description: "Se calcula solo sumando el <b>10%</b> al Precio Efectivo que ingresaste.",
           side: "right", align: "start"
         }
       },

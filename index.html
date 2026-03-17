@@ -166,11 +166,11 @@
 
             <div class="field span2">
               <label>
-                Precio Normal (entero, máx 5 dígitos)
-                <span class="fieldTooltip" tabindex="0" aria-label="¿Qué es Precio Normal?">?<span class="fieldTooltipText">⚠️ NO ingreses el precio efectivo. Ingresa el precio normal.</span></span>
+                Precio Efectivo (entero, máx 5 dígitos)
+                <span class="fieldTooltip" tabindex="0" aria-label="¿Qué es Precio Efectivo?">?<span class="fieldTooltipText">Ingresa el precio de contado. El Precio Normal se calcula automáticamente (+10%).</span></span>
               </label>
-              <input id="fAhora" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="Ej: 29999" autocomplete="off">
-              <div class="fieldError" id="eAhora"></div>
+              <input id="fEfectivo" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="Ej: 27272" autocomplete="off">
+              <div class="fieldError" id="eEfectivo"></div>
             </div>
 
             <div class="field">
@@ -180,9 +180,9 @@
             </div>
 
             <div class="field">
-              <label>Precio Efectivo <span class="calcBadge">automático</span></label>
-              <input id="fEfectivo" readonly class="calcField" placeholder="Se calcula solo" autocomplete="off" tabindex="-1">
-              <div class="fieldError" id="eEfectivo"></div>
+              <label>Precio Normal <span class="calcBadge">automático</span></label>
+              <input id="fAhora" readonly class="calcField" placeholder="Se calcula solo" autocomplete="off" tabindex="-1">
+              <div class="fieldError" id="eAhora"></div>
             </div>
 
             <div class="field">

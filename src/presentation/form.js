@@ -1,5 +1,5 @@
 import { $ } from "./dom.js";
-import { sanitizeIntStr, validateProductData, computePrecioAntes, computePrecioEfectivo, computeCuota } from "../domain/product.js";
+import { sanitizeIntStr, validateProductData, computePrecioAntes, computePrecioNormal, computeCuotaDesdeEfectivo } from "../domain/product.js";
 import { requestSave } from "../infrastructure/storage.js";
 import { scheduleRebuild } from "./preview.js";
 
@@ -47,15 +47,15 @@ export function syncDraftFromForm() {
   st.draft.size = $("fSize").value || "";
   st.draft.nombre = ($("fNombre").value || "").trim();
 
-  // Solo fAhora es ingresado por el usuario; antes y cuota se calculan automáticamente
-  st.draft.ahora = sanitizeIntStr($("fAhora").value);
-  $("fAhora").value = st.draft.ahora;
-
-  st.draft.antes    = computePrecioAntes(st.draft.ahora);
-  st.draft.efectivo = computePrecioEfectivo(st.draft.ahora);
-  st.draft.cuota    = computeCuota(st.draft.ahora);
-  $("fAntes").value    = st.draft.antes;
+  // fEfectivo es ingresado por el usuario; ahora, antes y cuota se calculan automáticamente
+  st.draft.efectivo = sanitizeIntStr($("fEfectivo").value);
   $("fEfectivo").value = st.draft.efectivo;
+
+  st.draft.ahora = computePrecioNormal(st.draft.efectivo);
+  st.draft.antes = computePrecioAntes(st.draft.ahora);
+  st.draft.cuota = computeCuotaDesdeEfectivo(st.draft.efectivo);
+  $("fAhora").value    = st.draft.ahora;
+  $("fAntes").value    = st.draft.antes;
   $("fCuota").value    = st.draft.cuota;
 
   const q = parseInt($("fQty").value, 10);
@@ -90,7 +90,7 @@ export function validateDraft() {
   if (!st.draft.template) setFieldError("fTemplate", "eTemplate", "Selecciona una plantilla.");
   if (!st.draft.size) setFieldError("fSize", "eSize", "Selecciona un tamaño.");
   if (!st.draft.nombre) setFieldError("fNombre", "eNombre", "Este campo es obligatorio.");
-  if (!st.draft.ahora || st.draft.ahora === "0") setFieldError("fAhora", "eAhora", "El Precio Normal debe ser mayor a 0.");
+  if (!st.draft.efectivo || st.draft.efectivo === "0") setFieldError("fEfectivo", "eEfectivo", "El Precio Efectivo debe ser mayor a 0.");
   if (!st.draft.qty || st.draft.qty < 1) setFieldError("fQty", "eQty", "Cantidad debe ser mayor a 0.");
 
   if (st.draft.useVig) {
@@ -112,8 +112,8 @@ export function fillFormFromProduct(p) {
   $("fTemplate").value = p.template || "";
   $("fSize").value = p.size || "";
   $("fNombre").value = p.nombre || "";
-  $("fAhora").value = p.ahora || "";
-  // antes y cuota se recalculan en syncDraftFromForm
+  $("fEfectivo").value = p.efectivo || "";
+  // ahora, antes y cuota se recalculan en syncDraftFromForm
   $("fQty").value = String(p.qty || 1);
 
   $("fUseVig").checked = !!p.useVig;

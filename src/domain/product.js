@@ -36,8 +36,7 @@ export function computePrecioAntes(precioNormal) {
 
 /**
  * Calcula el Precio Efectivo = round(precioNormal / (1 + downPaymentPct/100)).
- * Es el número entero que al sumarle el 10% da el Precio Normal.
- * Ejemplo: precioNormal=1000 → efectivo=round(1000/1.10)=909 → 909*1.10≈1000
+ * Ejemplo: precioNormal=1000 → efectivo=round(1000/1.10)=909
  */
 export function computePrecioEfectivo(precioNormal) {
   const n = parseInt(precioNormal, 10);
@@ -47,17 +46,36 @@ export function computePrecioEfectivo(precioNormal) {
 }
 
 /**
- * Calcula la cuota semanal según el plan de financiamiento.
- * Pasos:
- *   1. efectivo = round(precioNormal * (1 - downPaymentPct/100))
- *   2. cuota = ceil(efectivo * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id)
- * Ejemplo: precioNormal=556 → efectivo=500 → cuota=ceil(55)=55
- * Ejemplo: precioNormal=1111 → efectivo=1000 → cuota=ceil(110)=110
+ * Calcula el Precio Normal = round(precioEfectivo * (1 + downPaymentPct/100)).
+ * Inversa de computePrecioEfectivo: el usuario ingresa efectivo y se obtiene el normal.
+ * Siempre redondea hacia arriba (ceil).
+ * Ejemplo: efectivo=909 → normal=ceil(909*1.10)=ceil(999.9)=1000
+ * Ejemplo: efectivo=91  → normal=ceil(91*1.10)=ceil(100.1)=101
+ */
+export function computePrecioNormal(precioEfectivo) {
+  const n = parseInt(precioEfectivo, 10);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return String(Math.ceil(n * (1 + PRICING.downPaymentPct / 100)));
+}
+
+/**
+ * Calcula la cuota semanal directamente desde el precio efectivo.
+ * cuota = ceil(efectivo * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id)
+ * Ejemplo: efectivo=500  → cuota=ceil(55)=55
+ * Ejemplo: efectivo=1000 → cuota=ceil(110)=110
+ */
+export function computeCuotaDesdeEfectivo(precioEfectivo) {
+  const n = parseInt(precioEfectivo, 10);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return String(Math.ceil(n * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id));
+}
+
+/**
+ * @deprecated Usa computeCuotaDesdeEfectivo cuando el efectivo ya está disponible.
+ * Mantiene compatibilidad con código que solo tiene precioNormal.
  */
 export function computeCuota(precioNormal) {
-  const efectivo = computePrecioEfectivo(precioNormal);
-  if (!efectivo) return "";
-  return String(Math.ceil(parseInt(efectivo, 10) * FINANCING_PLAN.cuotaRef / FINANCING_PLAN.id));
+  return computeCuotaDesdeEfectivo(computePrecioEfectivo(precioNormal));
 }
 
 export function sanitizeIntStr(raw) {
@@ -73,9 +91,9 @@ export function validateProductData(p) {
   if (!p.size) errs.push("Tamaño requerido.");
   if (!p.nombre || !p.nombre.trim()) errs.push("Nombre requerido.");
 
-  const ahora = sanitizeIntStr(p.ahora || "");
+  const efectivo = sanitizeIntStr(p.efectivo || "");
 
-  if (!ahora || ahora === "0") errs.push("Precio Normal debe ser mayor a 0 (m\xE1x 5 d\xEDgitos).");
+  if (!efectivo || efectivo === "0") errs.push("Precio Efectivo debe ser mayor a 0 (máx 5 dígitos).");
 
   const qty = parseInt(p.qty, 10);
   if (!Number.isFinite(qty) || qty < 1) errs.push("Cantidad debe ser mayor a 0.");
@@ -100,11 +118,12 @@ export function sanitizeLoadedProduct(raw) {
   out.size = typeof raw?.size === "string" ? raw.size : "";
   out.nombre = typeof raw?.nombre === "string" ? raw.nombre : "";
 
-  out.ahora    = sanitizeIntStr(raw?.ahora);
-  // Recalcular automáticamente para garantizar consistencia con la regla actual
+  // efectivo es el campo canónico que ingresa el usuario
+  // Para compat con productos guardados antes del cambio (que solo tienen ahora):
+  out.efectivo = sanitizeIntStr(raw?.efectivo) || computePrecioEfectivo(raw?.ahora);
+  out.ahora    = computePrecioNormal(out.efectivo) || sanitizeIntStr(raw?.ahora);
   out.antes    = computePrecioAntes(out.ahora)    || sanitizeIntStr(raw?.antes);
-  out.efectivo = computePrecioEfectivo(out.ahora) || sanitizeIntStr(raw?.efectivo);
-  out.cuota    = computeCuota(out.ahora)           || sanitizeIntStr(raw?.cuota);
+  out.cuota    = computeCuotaDesdeEfectivo(out.efectivo) || sanitizeIntStr(raw?.cuota);
 
   const qtyN = parseInt(raw?.qty, 10);
   out.qty = Number.isFinite(qtyN) && qtyN > 0 ? qtyN : 1;

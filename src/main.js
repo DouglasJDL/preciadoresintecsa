@@ -494,7 +494,7 @@ function wirePreviewEvents() {
 }
 
 function wireNumericInputs() {
-  ["fAhora"].forEach(id => {
+  ["fEfectivo"].forEach(id => {
     const el = document.getElementById(id);
 
     el.addEventListener("keydown", (e) => {
@@ -637,7 +637,7 @@ function _parseUrlDate(val) {
 // ─── Pre-llenado del formulario desde parámetros de URL ───────────────────────
 // Parámetros soportados:
 //   nombre    → nombre del producto
-//   precio    → precio normal  (alias: ahora)
+//   precio    → precio efectivo (alias: efectivo)
 //   plantilla → plantilla SVG  (alias: template) — ej: "Normal", "Promocion", "normal1.svg"
 //   tamano    → tamaño de hoja (alias: size)      — ej: "1/4", "media", "carta", "mini"
 //   cantidad  → número de copias (alias: qty)     — ej: 4
@@ -651,7 +651,7 @@ function applyUrlParams() {
   const params = new URLSearchParams(window.location.search);
 
   const nombre    = params.get("nombre");
-  const precio    = params.get("precio")    ?? params.get("ahora");
+  const precio    = params.get("precio")    ?? params.get("efectivo");
   const plantilla = params.get("plantilla") ?? params.get("template");
   const tamano    = params.get("tamano")    ?? params.get("size");
   const cantidad  = params.get("cantidad")  ?? params.get("qty");
@@ -685,7 +685,7 @@ function applyUrlParams() {
       if (el) el.value = nombre.trim();
     }
     if (precio) {
-      const el = document.getElementById("fAhora");
+      const el = document.getElementById("fEfectivo");
       if (el) el.value = precio.replace(/[^\d]/g, "").slice(0, 5);
     }
     if (plantilla) {

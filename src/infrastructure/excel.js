@@ -1,6 +1,6 @@
 import { CONFIG, SIZE, TEMPLATE_ALIASES } from "../config/config.js";
 import { toast } from "./toast.js";
-import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioAntes, computeCuota } from "../domain/product.js";
+import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioNormal, computePrecioAntes, computeCuotaDesdeEfectivo } from "../domain/product.js";
 import { formatDateTimeNow, normalizeText } from "./svgRenderer.js";
 import { openModal, closeModal, buildTextBlock, buildErrorList } from "../presentation/modal.js";
 import { requestSave } from "./storage.js";
@@ -76,7 +76,7 @@ function parseTemplateCell(v, allowed) {
 
 function parseNumberCell(v) {
   if (v === null || v === undefined) return "";
-  const s = (typeof v === "number") ? String(Math.trunc(v)) : String(v);
+  const s = (typeof v === "number") ? String(Math.ceil(v)) : String(v);
   return sanitizeIntStr(s.replace(/[^\d]/g, ""));
 }
 
@@ -144,7 +144,7 @@ function parseExcelRowsToProducts(rows) {
     template: ["plantilla", "template", "svg"],
     size: ["tamano", "tamaño", "size"],
     nombre: ["nombre", "producto", "name"],
-    ahora: ["precionormal", "precioahora", "ahora", "now"],
+    efectivo: ["precioefectivo", "efectivo", "contado", "precionormal", "precioahora", "ahora"],
     qty: ["cantidad", "qty", "cant"],
     useVig: ["agregarvigencia", "vigencia", "usevig"],
     vigStart: ["vigenciainicio", "fechainicial", "inicio", "vigenciadesde"],
@@ -155,7 +155,7 @@ function parseExcelRowsToProducts(rows) {
     ["Plantilla", K.template],
     ["Tamaño", K.size],
     ["Nombre", K.nombre],
-    ["Precio Normal", K.ahora],
+    ["Precio Efectivo", K.efectivo],
     ["Cantidad", K.qty]
   ];
 
@@ -179,10 +179,11 @@ function parseExcelRowsToProducts(rows) {
     p.size = parseSizeCell(cellBy(map, row, K.size));
     p.nombre = (cellBy(map, row, K.nombre) ?? "").toString().trim();
 
-    p.ahora = parseNumberCell(cellBy(map, row, K.ahora));
-    // antes y cuota se calculan automáticamente a partir del precio normal
+    p.efectivo = parseNumberCell(cellBy(map, row, K.efectivo));
+    // ahora, antes y cuota se calculan automáticamente a partir del precio efectivo
+    p.ahora = computePrecioNormal(p.efectivo);
     p.antes = computePrecioAntes(p.ahora);
-    p.cuota = computeCuota(p.ahora);
+    p.cuota = computeCuotaDesdeEfectivo(p.efectivo);
 
     const qtyN = parseInt(String(cellBy(map, row, K.qty) ?? "").replace(/[^\d]/g, ""), 10);
     p.qty = Number.isFinite(qtyN) ? qtyN : 0;
@@ -390,14 +391,14 @@ export function downloadExcelTemplate() {
     return;
   }
 
-  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio Normal", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
+  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio Efectivo", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
   const examples = [
-    ["normal1", "1/4", "AUDÍFONOS BLUETOOTH [DAF4561546401]", "149", "4", "NO", "", ""],
-    ["promocion1", "MEDIA HORIZONTAL", "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]", "8999", "2", "SI", "01/01/2026", "31/01/2026"],
-    ["liquidacion1", "1/4", "TENIS NIKE AIR MAX [DAF4561546403]", "999", "4", "SI", "05/02/2026", "20/02/2026"],
-    ["oferta1", "CARTA COMPLETA", "SMART TV 55 PULGADAS [DAF4561546404]", "12999", "1", "SI", "01/03/2026", "15/03/2026"],
-    ["pequeño1", "MINI", "PILA DURACELL AA x4 [DAF4561546405]", "49", "28", "NO", "", ""],
-    ["superoferta", "1/4", "AUDÍFONOS GAMER RGB [DAF4561546406]", "599", "4", "SI", "01/04/2026", "30/04/2026"]
+    ["normal1",     "1/4",             "AUDÍFONOS BLUETOOTH [DAF4561546401]",      "136",   "4",  "NO", "",           ""],
+    ["promocion1",  "MEDIA HORIZONTAL","LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","8181",  "2",  "SI", "01/01/2026", "31/01/2026"],
+    ["liquidacion1","1/4",             "TENIS NIKE AIR MAX [DAF4561546403]",        "909",   "4",  "SI", "05/02/2026", "20/02/2026"],
+    ["oferta1",     "CARTA COMPLETA",  "SMART TV 55 PULGADAS [DAF4561546404]",     "11818", "1",  "SI", "01/03/2026", "15/03/2026"],
+    ["pequeño1",    "MINI",            "PILA DURACELL AA x4 [DAF4561546405]",       "45",   "28", "NO", "",           ""],
+    ["normal1",     "1/4",             "AUDÍFONOS GAMER RGB [DAF4561546406]",       "545",  "4",  "SI", "01/04/2026", "30/04/2026"]
   ];
 
   const wsImportar = XLSX.utils.aoa_to_sheet([headers, ...examples]);
@@ -412,24 +413,24 @@ export function downloadExcelTemplate() {
     [""],
     ["Objetivo:", "Rellenar la hoja 'Importar' y luego usar el botón 'Importar Excel' en el sistema."],
     [""],
-    ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio Normal, Cantidad"],
-    ["Columnas automáticas:", "Precio Antes (+10%) y Cuota Semanal se calculan automáticamente."],
+    ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio Efectivo, Cantidad"],
+    ["Columnas automáticas:", "Precio Normal (+10%), Precio Antes y Cuota Semanal se calculan automáticamente."],
     [""],
     ["PLANTILLA (sin .svg):", "Escribe solo el nombre. Ej: promocion1"],
     ["Plantillas disponibles en este sistema:", allowedBases || "promocion1 | normal1 | liquidacion1 | oferta1"],
-    ["También se aceptan alias:", "Normal | Promoción | Liquidación | Oferta | Pequeño | Superoferta"],
+    ["También se aceptan alias:", "Normal | Promoción | Liquidación | Super Oferta | Pequeño"],
     [""],
     ["TAMAÑO (recomendado en español):", "1/4 | MEDIA HORIZONTAL | CARTA COMPLETA | MINI"],
     ["También se aceptan:", "quarter | half_h | full | mini, y variantes como 'media', 'carta', 'mitad', 'cuarto', 'pequeño', '4x7'"],
     [""],
-    ["PRECIO NORMAL:", `Solo número entero, máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9999`],
+    ["PRECIO EFECTIVO:", `Solo número entero (precio de contado), máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9090`],
     ["CANTIDAD:", "Entero > 0. Ej: 4"],
     [""],
     ["AGREGAR VIGENCIA:", "SI / NO. Si es SI, VigenciaInicio y VigenciaFin son obligatorias."],
     ["FECHAS (VigenciaInicio/VigenciaFin):", "Formato recomendado: DD/MM/AAAA. Ej: 31/01/2026"],
     ["Reglas de fechas:", "VigenciaFin no puede ser menor que VigenciaInicio."],
     [""],
-    ["Reglas de precio:", "El sistema calcula Precio Antes (Precio Normal +10%) y Cuota Semanal automáticamente."],
+    ["Reglas de precio:", "El sistema calcula Precio Normal (Efectivo +10%), Precio Antes y Cuota Semanal automáticamente."],
     [""],
     ["Importante:", "Si una fila tiene error, se rechaza todo el archivo (no se crea nada)."]
   ];
