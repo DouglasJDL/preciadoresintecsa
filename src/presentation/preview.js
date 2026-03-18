@@ -149,9 +149,8 @@ function ensureDraftVisible() {
 
 export function scheduleRebuild() {
   const st = window.__APP_STATE__;
-  // Mostrar spinner de inmediato para que el usuario no vea pantalla en blanco durante el debounce
-  const items = buildItemsForPacking(!UI.isListView());
-  if (items.length > 0) UI.showRenderingPreview(items.length);
+  // Mostrar overlay de inmediato para que el usuario no vea pantalla en blanco durante el debounce
+  UI.showRenderingPreview();
   clearTimeout(st.timers.preview);
   st.timers.preview = setTimeout(() => buildPreview().catch(console.error), CONFIG.limits.previewDebounceMs);
 }
@@ -266,12 +265,11 @@ export async function buildPreview() {
   const items = buildItemsForPacking(includeDraft);
 
   if (items.length === 0) {
+    UI.hideRenderingPreview();
     UI.showEmptyPreview("Sin previsualización", "Agrega productos para ver cómo se acomodan en las hojas.");
     st.previewSlotsByProduct.clear();
     return;
   }
-
-  UI.showRenderingPreview(items.length);
 
   await hydratePngs(items, myGen);
   if (st.renderGeneration !== myGen) return;
@@ -279,6 +277,7 @@ export async function buildPreview() {
   const pages = packAll(items);
   const preview = $("paperPreview");
   preview.innerHTML = "";
+  UI.hideRenderingPreview();
   st.previewSlotsByProduct = new Map();
 
   // Disconnect old lazy observer before creating new one
