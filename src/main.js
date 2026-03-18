@@ -318,7 +318,7 @@ function wireTopButtons() {
 
   document.getElementById("btnTemplate").addEventListener("click", () => {
     if (!UI.isListView()) return;
-    downloadExcelTemplate();
+    downloadExcelTemplate().catch(e => console.error("Error descargando plantilla:", e));
   });
 }
 
@@ -600,7 +600,7 @@ function _resolveTemplate(val) {
     "liquidacion": "liquidacion1.svg", "liqui": "liquidacion1.svg",
     "oferta": "oferta1.svg",
     "pequeno": "pequeño1.svg", "pequeño": "pequeño1.svg", "pequeño1": "pequeño1.svg",
-    "superoferta": "superoferta.svg", "super": "superoferta.svg"
+    "superoferta": "oferta1.svg", "superoferta1": "oferta1.svg", "super": "oferta1.svg"
   };
   // Coincidencia directa en alias
   for (const [key, mapped] of Object.entries(aliases)) {

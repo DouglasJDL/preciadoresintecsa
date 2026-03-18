@@ -93,7 +93,14 @@ export function normalizeExistingState() {
   const st = window.__APP_STATE__;
   let changed = false;
 
+  // Migración: "superoferta.svg" → "oferta1.svg" (legacy eliminado)
+  const LEGACY_TEMPLATE_MAP = { "superoferta.svg": "oferta1.svg" };
+
   for (const p of st.products) {
+    if (p.template && LEGACY_TEMPLATE_MAP[p.template]) {
+      p.template = LEGACY_TEMPLATE_MAP[p.template];
+      changed = true;
+    }
     if (!Number.isFinite(p.colorIdx)) {
       p.colorIdx = st.domain.allocateColorIdx(st.products);
       changed = true;

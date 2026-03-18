@@ -45,6 +45,11 @@ export const UI = {
     $("btnResetAll").style.display = has ? "inline-flex" : "none";
   },
 
+  showRenderingPreview(count) {
+    const msg = count ? `Renderizando ${count} etiqueta${count !== 1 ? "s" : ""}…` : "Renderizando…";
+    $("paperPreview").innerHTML = `<div class="renderingPreview"><div class="renderingSpinner"></div><p>${escapeHtml(msg)}</p></div>`;
+  },
+
   showEmptyPreview(title, body) {
     if (title || body) {
       $("paperPreview").innerHTML = `

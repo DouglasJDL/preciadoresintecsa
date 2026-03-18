@@ -1,9 +1,9 @@
-import { CONFIG, SIZE, TEMPLATE_ALIASES } from "../config/config.js";
+import { CONFIG, SIZE, TEMPLATE_ALIASES, TEMPLATES } from "../config/config.js";
 import { toast } from "./toast.js";
 import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioNormal, computePrecioAntes, computeCuotaDesdeEfectivo } from "../domain/product.js";
 import { formatDateTimeNow, normalizeText } from "./svgRenderer.js";
 import { openModal, closeModal, buildTextBlock, buildErrorList } from "../presentation/modal.js";
-import { requestSave } from "./storage.js";
+import { requestSave, normalizeExistingState } from "./storage.js";
 import { scheduleRebuild } from "../presentation/preview.js";
 import { renderList } from "../presentation/list.js";
 import { applySelectionHighlight } from "../presentation/selection.js";
@@ -61,6 +61,11 @@ function parseTemplateCell(v, allowed) {
 
   const rawNorm = normalizeText(raw);
   if (TEMPLATE_ALIASES[rawNorm]) return TEMPLATE_ALIASES[rawNorm];
+
+  // Labels con espacios (ej: "Super Oferta") quedan con espacio en normalizeText
+  // pero TEMPLATE_ALIASES los guarda sin espacios → intentar sin espacios
+  const rawNormNoSpaces = rawNorm.replace(/\s+/g, "");
+  if (TEMPLATE_ALIASES[rawNormNoSpaces]) return TEMPLATE_ALIASES[rawNormNoSpaces];
 
   const foundExact = allowed.find(a => normalizeText(a) === rawNorm);
   if (foundExact) return foundExact;
@@ -360,6 +365,7 @@ export async function handleImportFile(file) {
         st.expandedId = firstId;
       }
 
+      normalizeExistingState();
       st.ui.updateTopButtonsVisibility();
       renderList();
       scheduleRebuild();
@@ -385,20 +391,76 @@ export async function handleImportFile(file) {
   }
 }
 
-export function downloadExcelTemplate() {
+// ── Helpers para inyectar dataValidations en el ZIP del XLSX ──────────────────
+
+function _xmlAttr(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function _xmlText(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function _buildDvXml(validations) {
+  const items = validations.map(v =>
+    `<dataValidation type="list" sqref="${v.sqref}" showDropDown="0" showErrorMessage="1" errorTitle="${_xmlAttr(v.errorTitle)}" error="${_xmlAttr(v.error)}"><formula1>${_xmlText(v.formula1)}</formula1></dataValidation>`
+  ).join("");
+  return `<dataValidations count="${validations.length}">${items}</dataValidations>`;
+}
+async function _loadJSZip() {
+  if (window.JSZip) return window.JSZip;
+  await new Promise((ok, fail) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+    s.onload = ok; s.onerror = fail;
+    document.head.appendChild(s);
+  });
+  return window.JSZip;
+}
+async function _injectValidations(xlsxArr, validations) {
+  const JSZip = await _loadJSZip();
+  const zip   = await JSZip.loadAsync(xlsxArr);
+  const entry = zip.file("xl/worksheets/sheet1.xml");
+  if (!entry) throw new Error("sheet1.xml not found");
+
+  // Leer en binario y decodificar con UTF-8 para no corromper caracteres especiales
+  const bytes    = await entry.async("uint8array");
+  const xml      = new TextDecoder("utf-8").decode(bytes);
+  const dvXml    = _buildDvXml(validations);
+  // dataValidations debe ir justo después de </sheetData> (antes de pageMargins)
+  const modified = xml.includes("<dataValidations")
+    ? xml.replace(/<dataValidations[\s\S]*?<\/dataValidations>/, dvXml)
+    : xml.replace("</sheetData>", "</sheetData>" + dvXml);
+
+  // Escribir de vuelta en bytes UTF-8
+  zip.file("xl/worksheets/sheet1.xml", new TextEncoder().encode(modified));
+  return zip.generateAsync({ type: "arraybuffer" });
+}
+function _triggerDownload(buffer, filename) {
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ── Función principal ──────────────────────────────────────────────────────────
+
+export async function downloadExcelTemplate() {
   if (!window.XLSX) {
     toast.error("No se pudo cargar XLSX. Revisa el CDN.");
     return;
   }
 
+  const enabledTemplates = TEMPLATES.filter(t => t.enabled);
+  const templateLabels   = enabledTemplates.map(t => t.label);
+
   const headers = ["Plantilla", "Tamaño", "Nombre", "Precio Efectivo", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
   const examples = [
-    ["normal1",     "1/4",             "AUDÍFONOS BLUETOOTH [DAF4561546401]",      "136",   "4",  "NO", "",           ""],
-    ["promocion1",  "MEDIA HORIZONTAL","LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","8181",  "2",  "SI", "01/01/2026", "31/01/2026"],
-    ["liquidacion1","1/4",             "TENIS NIKE AIR MAX [DAF4561546403]",        "909",   "4",  "SI", "05/02/2026", "20/02/2026"],
-    ["oferta1",     "CARTA COMPLETA",  "SMART TV 55 PULGADAS [DAF4561546404]",     "11818", "1",  "SI", "01/03/2026", "15/03/2026"],
-    ["pequeño1",    "MINI",            "PILA DURACELL AA x4 [DAF4561546405]",       "45",   "28", "NO", "",           ""],
-    ["normal1",     "1/4",             "AUDÍFONOS GAMER RGB [DAF4561546406]",       "545",  "4",  "SI", "01/04/2026", "30/04/2026"]
+    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS BLUETOOTH [DAF4561546401]",      "136",   "4",  "NO", "",           ""],
+    ["Promoción",    "Media hoja horizontal (2 por hoja)",   "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","8181",  "2",  "SI", "01/01/2026", "31/01/2026"],
+    ["Liquidación",  "1/4 (4 por hoja)",                    "TENIS NIKE AIR MAX [DAF4561546403]",        "909",   "4",  "SI", "05/02/2026", "20/02/2026"],
+    ["Super Oferta", "Carta completa (1 por hoja)",          "SMART TV 55 PULGADAS [DAF4561546404]",     "11818", "1",  "SI", "01/03/2026", "15/03/2026"],
+    ["Pequeño",      "Mini (28 por hoja)",                   "PILA DURACELL AA x4 [DAF4561546405]",       "45",   "28", "NO", "",           ""],
+    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS GAMER RGB [DAF4561546406]",       "545",  "4",  "SI", "01/04/2026", "30/04/2026"]
   ];
 
   const wsImportar = XLSX.utils.aoa_to_sheet([headers, ...examples]);
@@ -407,7 +469,16 @@ export function downloadExcelTemplate() {
     { wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 16 }
   ];
 
-  const allowedBases = getAllowedTemplateBases().join(" | ");
+  // Forzar columnas Plantilla (A) y Tamaño (B) como texto para evitar auto-conversión de Excel
+  const rangeI = XLSX.utils.decode_range(wsImportar["!ref"]);
+  for (let R = 1; R <= rangeI.e.r; R++) {
+    [0, 1].forEach(C => {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      if (wsImportar[addr]) { wsImportar[addr].t = "s"; wsImportar[addr].z = "@"; }
+    });
+  }
+
+  const allowedLabels = templateLabels.join(" | ");
   const notes = [
     ["NOTAS / AYUDA"],
     [""],
@@ -416,12 +487,12 @@ export function downloadExcelTemplate() {
     ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio Efectivo, Cantidad"],
     ["Columnas automáticas:", "Precio Normal (+10%), Precio Antes y Cuota Semanal se calculan automáticamente."],
     [""],
-    ["PLANTILLA (sin .svg):", "Escribe solo el nombre. Ej: promocion1"],
-    ["Plantillas disponibles en este sistema:", allowedBases || "promocion1 | normal1 | liquidacion1 | oferta1"],
-    ["También se aceptan alias:", "Normal | Promoción | Liquidación | Super Oferta | Pequeño"],
+    ["PLANTILLA:", "Selecciona del desplegable. Ej: Normal, Promoción, Liquidación"],
+    ["Plantillas disponibles en este sistema:", allowedLabels || "Normal | Promoción | Liquidación | Super Oferta | Pequeño"],
+    ["También se aceptan:", "Los nombres internos como normal1, promocion1, liquidacion1, oferta1, pequeño1"],
     [""],
-    ["TAMAÑO (recomendado en español):", "1/4 | MEDIA HORIZONTAL | CARTA COMPLETA | MINI"],
-    ["También se aceptan:", "quarter | half_h | full | mini, y variantes como 'media', 'carta', 'mitad', 'cuarto', 'pequeño', '4x7'"],
+    ["TAMAÑO:", "Selecciona del desplegable. Son los mismos nombres que en el formulario del sistema."],
+    ["Opciones:", "1/4 (4 por hoja) | Media hoja horizontal (2 por hoja) | Carta completa (1 por hoja) | Mini (28 por hoja)"],
     [""],
     ["PRECIO EFECTIVO:", `Solo número entero (precio de contado), máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9090`],
     ["CANTIDAD:", "Entero > 0. Ej: 4"],
@@ -441,5 +512,29 @@ export function downloadExcelTemplate() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsImportar, "Importar");
   XLSX.utils.book_append_sheet(wb, wsNotas, "Notas");
-  XLSX.writeFile(wb, "plantilla_importacion_etiquetas.xlsx");
+
+  // SheetJS community no soporta dataValidations → inyectamos el XML manualmente en el ZIP
+  const validations = [
+    {
+      sqref: "A2:A501",
+      formula1: `"${templateLabels.join(",")}"`,
+      errorTitle: "Plantilla inválida",
+      error: "Selecciona una plantilla de la lista"
+    },
+    {
+      sqref: "B2:B501",
+      formula1: '"1/4 (4 por hoja),Media hoja horizontal (2 por hoja),Carta completa (1 por hoja),Mini (28 por hoja)"',
+      errorTitle: "Tamaño inválido",
+      error: "Selecciona un tamaño de la lista"
+    }
+  ];
+
+  try {
+    const xlsxArr = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const modified = await _injectValidations(xlsxArr, validations);
+    _triggerDownload(modified, "plantilla_importacion_etiquetas.xlsx");
+  } catch (e) {
+    console.warn("No se pudo agregar desplegables, descargando sin ellos:", e);
+    XLSX.writeFile(wb, "plantilla_importacion_etiquetas.xlsx");
+  }
 }

@@ -149,6 +149,9 @@ function ensureDraftVisible() {
 
 export function scheduleRebuild() {
   const st = window.__APP_STATE__;
+  // Mostrar spinner de inmediato para que el usuario no vea pantalla en blanco durante el debounce
+  const items = buildItemsForPacking(!UI.isListView());
+  if (items.length > 0) UI.showRenderingPreview(items.length);
   clearTimeout(st.timers.preview);
   st.timers.preview = setTimeout(() => buildPreview().catch(console.error), CONFIG.limits.previewDebounceMs);
 }
@@ -267,6 +270,8 @@ export async function buildPreview() {
     st.previewSlotsByProduct.clear();
     return;
   }
+
+  UI.showRenderingPreview(items.length);
 
   await hydratePngs(items, myGen);
   if (st.renderGeneration !== myGen) return;
