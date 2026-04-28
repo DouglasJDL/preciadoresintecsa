@@ -1,4 +1,4 @@
-import { CONFIG, PRICING, getPlanForEfectivo } from "../config/config.js";
+import { CONFIG, PRICING, getPlanForNormal } from "../config/config.js";
 
 export function emptyProduct() {
   return {
@@ -35,47 +35,25 @@ export function computePrecioAntes(precioNormal) {
 }
 
 /**
- * Calcula el Precio Efectivo = round(precioNormal / (1 + downPaymentPct/100)).
- * Ejemplo: precioNormal=1000 → efectivo=round(1000/1.10)=909
+ * Calcula el Precio Efectivo = round(precioNormal * (1 - downPaymentPct/100)).
+ * Ejemplo: precioNormal=6290 → efectivo=round(6290*0.90)=5661
  */
 export function computePrecioEfectivo(precioNormal) {
   const n = parseInt(precioNormal, 10);
   if (!Number.isFinite(n) || n <= 0) return "";
-  const monto = Math.round(n / (1 + PRICING.downPaymentPct / 100));
+  const monto = Math.round(n * (1 - PRICING.downPaymentPct / 100));
   return monto > 0 ? String(monto) : "";
 }
 
 /**
- * Calcula el Precio Normal = round(precioEfectivo * (1 + downPaymentPct/100)).
- * Inversa de computePrecioEfectivo: el usuario ingresa efectivo y se obtiene el normal.
- * Siempre redondea hacia arriba (ceil).
- * Ejemplo: efectivo=909 → normal=ceil(909*1.10)=ceil(999.9)=1000
- * Ejemplo: efectivo=91  → normal=ceil(91*1.10)=ceil(100.1)=101
+ * Calcula la cuota semanal directamente desde el precio normal.
+ * Selecciona el plan según el monto y aplica cuota = ceil(normal * cuotaRef / refAmount).
  */
-export function computePrecioNormal(precioEfectivo) {
-  const n = parseInt(precioEfectivo, 10);
+export function computeCuotaDesdeNormal(precioNormal) {
+  const n = parseInt(precioNormal, 10);
   if (!Number.isFinite(n) || n <= 0) return "";
-  return String(Math.ceil(n * (1 + PRICING.downPaymentPct / 100)));
-}
-
-/**
- * Calcula la cuota semanal directamente desde el precio efectivo.
- * Selecciona el plan según el monto: efectivo < 500 → 4 semanas, >= 500 → 20 semanas.
- * cuota = ceil(efectivo * plan.cuotaRef / plan.refAmount)
- */
-export function computeCuotaDesdeEfectivo(precioEfectivo) {
-  const n = parseInt(precioEfectivo, 10);
-  if (!Number.isFinite(n) || n <= 0) return "";
-  const plan = getPlanForEfectivo(n);
+  const plan = getPlanForNormal(n);
   return String(Math.ceil(n * plan.cuotaRef / plan.refAmount));
-}
-
-/**
- * @deprecated Usa computeCuotaDesdeEfectivo cuando el efectivo ya está disponible.
- * Mantiene compatibilidad con código que solo tiene precioNormal.
- */
-export function computeCuota(precioNormal) {
-  return computeCuotaDesdeEfectivo(computePrecioEfectivo(precioNormal));
 }
 
 export function sanitizeIntStr(raw) {
@@ -91,9 +69,9 @@ export function validateProductData(p) {
   if (!p.size) errs.push("Tamaño requerido.");
   if (!p.nombre || !p.nombre.trim()) errs.push("Nombre requerido.");
 
-  const efectivo = sanitizeIntStr(p.efectivo || "");
+  const ahora = sanitizeIntStr(p.ahora || "");
 
-  if (!efectivo || efectivo === "0") errs.push("Precio Efectivo debe ser mayor a 0 (máx 5 dígitos).");
+  if (!ahora || ahora === "0") errs.push("Precio Normal debe ser mayor a 0 (máx 5 dígitos).");
 
   const qty = parseInt(p.qty, 10);
   if (!Number.isFinite(qty) || qty < 1) errs.push("Cantidad debe ser mayor a 0.");
@@ -118,12 +96,11 @@ export function sanitizeLoadedProduct(raw) {
   out.size = typeof raw?.size === "string" ? raw.size : "";
   out.nombre = typeof raw?.nombre === "string" ? raw.nombre : "";
 
-  // efectivo es el campo canónico que ingresa el usuario
-  // Para compat con productos guardados antes del cambio (que solo tienen ahora):
-  out.efectivo = sanitizeIntStr(raw?.efectivo) || computePrecioEfectivo(raw?.ahora);
-  out.ahora    = computePrecioNormal(out.efectivo) || sanitizeIntStr(raw?.ahora);
-  out.antes    = computePrecioAntes(out.ahora)    || sanitizeIntStr(raw?.antes);
-  out.cuota    = computeCuotaDesdeEfectivo(out.efectivo) || sanitizeIntStr(raw?.cuota);
+  // ahora es el campo canónico que ingresa el usuario; los demás se derivan
+  out.ahora    = sanitizeIntStr(raw?.ahora);
+  out.efectivo = computePrecioEfectivo(out.ahora);
+  out.antes    = computePrecioAntes(out.ahora);
+  out.cuota    = computeCuotaDesdeNormal(out.ahora);
 
   const qtyN = parseInt(raw?.qty, 10);
   out.qty = Number.isFinite(qtyN) && qtyN > 0 ? qtyN : 1;

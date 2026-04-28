@@ -1,6 +1,6 @@
 import { CONFIG, SIZE, TEMPLATE_ALIASES, TEMPLATES } from "../config/config.js";
 import { toast } from "./toast.js";
-import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioNormal, computePrecioAntes, computeCuotaDesdeEfectivo } from "../domain/product.js";
+import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioEfectivo, computePrecioAntes, computeCuotaDesdeNormal } from "../domain/product.js";
 import { formatDateTimeNow, normalizeText } from "./svgRenderer.js";
 import { openModal, closeModal, buildTextBlock, buildErrorList } from "../presentation/modal.js";
 import { requestSave, normalizeExistingState } from "./storage.js";
@@ -149,7 +149,7 @@ function parseExcelRowsToProducts(rows) {
     template: ["plantilla", "template", "svg"],
     size: ["tamano", "tamaño", "size"],
     nombre: ["nombre", "producto", "name"],
-    efectivo: ["precioefectivo", "efectivo", "contado", "precionormal", "precioahora", "ahora"],
+    ahora: ["precionormal", "normal", "precioahora", "ahora", "precioefectivo", "efectivo", "contado"],
     qty: ["cantidad", "qty", "cant"],
     useVig: ["agregarvigencia", "vigencia", "usevig"],
     vigStart: ["vigenciainicio", "fechainicial", "inicio", "vigenciadesde"],
@@ -160,7 +160,7 @@ function parseExcelRowsToProducts(rows) {
     ["Plantilla", K.template],
     ["Tamaño", K.size],
     ["Nombre", K.nombre],
-    ["Precio Efectivo", K.efectivo],
+    ["Precio Normal", K.ahora],
     ["Cantidad", K.qty]
   ];
 
@@ -184,11 +184,11 @@ function parseExcelRowsToProducts(rows) {
     p.size = parseSizeCell(cellBy(map, row, K.size));
     p.nombre = (cellBy(map, row, K.nombre) ?? "").toString().trim();
 
-    p.efectivo = parseNumberCell(cellBy(map, row, K.efectivo));
-    // ahora, antes y cuota se calculan automáticamente a partir del precio efectivo
-    p.ahora = computePrecioNormal(p.efectivo);
-    p.antes = computePrecioAntes(p.ahora);
-    p.cuota = computeCuotaDesdeEfectivo(p.efectivo);
+    p.ahora = parseNumberCell(cellBy(map, row, K.ahora));
+    // efectivo, antes y cuota se calculan automáticamente a partir del precio normal
+    p.efectivo = computePrecioEfectivo(p.ahora);
+    p.antes    = computePrecioAntes(p.ahora);
+    p.cuota    = computeCuotaDesdeNormal(p.ahora);
 
     const qtyN = parseInt(String(cellBy(map, row, K.qty) ?? "").replace(/[^\d]/g, ""), 10);
     p.qty = Number.isFinite(qtyN) ? qtyN : 0;
@@ -453,7 +453,7 @@ export async function downloadExcelTemplate() {
   const enabledTemplates = TEMPLATES.filter(t => t.enabled);
   const templateLabels   = enabledTemplates.map(t => t.label);
 
-  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio Efectivo", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
+  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio Normal", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
   const examples = [
     ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS BLUETOOTH [DAF4561546401]",      "136",   "4",  "NO", "",           ""],
     ["Promoción",    "Media hoja horizontal (2 por hoja)",   "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","8181",  "2",  "SI", "01/01/2026", "31/01/2026"],
@@ -484,8 +484,8 @@ export async function downloadExcelTemplate() {
     [""],
     ["Objetivo:", "Rellenar la hoja 'Importar' y luego usar el botón 'Importar Excel' en el sistema."],
     [""],
-    ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio Efectivo, Cantidad"],
-    ["Columnas automáticas:", "Precio Normal (+10%), Precio Antes y Cuota Semanal se calculan automáticamente."],
+    ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio Normal, Cantidad"],
+    ["Columnas automáticas:", "Precio Antes (+10%), Precio Efectivo (−10%) y Cuota Semanal se calculan automáticamente."],
     [""],
     ["PLANTILLA:", "Selecciona del desplegable. Ej: Normal, Promoción, Liquidación"],
     ["Plantillas disponibles en este sistema:", allowedLabels || "Normal | Promoción | Liquidación | Super Oferta | Pequeño"],
@@ -494,14 +494,12 @@ export async function downloadExcelTemplate() {
     ["TAMAÑO:", "Selecciona del desplegable. Son los mismos nombres que en el formulario del sistema."],
     ["Opciones:", "1/4 (4 por hoja) | Media hoja horizontal (2 por hoja) | Carta completa (1 por hoja) | Mini (28 por hoja)"],
     [""],
-    ["PRECIO EFECTIVO:", `Solo número entero (precio de contado), máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9090`],
+    ["PRECIO NORMAL:", `Solo número entero (precio normal), máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 6290`],
     ["CANTIDAD:", "Entero > 0. Ej: 4"],
     [""],
     ["AGREGAR VIGENCIA:", "SI / NO. Si es SI, VigenciaInicio y VigenciaFin son obligatorias."],
     ["FECHAS (VigenciaInicio/VigenciaFin):", "Formato recomendado: DD/MM/AAAA. Ej: 31/01/2026"],
     ["Reglas de fechas:", "VigenciaFin no puede ser menor que VigenciaInicio."],
-    [""],
-    ["Reglas de precio:", "El sistema calcula Precio Normal (Efectivo +10%), Precio Antes y Cuota Semanal automáticamente."],
     [""],
     ["Importante:", "Si una fila tiene error, se rechaza todo el archivo (no se crea nada)."]
   ];
