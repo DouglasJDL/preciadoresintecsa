@@ -74,7 +74,7 @@ export const TEMPLATES = Object.freeze([
     id: "promocion",
     file: "promocion1.svg",
     label: "Promoción",
-    enabled: true,
+    enabled: false,
     aliases: ["promo", "promocion1"]
   },
   {
@@ -85,6 +85,13 @@ export const TEMPLATES = Object.freeze([
     aliases: ["normal1"]
   },
   {
+    id: "nuevo",
+    file: "nuevo1.svg",
+    label: "Nuevo",
+    enabled: true,
+    aliases: ["nuevo1"]
+  },
+  {
     id: "liquidacion",
     file: "liquidacion1.svg",
     label: "Liquidación",
@@ -93,10 +100,17 @@ export const TEMPLATES = Object.freeze([
   },
   {
     id: "super_oferta",
-    file: "oferta1.svg",
+    file: "superoferta.svg",
     label: "Super Oferta",
+    enabled: false,
+    aliases: ["super oferta", "superoferta", "superoferta1"]
+  },
+  {
+    id: "oferta",
+    file: "oferta1.svg",
+    label: "Oferta",
     enabled: true,
-    aliases: ["oferta", "oferta1", "super oferta", "superoferta", "superoferta1"]
+    aliases: ["oferta1"]
   },
   {
     id: "pequeño",

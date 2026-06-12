@@ -82,18 +82,36 @@ export function computeCuota(precioNormal) {
 export function sanitizeIntStr(raw) {
   const str = (raw ?? "").toString().trim();
 
-  // Si el valor incluye punto o coma decimal (ej. pegado "235.29" o "235,50"),
-  // interpretarlo como número y redondear a entero.
-  if (str.includes(".") || str.includes(",")) {
-    const num = parseFloat(str.replace(",", "."));
+  // Quitar prefijo no numérico (ej. "Q 1,672.47" → "1,672.47")
+  const numericPart = str.replace(/^[^\d]*/, "");
+
+  if (numericPart.includes(".") || numericPart.includes(",")) {
+    let clean;
+
+    if (numericPart.includes(".")) {
+      // Tiene punto decimal → las comas son separadores de miles: "1,672.47" → "1672.47"
+      clean = numericPart.replace(/,/g, "");
+    } else {
+      // Solo comas → puede ser miles ("1,672" → 1672) o decimal ("1,6" → 1.6)
+      // Si tiene más de una coma o la coma está lejos del final → miles
+      const commaCount = (numericPart.match(/,/g) || []).length;
+      if (commaCount > 1 || numericPart.length - numericPart.lastIndexOf(",") !== 2) {
+        clean = numericPart.replace(/,/g, "");   // miles
+      } else {
+        clean = numericPart.replace(",", ".");    // decimal europeo
+      }
+    }
+
+    const num = parseFloat(clean);
     if (Number.isFinite(num) && num > 0) {
       return String(Math.round(num)).slice(0, CONFIG.limits.maxDigits);
     }
   }
 
-  let cleaned = onlyDigits(str).slice(0, CONFIG.limits.maxDigits);
-  if (cleaned.length > 1) cleaned = cleaned.replace(/^0+/, "") || "0";
-  return cleaned;
+  // Último recurso: solo dígitos
+  let digits = onlyDigits(str).slice(0, CONFIG.limits.maxDigits);
+  if (digits.length > 1) digits = digits.replace(/^0+/, "") || "0";
+  return digits;
 }
 
 export function validateProductData(p) {

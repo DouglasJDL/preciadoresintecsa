@@ -24,9 +24,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="5.3642384"
-     inkscape:cx="85.287037"
-     inkscape:cy="58.629012"
+     inkscape:zoom="1.8965447"
+     inkscape:cx="5.8000216"
+     inkscape:cy="50.882007"
      inkscape:window-width="1920"
      inkscape:window-height="995"
      inkscape:window-x="-9"
@@ -379,5 +379,48 @@
        y="9.2782192"
        ry="9.6713314"
        rx="0" />
+    <text
+       fill="#595959"
+       font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
+       font-weight="800"
+       font-size="33.3333px"
+       id="fecha_impresion"
+       x="715.96008"
+       y="335.06299"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38951px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;white-space:pre;inline-size:133.903;display:inline"
+       transform="matrix(0,-1.4648425,1.464865,0,-484.27282,1118.2756)"
+       xml:space="preserve"><tspan
+         x="715.96008"
+         y="335.06299"
+         id="tspan7200">[Fecha_impresion]</tspan></text>
+    <text
+       fill="#595959"
+       font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
+       font-weight="800"
+       font-size="33.3333px"
+       id="restricciones"
+       x="715.96008"
+       y="335.06299"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38951px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;white-space:pre;inline-size:133.903;display:inline"
+       transform="matrix(0,-1.3303216,1.464865,0,-325.5402,1023.0462)"
+       xml:space="preserve"
+       inkscape:label="restricciones"><tspan
+         x="715.96008"
+         y="335.06299"
+         id="tspan7202">*Aplican Restricciones</tspan></text>
+    <text
+       fill="#595959"
+       font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
+       font-weight="800"
+       font-size="33.3333px"
+       id="fecha_vigencia"
+       x="715.96008"
+       y="335.06299"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38950769px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;white-space:pre;inline-size:133.903;display:inline"
+       transform="matrix(1.464865,0,0,1.4648425,-963.5672,-397.54803)"
+       xml:space="preserve"><tspan
+         x="715.96008"
+         y="335.06299"
+         id="tspan7204">[Fecha_vigencia]</tspan></text>
   </g>
 </svg>

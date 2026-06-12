@@ -465,14 +465,28 @@ export async function downloadExcelTemplate() {
   const templateLabels   = enabledTemplates.map(t => t.label);
 
   const headers = ["Plantilla", "Tamaño", "Nombre", "Precio Efectivo", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
-  const examples = [
-    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS BLUETOOTH [DAF4561546401]",      "136",   "4",  "NO", "",           ""],
-    ["Promoción",    "Media hoja horizontal (2 por hoja)",   "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","8181",  "2",  "SI", "01/01/2026", "31/01/2026"],
-    ["Liquidación",  "1/4 (4 por hoja)",                    "TENIS NIKE AIR MAX [DAF4561546403]",        "909",   "4",  "SI", "05/02/2026", "20/02/2026"],
-    ["Super Oferta", "Carta completa (1 por hoja)",          "SMART TV 55 PULGADAS [DAF4561546404]",     "11818", "1",  "SI", "01/03/2026", "15/03/2026"],
-    ["Pequeño",      "Mini (28 por hoja)",                   "PILA DURACELL AA x4 [DAF4561546405]",       "45",   "28", "NO", "",           ""],
-    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS GAMER RGB [DAF4561546406]",       "545",  "4",  "SI", "01/04/2026", "30/04/2026"]
-  ];
+
+  // Ejemplos generados automáticamente desde las plantillas habilitadas
+  const SIZES = ["1/4 (4 por hoja)", "Media hoja horizontal (2 por hoja)", "Carta completa (1 por hoja)", "Mini (28 por hoja)"];
+  const NOMBRES = ["AUDÍFONOS BLUETOOTH", "LAPTOP DELL I5 8GB 256SSD", "TENIS NIKE AIR MAX", "SMART TV 55 PULGADAS", "PILA DURACELL AA x4", "AUDÍFONOS GAMER RGB"];
+  const examples = enabledTemplates.map((t, i) => {
+    const size = SIZES[i % SIZES.length];
+    const nombre = NOMBRES[i % NOMBRES.length];
+    const sku = `CODE${String(i + 1).padStart(3, "0")}`;
+    const precio = String(Math.round(100 * (i + 1) * ((i % 3) + 0.5)));
+    const qty = String((i % 2) + 1);
+    const useVig = i % 2 !== 0;
+    return [
+      t.label,
+      size,
+      `${nombre} [${sku}]`,
+      precio,
+      qty,
+      useVig ? "SI" : "NO",
+      useVig ? `01/0${Math.min((i % 9) + 1, 9)}/2026` : "",
+      useVig ? `${15 + (i % 3) * 5}/0${Math.min((i % 9) + 1, 9)}/2026` : ""
+    ];
+  });
 
   const wsImportar = XLSX.utils.aoa_to_sheet([headers, ...examples]);
   wsImportar["!cols"] = [
@@ -498,9 +512,9 @@ export async function downloadExcelTemplate() {
     ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio Efectivo, Cantidad"],
     ["Columnas automáticas:", "Precio Normal (+10%), Precio Antes y Cuota Semanal se calculan automáticamente."],
     [""],
-    ["PLANTILLA:", "Selecciona del desplegable. Ej: Normal, Promoción, Liquidación"],
-    ["Plantillas disponibles en este sistema:", allowedLabels || "Normal | Promoción | Liquidación | Super Oferta | Pequeño"],
-    ["También se aceptan:", "Los nombres internos como normal1, promocion1, liquidacion1, oferta1, pequeño1"],
+    ["PLANTILLA:", "Selecciona del desplegable. Ej: Normal, Nuevo, Liquidación"],
+    ["Plantillas disponibles en este sistema:", allowedLabels || "Normal | Nuevo | Liquidación | Oferta | Pequeño"],
+    ["También se aceptan:", `Los nombres internos como ${enabledTemplates.map(t => t.file.replace(".svg", "")).join(", ")}`],
     [""],
     ["TAMAÑO:", "Selecciona del desplegable. Son los mismos nombres que en el formulario del sistema."],
     ["Opciones:", "1/4 (4 por hoja) | Media hoja horizontal (2 por hoja) | Carta completa (1 por hoja) | Mini (28 por hoja)"],
