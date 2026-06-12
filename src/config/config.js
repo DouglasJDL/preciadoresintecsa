@@ -1,5 +1,5 @@
 export const CONFIG = Object.freeze({
-  storageKey: "editor_etiquetas_state_v8_secure",
+  storageKey: "editor_etiquetas_state_v7_secure",
   previewScale: 0.58,
 
   limits: Object.freeze({
@@ -36,6 +36,7 @@ export const SVG_IDS = Object.freeze({
   ahora: "precio_ahora",
   efectivo: "precio_efectivo",
   cuota: "cuota_semanal",
+  sku: "codigo_sku",
   vigencia: "fecha_vigencia",
   impresionCandidates: Object.freeze(["Fecha_impresion", "fecha_impresion", "FECHA_IMPRESION"])
 });
@@ -124,23 +125,23 @@ export const COLOR_HUES = Object.freeze([210, 150, 35, 0, 270, 190, 95, 235, 25,
 
 /**
  * Configuración de precios automáticos.
- * markupPct     : % que se suma al Precio Normal para obtener el Precio Antes.
- * downPaymentPct: % que se resta al Precio Normal para obtener el Precio Efectivo.
+ * markupPct    : % que se suma al Precio Normal para obtener Precio Antes.
+ * downPaymentPct: % que se resta al Precio Normal antes de financiar.
  */
 export const PRICING = Object.freeze({
-  markupPct: 10,
+  markupPct: 15,
   downPaymentPct: 10
 });
 
 /**
- * Planes de financiamiento por rango de Precio Normal.
+ * Planes de financiamiento por rango de Precio Efectivo.
  *
- * Cada plan se activa cuando el precio normal >= minNormal.
- * El array debe estar ordenado de menor a mayor minNormal.
- * Para agregar un nuevo plan: añade un objeto con minNormal, cuotas, cuotaRef, etc.
+ * Cada plan se activa cuando el precio efectivo >= minEfectivo.
+ * El array debe estar ordenado de menor a mayor minEfectivo.
+ * Para agregar un nuevo plan: añade un objeto con minEfectivo, cuotas, cuotaRef, etc.
  *
  * Campos:
- *   minNormal   : precio normal mínimo (inclusive) para aplicar este plan.
+ *   minEfectivo : precio efectivo mínimo (inclusive) para aplicar este plan.
  *   refAmount   : monto de referencia sobre el que se calcula cuotaRef (Q).
  *   cuotaRef    : cuota semanal para el refAmount.
  *   cuotas      : número de cuotas (semanas).
@@ -149,7 +150,7 @@ export const PRICING = Object.freeze({
  */
 export const FINANCING_PLANS = Object.freeze([
   {
-    minNormal: 200,
+    minEfectivo: 200,
     nombre: "Avanza Pay 04 Semanas",
     periodo: "Semanal",
     cuotas: 4,
@@ -159,7 +160,7 @@ export const FINANCING_PLANS = Object.freeze([
     total: 1260.00
   },
   {
-    minNormal: 600,
+    minEfectivo: 600,
     nombre: "Avanza Pay 08 Semanas",
     periodo: "Semanal",
     cuotas: 8,
@@ -169,7 +170,7 @@ export const FINANCING_PLANS = Object.freeze([
     total: 1520.00
   },
   {
-    minNormal: 1000,
+    minEfectivo: 1000,
     nombre: "Avanza Pay 20 Semanas",
     periodo: "Semanal",
     cuotas: 20,
@@ -182,16 +183,19 @@ export const FINANCING_PLANS = Object.freeze([
 ]);
 
 /**
- * Devuelve el plan de financiamiento correspondiente al precio normal dado.
- * Se selecciona el plan con el mayor minNormal que sea <= precioNormal.
+ * Devuelve el plan de financiamiento correspondiente al precio efectivo dado.
+ * Se selecciona el plan con el mayor minEfectivo que sea <= precioEfectivo.
  */
-export function getPlanForNormal(precioNormal) {
-  const n = parseInt(precioNormal, 10);
+export function getPlanForEfectivo(precioEfectivo) {
+  const n = parseInt(precioEfectivo, 10);
   let plan = FINANCING_PLANS[0];
   if (Number.isFinite(n) && n > 0) {
     for (const p of FINANCING_PLANS) {
-      if (n >= p.minNormal) plan = p;
+      if (n >= p.minEfectivo) plan = p;
     }
   }
   return plan;
 }
+
+/** @deprecated Usa FINANCING_PLANS. Mantenido por compatibilidad. */
+export const FINANCING_PLAN = FINANCING_PLANS[FINANCING_PLANS.length - 1];

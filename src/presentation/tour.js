@@ -174,20 +174,20 @@ export function startTour() {
         }
       },
 
-      // 6 \u2500 Precio Normal
+      // 6 \u2500 Precio Efectivo
       {
-        element: "#fAhora",
+        element: "#fEfectivo",
         disableActiveInteraction: false,
         popover: {
 
-          title: "\uD83D\uDCB0 Ingresa el Precio Normal",
+          title: "\uD83D\uDCB0 Ingresa el Precio Efectivo",
           description:
-            "Escribe el <b>precio normal</b> del art\xEDculo (solo n\xFAmeros, m\xE1x. 5 d\xEDgitos). " +
-            "El Precio Antes, el Precio Efectivo y la Cuota se calcular\xE1n autom\xE1ticamente." +
+            "Escribe el <b>precio de contado</b> del art\xEDculo (solo n\xFAmeros, m\xE1x. 5 d\xEDgitos). " +
+            "El Precio Normal se calcular\xE1 autom\xE1ticamente." +
             "<br><small style='color:#ef4444'>\u26A0\uFE0F Debes ingresar un precio para continuar.</small>",
           side: "right", align: "start",
           onNextClick: () => {
-            const el = document.getElementById("fAhora");
+            const el = document.getElementById("fEfectivo");
             if (!el?.value?.trim() || el.value.trim() === "0") { flashError(el); return; }
             tour.moveNext();
           }
@@ -205,12 +205,12 @@ export function startTour() {
         }
       },
 
-      // 8 — Precio Efectivo automático
+      // 8 — Precio Normal automático
       {
-        element: "#fEfectivo",
+        element: "#fAhora",
         popover: {
-          title: "💵 Precio Efectivo — automático",
-          description: "Se calcula solo en base al Precio Normal que ingresaste.",
+          title: "💵 Precio Normal — automático",
+          description: "Se calcula solo en base al Precio Efectivo que ingresaste.",
           side: "right", align: "start"
         }
       },
@@ -222,7 +222,7 @@ export function startTour() {
 
           title: "\uD83D\uDCC5 Cuota Semanal \u2014 autom\xE1tica",
           description:
-            "Se calcula autom\xE1ticamente seg\xFAn el Precio Normal ingresado. " +
+            "Se calcula autom\xE1ticamente seg\xFAn el Precio Efectivo ingresado. " +
             "El plan se asigna as\xED:<br>" +
             "<b>Q200\u2013Q599</b> \u2192 <b>4 semanas</b><br>" +
             "<b>Q600\u2013Q999</b> \u2192 <b>8 semanas</b><br>" +

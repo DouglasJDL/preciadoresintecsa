@@ -393,6 +393,7 @@ function renderKey(p, widthPx) {
     widthPx,
     template: p.template,
     nombre: (p.nombre || "").trim().toUpperCase(),
+    sku: (p.sku || "").trim(),
     antes: p.antes,
     ahora: p.ahora,
     efectivo: p.efectivo,
@@ -440,10 +441,30 @@ export async function renderProductToPngs(p, widthPx = 2200) {
     console.warn("No encontré el ID del nombre:", SVG_IDS.nombre);
   }
 
+  // ===== SKU / Código =====
+  // TreeWalker: recorre TODOS los nodos de texto del SVG y elimina [SKU] donde esté
+  const skuVal = (p.sku || "").trim();
+  const walker = document.createTreeWalker(svg, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (/\[SKU\]/i.test(node.textContent)) {
+      node.textContent = node.textContent.replace(/\[SKU\]/gi, "");
+    }
+  }
+  // Establecer el valor real en el elemento con ID codigo_sku
+  const skuEl = svg.querySelector("#" + cssEsc(SVG_IDS.sku));
+  if (skuEl) {
+    if (skuVal) {
+      setSvgText(skuEl, skuVal);
+    } else {
+      skuEl.remove();
+    }
+  }
+
   // ===== Precios =====
   const efectivoVal = p.efectivo || (() => {
     const n = parseInt(p.ahora, 10);
-    return Number.isFinite(n) && n > 0 ? String(Math.round(n * (1 - PRICING.downPaymentPct / 100))) : "";
+    return Number.isFinite(n) && n > 0 ? String(Math.round(n / (1 + PRICING.downPaymentPct / 100))) : "";
   })();
   const efectivo = toQuetzales(efectivoVal);
 

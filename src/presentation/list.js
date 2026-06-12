@@ -132,6 +132,7 @@ export function renderList() {
           `<div class="metaGrid">` +
             `<div><b>Plantilla:</b> ${escapeHtml(p.template)}</div>` +
             `<div><b>Tama\xF1o:</b> ${escapeHtml(sizeLabel(p.size))}</div>` +
+            (p.sku ? `<div><b>SKU:</b> ${escapeHtml(p.sku)}</div>` : "") +
             `<div><b>Cantidad:</b> ${p.qty}</div>` +
             `<div><b>Precio Normal:</b> ${escapeHtml(toQuetzales(p.ahora))}</div>` +
             `<div><b>Precio Antes:</b> ${escapeHtml(toQuetzales(p.antes))}</div>` +
