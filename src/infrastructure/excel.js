@@ -81,8 +81,10 @@ function parseTemplateCell(v, allowed) {
 
 function parseNumberCell(v) {
   if (v === null || v === undefined) return "";
-  const s = (typeof v === "number") ? String(Math.ceil(v)) : String(v);
-  return sanitizeIntStr(s.replace(/[^\d]/g, ""));
+  // Si es número (Excel lo detecta), redondear al entero más cercano
+  if (typeof v === "number") return sanitizeIntStr(String(Math.round(v)));
+  // Si es string, pasarlo tal cual — sanitizeIntStr ya maneja decimales
+  return sanitizeIntStr(String(v));
 }
 
 function pad2num(n) { return String(n).padStart(2, "0"); }

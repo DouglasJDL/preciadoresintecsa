@@ -80,7 +80,18 @@ export function computeCuota(precioNormal) {
 }
 
 export function sanitizeIntStr(raw) {
-  let cleaned = onlyDigits(raw).slice(0, CONFIG.limits.maxDigits);
+  const str = (raw ?? "").toString().trim();
+
+  // Si el valor incluye punto o coma decimal (ej. pegado "235.29" o "235,50"),
+  // interpretarlo como número y redondear a entero.
+  if (str.includes(".") || str.includes(",")) {
+    const num = parseFloat(str.replace(",", "."));
+    if (Number.isFinite(num) && num > 0) {
+      return String(Math.round(num)).slice(0, CONFIG.limits.maxDigits);
+    }
+  }
+
+  let cleaned = onlyDigits(str).slice(0, CONFIG.limits.maxDigits);
   if (cleaned.length > 1) cleaned = cleaned.replace(/^0+/, "") || "0";
   return cleaned;
 }
