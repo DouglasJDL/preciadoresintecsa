@@ -151,7 +151,7 @@ function parseExcelRowsToProducts(rows) {
     template: ["plantilla", "template", "svg"],
     size: ["tamano", "tamaño", "size"],
     nombre: ["nombre", "producto", "name"],
-    efectivo: ["precioefectivo", "efectivo", "contado", "precionormal", "precioahora", "ahora"],
+    efectivo: ["precio", "precioefectivo", "efectivo", "contado", "precionormal", "precioahora", "ahora"],
     qty: ["cantidad", "qty", "cant"],
     useVig: ["agregarvigencia", "vigencia", "usevig"],
     vigStart: ["vigenciainicio", "fechainicial", "inicio", "vigenciadesde"],
@@ -464,7 +464,7 @@ export async function downloadExcelTemplate() {
   const enabledTemplates = TEMPLATES.filter(t => t.enabled);
   const templateLabels   = enabledTemplates.map(t => t.label);
 
-  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio Efectivo", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
+  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
 
   // Ejemplos generados automáticamente desde las plantillas habilitadas
   const SIZES = ["1/4 (4 por hoja)", "Media hoja horizontal (2 por hoja)", "Carta completa (1 por hoja)", "Mini (28 por hoja)"];
@@ -509,7 +509,7 @@ export async function downloadExcelTemplate() {
     [""],
     ["Objetivo:", "Rellenar la hoja 'Importar' y luego usar el botón 'Importar Excel' en el sistema."],
     [""],
-    ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio Efectivo, Cantidad"],
+    ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio, Cantidad"],
     ["Columnas automáticas:", "Precio Normal (+10%), Precio Antes y Cuota Semanal se calculan automáticamente."],
     [""],
     ["PLANTILLA:", "Selecciona del desplegable. Ej: Normal, Nuevo, Liquidación"],
@@ -522,7 +522,7 @@ export async function downloadExcelTemplate() {
     ["SKU / CÓDIGO:", "(Opcional) Escribe [CODIGO] al final del Nombre y se extraerá automáticamente como SKU."],
     ["Ejemplo:", "AUDÍFONOS BLUETOOTH [DAF4561546401] → Nombre: AUDÍFONOS BLUETOOTH, SKU: DAF4561546401"],
     [""],
-    ["PRECIO EFECTIVO:", `Solo número entero (precio de contado), máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9090`],
+    ["PRECIO:", `Solo número entero (precio de contado), máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9090`],
     ["CANTIDAD:", "Entero > 0. Ej: 4"],
     [""],
     ["AGREGAR VIGENCIA:", "SI / NO. Si es SI, VigenciaInicio y VigenciaFin son obligatorias."],
