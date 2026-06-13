@@ -321,7 +321,83 @@ function setWrappedTextInBox(textEl, text, box, opts = {}) {
   });
 }
 
+/* ===== Inyección de fuentes en SVG (para rasterizado) ===== */
+
+// Las fuentes deben estar embebidas dentro del SVG como data URLs porque
+// el SVG se rasteriza mediante new Image() → canvas, que ejecuta el SVG en
+// un contexto aislado donde los @font-face de la página HTML no aplican.
+// Sin esto, las fuentes solo se ven en PCs que las tengan instaladas en el sistema.
+
+const SVG_FONTS = [
+  {
+    family: "Archivo Black",
+    path: "resource/fonts/ArchivoBlack-Regular.ttf",
+    format: "truetype",
+    weight: "normal",
+    style: "normal"
+  },
+  {
+    family: "Montserrat ExtraBold",
+    path: "resource/fonts/Montserrat-ExtraBold.woff2",
+    format: "woff2",
+    weight: "normal",
+    style: "normal"
+  }
+];
+
+let _fontBase64Cache = null;
+
+async function loadFontsBase64() {
+  if (_fontBase64Cache) return _fontBase64Cache;
+
+  const results = await Promise.all(SVG_FONTS.map(async (f) => {
+    try {
+      const resp = await fetch(f.path);
+      if (!resp.ok) {
+        console.warn("No se pudo cargar la fuente", f.family, "desde", f.path, "— status", resp.status);
+        return null;
+      }
+      const blob = await resp.blob();
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      return { ...f, dataUrl };
+    } catch (err) {
+      console.warn("Error cargando fuente", f.family, err);
+      return null;
+    }
+  }));
+
+  _fontBase64Cache = results.filter(Boolean);
+  return _fontBase64Cache;
+}
+
+async function injectFontsIntoSvg(svgNode) {
+  const fonts = await loadFontsBase64();
+  if (!fonts.length) return;
+
+  const NS = "http://www.w3.org/2000/svg";
+  const style = document.createElementNS(NS, "style");
+  style.textContent = fonts.map(f =>
+    `@font-face { font-family: '${f.family}'; src: url('${f.dataUrl}') format('${f.format}'); font-weight: ${f.weight}; font-style: ${f.style}; }`
+  ).join("\n");
+
+  const firstChild = svgNode.firstChild;
+  if (firstChild) {
+    svgNode.insertBefore(style, firstChild);
+  } else {
+    svgNode.appendChild(style);
+  }
+}
+
 async function svgNodeToPng(svgNode, targetWidthPx = 2200) {
+  // Inyectar fuentes en el SVG antes de serializar para que se rendericen
+  // correctamente en el contexto aislado del Image()
+  await injectFontsIntoSvg(svgNode);
+
   const serializer = new XMLSerializer();
   let svgText = serializer.serializeToString(svgNode);
 

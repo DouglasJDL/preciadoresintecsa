@@ -14,6 +14,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Montserrat ExtraBold';
+  src: url('../fonts/Montserrat-ExtraBold.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root{
   --bg:#f6f7f9;
   --card:#fff;
