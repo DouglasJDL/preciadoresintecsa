@@ -26,7 +26,7 @@
      showgrid="false"
      inkscape:zoom="0.72128228"
      inkscape:cx="266.19259"
-     inkscape:cy="735.49568"
+     inkscape:cy="736.8821"
      inkscape:window-width="1920"
      inkscape:window-height="995"
      inkscape:window-x="-9"
@@ -1135,7 +1135,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan11385">[Ahora]</tspan></text>
+       id="tspan1220">[Ahora]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1144,13 +1144,13 @@
      id="precio_efectivo"
      x="715.96008"
      y="335.06299"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:31.1185px;font-family:'Archivo Black';-inkscape-font-specification:'Archivo Black, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;white-space:pre;inline-size:203.065;display:inline;fill:#000000"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28.0066px;font-family:'Archivo Black';-inkscape-font-specification:'Archivo Black, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;white-space:pre;inline-size:203.065;display:inline;fill:#000000"
      transform="matrix(1.6067628,0,0,1.6067628,-750.38001,113.91406)"
      xml:space="preserve"
      inkscape:label="precio_efectivo"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan11387">[Efectivo]</tspan></text>
+       id="tspan1222">[Efectivo]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1159,12 +1159,12 @@
      id="cuota_semanal"
      x="281.32864"
      y="608.50494"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:139.99999826px;font-family:'Archivo Black';-inkscape-font-specification:'Archivo Black, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;white-space:pre;inline-size:865.672;display:inline;fill:#e12124;fill-opacity:1;stroke-width:1.47514"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:120px;font-family:'Archivo Black';-inkscape-font-specification:'Archivo Black, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;white-space:pre;inline-size:865.672;display:inline;fill:#e12124;fill-opacity:1;stroke-width:1.47514"
      transform="translate(11.653058,-93.283017)"
      xml:space="preserve"><tspan
        x="281.32864"
        y="608.50494"
-       id="tspan11389">[Cuota]</tspan></text>
+       id="tspan1224">[Cuota]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1178,7 +1178,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan11391">[Fecha_vigencia]</tspan></text>
+       id="tspan1226">[Fecha_vigencia]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1192,7 +1192,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan11393">[Fecha_impresion]</tspan></text>
+       id="tspan1228">[Fecha_impresion]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1207,5 +1207,5 @@
      inkscape:label="restricciones"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan11395">*Aplican Restricciones</tspan></text>
+       id="tspan1230">*Aplican Restricciones</tspan></text>
 </svg>

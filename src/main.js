@@ -494,7 +494,7 @@ function wirePreviewEvents() {
 }
 
 function wireNumericInputs() {
-  ["fEfectivo"].forEach(id => {
+  ["fAhora"].forEach(id => {
     const el = document.getElementById(id);
 
     el.addEventListener("keydown", (e) => {
@@ -637,7 +637,7 @@ function _parseUrlDate(val) {
 // ─── Pre-llenado del formulario desde parámetros de URL ───────────────────────
 // Parámetros soportados:
 //   nombre    → nombre del producto
-//   precio    → precio efectivo (alias: efectivo)
+//   precio    → precio normal (alias: efectivo, mantenido por compatibilidad)
 //   plantilla → plantilla SVG  (alias: template) — ej: "Normal", "Promocion", "normal1.svg"
 //   tamano    → tamaño de hoja (alias: size)      — ej: "1/4", "media", "carta", "mini"
 //   cantidad  → número de copias (alias: qty)     — ej: 4
@@ -685,7 +685,7 @@ function applyUrlParams() {
       if (el) el.value = nombre.trim();
     }
     if (precio) {
-      const el = document.getElementById("fEfectivo");
+      const el = document.getElementById("fAhora");
       if (el) el.value = precio.replace(/[^\d]/g, "").slice(0, 5);
     }
     if (plantilla) {
@@ -734,21 +734,8 @@ function applyUrlParams() {
   return true;
 }
 
-async function init() {
+function init() {
   applyTemplateConfig();
-
-  // Precargar tipografías antes del primer renderizado.
-  // Sin esto, las fuentes externas (ej. Archivo Black) pueden no estar
-  // listas cuando el SVG se rasteriza a canvas → se ven con fuente de respaldo.
-  try {
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-      // Forzar carga explícita de Archivo Black si está declarada
-      if (document.fonts.load) {
-        await document.fonts.load("normal 14px 'Archivo Black'").catch(() => {});
-      }
-    }
-  } catch { /* continuar aunque falle la precarga */ }
 
   window.__APP_STATE__ = buildAppState();
 

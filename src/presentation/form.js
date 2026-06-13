@@ -1,6 +1,6 @@
 import { $ } from "./dom.js";
-import { sanitizeIntStr, validateProductData, computePrecioAntes, computePrecioNormal, computeCuotaDesdeEfectivo } from "../domain/product.js";
-import { getPlanForEfectivo } from "../config/config.js";
+import { sanitizeIntStr, validateProductData, computePrecioAntes, computePrecioEfectivo, computeCuotaDesdeNormal } from "../domain/product.js";
+import { getPlanForNormal } from "../config/config.js";
 import { requestSave } from "../infrastructure/storage.js";
 import { scheduleRebuild } from "./preview.js";
 
@@ -34,7 +34,7 @@ function clearAllErrors() {
   setFieldError("fTemplate", "eTemplate", "");
   setFieldError("fSize", "eSize", "");
   setFieldError("fNombre", "eNombre", "");
-  setFieldError("fEfectivo", "eEfectivo", "");
+  setFieldError("fAhora", "eAhora", "");
   setFieldError("fQty", "eQty", "");
   setFieldError("fUseVig", "eVig", "");
   setFieldError("fVigStart", "eVigStart", "");
@@ -46,40 +46,23 @@ export function syncDraftFromForm() {
 
   st.draft.template = $("fTemplate").value || "";
   st.draft.size = $("fSize").value || "";
+  st.draft.nombre = ($("fNombre").value || "").trim();
 
-  // ── SKU auto-detect: detecta [CODIGO] al inicio, medio o final del nombre ──
-  const nombreRaw = ($("fNombre").value || "").trim();
-  const skuRegex = /\[([^\]]+)\]/g;
-  const skuMatches = [...nombreRaw.matchAll(skuRegex)];
+  // fAhora es ingresado por el usuario; antes, efectivo y cuota se calculan automáticamente
+  st.draft.ahora = sanitizeIntStr($("fAhora").value);
+  $("fAhora").value = st.draft.ahora;
 
-  if (skuMatches.length > 0) {
-    // Si hay varios [CODIGO], se toma el último (el más probable como SKU)
-    const lastMatch = skuMatches[skuMatches.length - 1];
-    st.draft.sku = lastMatch[1].trim();
-    // Eliminar SOLO el [CODIGO] extraído del nombre (los demás se quedan)
-    st.draft.nombre = nombreRaw.replace(lastMatch[0], "").trim().replace(/\s{2,}/g, " ");
-    // Actualizar el input del nombre para reflejar la limpieza
-    $("fNombre").value = st.draft.nombre;
-  } else {
-    st.draft.nombre = nombreRaw;
-    // Sin [CODIGO] en el nombre: mantener el SKU actual del draft
-  }
-
-  // fEfectivo es ingresado por el usuario; ahora, antes y cuota se calculan automáticamente
-  st.draft.efectivo = sanitizeIntStr($("fEfectivo").value);
-  $("fEfectivo").value = st.draft.efectivo;
-
-  st.draft.ahora = computePrecioNormal(st.draft.efectivo);
-  st.draft.antes = computePrecioAntes(st.draft.ahora);
-  st.draft.cuota = computeCuotaDesdeEfectivo(st.draft.efectivo);
-  $("fAhora").value    = st.draft.ahora;
+  st.draft.antes    = computePrecioAntes(st.draft.ahora);
+  st.draft.efectivo = computePrecioEfectivo(st.draft.ahora);
+  st.draft.cuota    = computeCuotaDesdeNormal(st.draft.ahora);
   $("fAntes").value    = st.draft.antes;
+  $("fEfectivo").value = st.draft.efectivo;
   $("fCuota").value    = st.draft.cuota;
 
   const planInfo = $("cuotaPlanInfo");
   if (planInfo) {
-    if (st.draft.efectivo && st.draft.efectivo !== "0") {
-      const plan = getPlanForEfectivo(st.draft.efectivo);
+    if (st.draft.ahora && st.draft.ahora !== "0") {
+      const plan = getPlanForNormal(st.draft.ahora);
       planInfo.textContent = `Plan: ${plan.cuotas} semanas (${plan.nombre})`;
     } else {
       planInfo.textContent = "";
@@ -118,7 +101,7 @@ export function validateDraft() {
   if (!st.draft.template) setFieldError("fTemplate", "eTemplate", "Selecciona una plantilla.");
   if (!st.draft.size) setFieldError("fSize", "eSize", "Selecciona un tamaño.");
   if (!st.draft.nombre) setFieldError("fNombre", "eNombre", "Este campo es obligatorio.");
-  if (!st.draft.efectivo || st.draft.efectivo === "0") setFieldError("fEfectivo", "eEfectivo", "El Precio Efectivo debe ser mayor a 0.");
+  if (!st.draft.ahora || st.draft.ahora === "0") setFieldError("fAhora", "eAhora", "El Precio Normal debe ser mayor a 0.");
   if (!st.draft.qty || st.draft.qty < 1) setFieldError("fQty", "eQty", "Cantidad debe ser mayor a 0.");
 
   if (st.draft.useVig) {
@@ -140,8 +123,8 @@ export function fillFormFromProduct(p) {
   $("fTemplate").value = p.template || "";
   $("fSize").value = p.size || "";
   $("fNombre").value = p.nombre || "";
-  $("fEfectivo").value = p.efectivo || "";
-  // ahora, antes y cuota se recalculan en syncDraftFromForm
+  $("fAhora").value = p.ahora || "";
+  // antes, efectivo y cuota se recalculan en syncDraftFromForm
   $("fQty").value = String(p.qty || 1);
 
   $("fUseVig").checked = !!p.useVig;

@@ -29,7 +29,8 @@ Todo se ejecuta en el navegador y se **guarda automáticamente en `localStorage`
   - Nombre del producto
   - Precio Normal (ingresado por el usuario)
   - Precio Antes (calculado automáticamente: +10%)
-  - Cuota Semanal (calculada automáticamente, plan 20 semanas)
+  - Precio Efectivo (calculado automáticamente: −10%)
+  - Cuota Semanal (calculada automáticamente, plan según monto)
   - Cantidad de copias
   - Vigencia opcional con fechas de inicio y fin
 - Previsualización en hojas tamaño **Carta (Letter)**
@@ -184,8 +185,9 @@ Controles verticales fijos a la izquierda del panel de preview:
   template: string,           // e.g. "normal1.svg"
   size: "quarter" | "half_h" | "full" | "mini",
   nombre: string,
+  ahora: string,              // Precio Normal: ingresado por el usuario
   antes: string,              // calculado automáticamente
-  ahora: string,              // precio normal ingresado por el usuario
+  efectivo: string,           // calculado automáticamente
   cuota: string,              // calculado automáticamente
   qty: number,
   useVig: boolean,
@@ -206,7 +208,8 @@ Controles verticales fijos a la izquierda del panel de preview:
 ### Cálculos automáticos
 
 - **Precio Antes** = `ceil(Precio Normal × 1.10)` (+10%)
-- **Cuota Semanal** = `ceil(round(Precio Normal × 0.90) × 110 / 1000)` (plan 20 semanas)
+- **Precio Efectivo** = `round(Precio Normal × 0.90)` (−10%)
+- **Cuota Semanal** = `ceil(Precio Normal × plan.cuotaRef / plan.refAmount)`. El plan se elige por el Precio Normal: `≥200 → 4 semanas (315/1000)`, `≥600 → 8 semanas (190/1000)`, `≥1000 → 20 semanas (110/1000)`.
 
 ---
 
@@ -304,7 +307,7 @@ Antes de renderizar se elimina:
 | VigenciaInicio | Fecha inicio (`DD/MM/AAAA` o ISO) |
 | VigenciaFin | Fecha fin (`DD/MM/AAAA` o ISO) |
 
-> **Precio Antes** y **Cuota Semanal** se calculan automáticamente; no es necesario incluirlos.
+> **Precio Antes**, **Precio Efectivo** y **Cuota Semanal** se calculan automáticamente; no es necesario incluirlos.
 
 ### Alias aceptados para Tamaño
 
@@ -370,7 +373,7 @@ Validaciones activas: no es posible avanzar sin completar cada acción requerida
 Estado guardado automáticamente en:
 
 ```
-localStorage["editor_etiquetas_state_v7_secure"]
+localStorage["editor_etiquetas_state_v8_secure"]
 ```
 
 ---
@@ -386,8 +389,8 @@ localStorage["editor_etiquetas_state_v7_secure"]
 | `SIZE` | Claves de tamaño: `quarter`, `half_h`, `full`, `mini` |
 | `SVG_IDS` | IDs que el render inyecta en el SVG |
 | `TEMPLATE_ALIASES` | Mapeo alias → nombre de archivo |
-| `PRICING` | Porcentaje de markup y enganche |
-| `FINANCING_PLAN` | Parámetros del plan de 20 semanas |
+| `PRICING` | `markupPct` (Antes = Normal × 1.10) y `downPaymentPct` (Efectivo = Normal × 0.90) |
+| `FINANCING_PLANS` | Planes de financiamiento con umbral `minNormal` (4/8/20 semanas) |
 
 ---
 

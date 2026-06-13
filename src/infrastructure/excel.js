@@ -1,6 +1,6 @@
 import { CONFIG, SIZE, TEMPLATE_ALIASES, TEMPLATES } from "../config/config.js";
 import { toast } from "./toast.js";
-import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioNormal, computePrecioAntes, computeCuotaDesdeEfectivo } from "../domain/product.js";
+import { emptyProduct, sanitizeIntStr, validateProductData, computePrecioEfectivo, computePrecioAntes, computeCuotaDesdeNormal } from "../domain/product.js";
 import { formatDateTimeNow, normalizeText } from "./svgRenderer.js";
 import { openModal, closeModal, buildTextBlock, buildErrorList } from "../presentation/modal.js";
 import { requestSave, normalizeExistingState } from "./storage.js";
@@ -81,10 +81,8 @@ function parseTemplateCell(v, allowed) {
 
 function parseNumberCell(v) {
   if (v === null || v === undefined) return "";
-  // Si es número (Excel lo detecta), redondear al entero más cercano
-  if (typeof v === "number") return sanitizeIntStr(String(Math.round(v)));
-  // Si es string, pasarlo tal cual — sanitizeIntStr ya maneja decimales
-  return sanitizeIntStr(String(v));
+  const s = (typeof v === "number") ? String(Math.ceil(v)) : String(v);
+  return sanitizeIntStr(s.replace(/[^\d]/g, ""));
 }
 
 function pad2num(n) { return String(n).padStart(2, "0"); }
@@ -151,7 +149,7 @@ function parseExcelRowsToProducts(rows) {
     template: ["plantilla", "template", "svg"],
     size: ["tamano", "tamaño", "size"],
     nombre: ["nombre", "producto", "name"],
-    efectivo: ["precio", "precioefectivo", "efectivo", "contado", "precionormal", "precioahora", "ahora"],
+    ahora: ["precionormal", "precio", "normal", "precioahora", "ahora", "precioefectivo", "efectivo", "contado"],
     qty: ["cantidad", "qty", "cant"],
     useVig: ["agregarvigencia", "vigencia", "usevig"],
     vigStart: ["vigenciainicio", "fechainicial", "inicio", "vigenciadesde"],
@@ -162,7 +160,7 @@ function parseExcelRowsToProducts(rows) {
     ["Plantilla", K.template],
     ["Tamaño", K.size],
     ["Nombre", K.nombre],
-    ["Precio Efectivo", K.efectivo],
+    ["Precio", K.ahora],
     ["Cantidad", K.qty]
   ];
 
@@ -186,20 +184,11 @@ function parseExcelRowsToProducts(rows) {
     p.size = parseSizeCell(cellBy(map, row, K.size));
     p.nombre = (cellBy(map, row, K.nombre) ?? "").toString().trim();
 
-    // ── SKU: solo se detecta [CODIGO] en el nombre, no hay columna separada ──
-    const skuRegex = /\[([^\]]+)\]/g;
-    const skuMatches = [...p.nombre.matchAll(skuRegex)];
-    if (skuMatches.length > 0) {
-      const lastMatch = skuMatches[skuMatches.length - 1];
-      p.sku = lastMatch[1].trim();
-      p.nombre = p.nombre.replace(lastMatch[0], "").trim().replace(/\s{2,}/g, " ");
-    }
-
-    p.efectivo = parseNumberCell(cellBy(map, row, K.efectivo));
-    // ahora, antes y cuota se calculan automáticamente a partir del precio efectivo
-    p.ahora = computePrecioNormal(p.efectivo);
-    p.antes = computePrecioAntes(p.ahora);
-    p.cuota = computeCuotaDesdeEfectivo(p.efectivo);
+    p.ahora = parseNumberCell(cellBy(map, row, K.ahora));
+    // efectivo, antes y cuota se calculan automáticamente a partir del precio normal
+    p.efectivo = computePrecioEfectivo(p.ahora);
+    p.antes    = computePrecioAntes(p.ahora);
+    p.cuota    = computeCuotaDesdeNormal(p.ahora);
 
     const qtyN = parseInt(String(cellBy(map, row, K.qty) ?? "").replace(/[^\d]/g, ""), 10);
     p.qty = Number.isFinite(qtyN) ? qtyN : 0;
@@ -465,28 +454,14 @@ export async function downloadExcelTemplate() {
   const templateLabels   = enabledTemplates.map(t => t.label);
 
   const headers = ["Plantilla", "Tamaño", "Nombre", "Precio", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
-
-  // Ejemplos generados automáticamente desde las plantillas habilitadas
-  const SIZES = ["1/4 (4 por hoja)", "Media hoja horizontal (2 por hoja)", "Carta completa (1 por hoja)", "Mini (28 por hoja)"];
-  const NOMBRES = ["AUDÍFONOS BLUETOOTH", "LAPTOP DELL I5 8GB 256SSD", "TENIS NIKE AIR MAX", "SMART TV 55 PULGADAS", "PILA DURACELL AA x4", "AUDÍFONOS GAMER RGB"];
-  const examples = enabledTemplates.map((t, i) => {
-    const size = SIZES[i % SIZES.length];
-    const nombre = NOMBRES[i % NOMBRES.length];
-    const sku = `CODE${String(i + 1).padStart(3, "0")}`;
-    const precio = String(Math.round(100 * (i + 1) * ((i % 3) + 0.5)));
-    const qty = String((i % 2) + 1);
-    const useVig = i % 2 !== 0;
-    return [
-      t.label,
-      size,
-      `${nombre} [${sku}]`,
-      precio,
-      qty,
-      useVig ? "SI" : "NO",
-      useVig ? `01/0${Math.min((i % 9) + 1, 9)}/2026` : "",
-      useVig ? `${15 + (i % 3) * 5}/0${Math.min((i % 9) + 1, 9)}/2026` : ""
-    ];
-  });
+  const examples = [
+    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS BLUETOOTH [DAF4561546401]",      "136",   "4",  "NO", "",           ""],
+    ["Promoción",    "Media hoja horizontal (2 por hoja)",   "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","8181",  "2",  "SI", "01/01/2026", "31/01/2026"],
+    ["Liquidación",  "1/4 (4 por hoja)",                    "TENIS NIKE AIR MAX [DAF4561546403]",        "909",   "4",  "SI", "05/02/2026", "20/02/2026"],
+    ["Super Oferta", "Carta completa (1 por hoja)",          "SMART TV 55 PULGADAS [DAF4561546404]",     "11818", "1",  "SI", "01/03/2026", "15/03/2026"],
+    ["Pequeño",      "Mini (28 por hoja)",                   "PILA DURACELL AA x4 [DAF4561546405]",       "45",   "28", "NO", "",           ""],
+    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS GAMER RGB [DAF4561546406]",       "545",  "4",  "SI", "01/04/2026", "30/04/2026"]
+  ];
 
   const wsImportar = XLSX.utils.aoa_to_sheet([headers, ...examples]);
   wsImportar["!cols"] = [
@@ -510,26 +485,21 @@ export async function downloadExcelTemplate() {
     ["Objetivo:", "Rellenar la hoja 'Importar' y luego usar el botón 'Importar Excel' en el sistema."],
     [""],
     ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio, Cantidad"],
-    ["Columnas automáticas:", "Precio Normal (+10%), Precio Antes y Cuota Semanal se calculan automáticamente."],
+    ["Columnas automáticas:", "Precio Antes (+10%), Precio Efectivo (−10%) y Cuota Semanal se calculan automáticamente."],
     [""],
-    ["PLANTILLA:", "Selecciona del desplegable. Ej: Normal, Nuevo, Liquidación"],
-    ["Plantillas disponibles en este sistema:", allowedLabels || "Normal | Nuevo | Liquidación | Oferta | Pequeño"],
-    ["También se aceptan:", `Los nombres internos como ${enabledTemplates.map(t => t.file.replace(".svg", "")).join(", ")}`],
+    ["PLANTILLA:", "Selecciona del desplegable. Ej: Normal, Promoción, Liquidación"],
+    ["Plantillas disponibles en este sistema:", allowedLabels || "Normal | Promoción | Liquidación | Super Oferta | Pequeño"],
+    ["También se aceptan:", "Los nombres internos como normal1, promocion1, liquidacion1, oferta1, pequeño1"],
     [""],
     ["TAMAÑO:", "Selecciona del desplegable. Son los mismos nombres que en el formulario del sistema."],
     ["Opciones:", "1/4 (4 por hoja) | Media hoja horizontal (2 por hoja) | Carta completa (1 por hoja) | Mini (28 por hoja)"],
     [""],
-    ["SKU / CÓDIGO:", "(Opcional) Escribe [CODIGO] al final del Nombre y se extraerá automáticamente como SKU."],
-    ["Ejemplo:", "AUDÍFONOS BLUETOOTH [DAF4561546401] → Nombre: AUDÍFONOS BLUETOOTH, SKU: DAF4561546401"],
-    [""],
-    ["PRECIO:", `Solo número entero (precio de contado), máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 9090`],
+    ["PRECIO NORMAL:", `Solo número entero (precio normal), máximo ${CONFIG.limits.maxDigits} dígitos. Ej: 6290`],
     ["CANTIDAD:", "Entero > 0. Ej: 4"],
     [""],
     ["AGREGAR VIGENCIA:", "SI / NO. Si es SI, VigenciaInicio y VigenciaFin son obligatorias."],
     ["FECHAS (VigenciaInicio/VigenciaFin):", "Formato recomendado: DD/MM/AAAA. Ej: 31/01/2026"],
     ["Reglas de fechas:", "VigenciaFin no puede ser menor que VigenciaInicio."],
-    [""],
-    ["Reglas de precio:", "El sistema calcula Precio Normal (Efectivo +10%), Precio Antes y Cuota Semanal automáticamente."],
     [""],
     ["Importante:", "Si una fila tiene error, se rechaza todo el archivo (no se crea nada)."]
   ];

@@ -388,16 +388,28 @@ async function rotatePng90(pngDataUrl) {
   return canvas.toDataURL("image/png");
 }
 
+function extractSkuFromName(name) {
+  const trimmed = (name || "").trim();
+  const match = trimmed.match(/\[([^\]]+)\]/);
+  if (match) {
+    return {
+      sku: match[1].trim(),
+      cleanName: trimmed.replace(/\s*\[[^\]]+\]\s*/, " ").trim()
+    };
+  }
+  return { sku: "", cleanName: trimmed };
+}
+
 function renderKey(p, widthPx) {
   return JSON.stringify({
     widthPx,
     template: p.template,
     nombre: (p.nombre || "").trim().toUpperCase(),
-    sku: (p.sku || "").trim(),
     antes: p.antes,
     ahora: p.ahora,
     efectivo: p.efectivo,
     cuota: p.cuota,
+    sku: extractSkuFromName((p.nombre || "").trim().toUpperCase()).sku,
     useVig: !!p.useVig,
     vigStart: p.vigStart || "",
     vigEnd: p.vigEnd || "",
@@ -428,6 +440,7 @@ export async function renderProductToPngs(p, widthPx = 2200) {
   svg.getBoundingClientRect(); // fuerza layout
 
   const upperName = (p.nombre || "").trim().toUpperCase();
+  const { cleanName, sku } = extractSkuFromName(upperName);
   const antes = toQuetzales(p.antes);
   const ahora = toQuetzales(p.ahora);
   const cuota = toQuetzales(p.cuota);
@@ -436,35 +449,20 @@ export async function renderProductToPngs(p, widthPx = 2200) {
   const nameEl = svg.querySelector("#" + cssEsc(SVG_IDS.nombre));
   if (nameEl) {
     const box = getTextBoxById(svg, SVG_IDS.nombre);
-    setWrappedTextInBox(nameEl, upperName, box, { lineHeightEm: 1.10 });
+    setWrappedTextInBox(nameEl, cleanName, box, { lineHeightEm: 1.10 });
   } else {
     console.warn("No encontré el ID del nombre:", SVG_IDS.nombre);
   }
 
-  // ===== SKU / Código =====
-  // TreeWalker: recorre TODOS los nodos de texto del SVG y elimina [SKU] donde esté
-  const skuVal = (p.sku || "").trim();
-  const walker = document.createTreeWalker(svg, NodeFilter.SHOW_TEXT);
-  while (walker.nextNode()) {
-    const node = walker.currentNode;
-    if (/\[SKU\]/i.test(node.textContent)) {
-      node.textContent = node.textContent.replace(/\[SKU\]/gi, "");
-    }
-  }
-  // Establecer el valor real en el elemento con ID codigo_sku
-  const skuEl = svg.querySelector("#" + cssEsc(SVG_IDS.sku));
-  if (skuEl) {
-    if (skuVal) {
-      setSvgText(skuEl, skuVal);
-    } else {
-      skuEl.remove();
-    }
-  }
+  // ===== SKU =====
+  const skuText = sku ? `SKU: ${sku}` : "";
+  setSvgText(svg.querySelector("#" + cssEsc(SVG_IDS.sku)), skuText);
+  replaceTokenInSvg(svg, "[SKU]", skuText);
 
   // ===== Precios =====
   const efectivoVal = p.efectivo || (() => {
     const n = parseInt(p.ahora, 10);
-    return Number.isFinite(n) && n > 0 ? String(Math.round(n / (1 + PRICING.downPaymentPct / 100))) : "";
+    return Number.isFinite(n) && n > 0 ? String(Math.round(n * (1 - PRICING.downPaymentPct / 100))) : "";
   })();
   const efectivo = toQuetzales(efectivoVal);
 
