@@ -25,7 +25,7 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="0.69786095"
-     inkscape:cx="267.96169"
+     inkscape:cx="176.25288"
      inkscape:cy="522.31035"
      inkscape:window-width="1920"
      inkscape:window-height="995"
@@ -1054,14 +1054,14 @@
   </g>
   <text
      xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:50px;font-family:'Archivo Black';-inkscape-font-specification:'Archivo Black, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;fill:#000000;stroke-width:3"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:36px;font-family:'Archivo Black';-inkscape-font-specification:'Archivo Black, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;fill:#000000;stroke-width:3"
      x="314.02594"
      y="226.64334"
      id="nombre_producto"
      inkscape:label="nombre_producto"><tspan
        sodipodi:role="line"
        id="tspan833"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:50px;font-family:'Archivo Black';-inkscape-font-specification:'Archivo Black, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;stroke-width:3"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:35.99999955px;font-family:'Archivo Black';-inkscape-font-specification:'Archivo Black, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;stroke-width:3"
        x="314.02594"
        y="226.64334">[Producto]</tspan></text>
   <text
@@ -1076,11 +1076,11 @@
        x="306.74536"
        y="294.36945">SKU</tspan></text>
   <rect
-     style="fill:none;stroke-width:0.434465"
+     style="fill:none;stroke-width:0.431598"
      id="box_nombre_producto"
-     width="571.87018"
+     width="564.34717"
      height="132.51808"
-     x="13.611258"
+     x="13.611257"
      y="154.35619"
      ry="41.891731"
      rx="0"
@@ -1098,7 +1098,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1808">[Ahora]</tspan></text>
+       id="tspan779">[Ahora]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1113,7 +1113,7 @@
      inkscape:label="precio_efectivo"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1810">[Efectivo]</tspan></text>
+       id="tspan781">[Efectivo]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1127,7 +1127,7 @@
      xml:space="preserve"><tspan
        x="281.32864"
        y="608.50494"
-       id="tspan1812">[Cuota]</tspan></text>
+       id="tspan783">[Cuota]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1141,7 +1141,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1814">[Fecha_vigencia]</tspan></text>
+       id="tspan785">[Fecha_vigencia]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1155,7 +1155,7 @@
      xml:space="preserve"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1816">[Fecha_impresion]</tspan></text>
+       id="tspan787">[Fecha_impresion]</tspan></text>
   <text
      fill="#595959"
      font-family="'Montserrat ExtraBold', 'Montserrat ExtraBold_MSFontService', sans-serif"
@@ -1170,5 +1170,5 @@
      inkscape:label="restricciones"><tspan
        x="715.96008"
        y="335.06299"
-       id="tspan1818">*Aplican Restricciones</tspan></text>
+       id="tspan789">*Aplican Restricciones</tspan></text>
 </svg>
