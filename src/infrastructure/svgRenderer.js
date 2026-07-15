@@ -484,6 +484,7 @@ function renderKey(p, widthPx) {
     antes: p.antes,
     ahora: p.ahora,
     efectivo: p.efectivo,
+    efectivoPct: p.efectivoPct != null ? p.efectivoPct : PRICING.downPaymentPct,
     cuota: p.cuota,
     sku: extractSkuFromName((p.nombre || "").trim().toUpperCase()).sku,
     useVig: !!p.useVig,
@@ -536,9 +537,10 @@ export async function renderProductToPngs(p, widthPx = 2200) {
   replaceTokenInSvg(svg, "[SKU]", skuText);
 
   // ===== Precios =====
+  const efectivoPct = (p.efectivoPct != null) ? p.efectivoPct : PRICING.downPaymentPct;
   const efectivoVal = p.efectivo || (() => {
     const n = parseInt(p.ahora, 10);
-    return Number.isFinite(n) && n > 0 ? String(Math.round(n * (1 - PRICING.downPaymentPct / 100))) : "";
+    return Number.isFinite(n) && n > 0 ? String(Math.round(n * (1 - efectivoPct / 100))) : "";
   })();
   const efectivo = toQuetzales(efectivoVal);
 

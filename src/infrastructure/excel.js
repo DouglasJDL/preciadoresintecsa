@@ -153,7 +153,8 @@ function parseExcelRowsToProducts(rows) {
     qty: ["cantidad", "qty", "cant"],
     useVig: ["agregarvigencia", "vigencia", "usevig"],
     vigStart: ["vigenciainicio", "fechainicial", "inicio", "vigenciadesde"],
-    vigEnd: ["vigenciafin", "fechafinal", "fin", "vigenciahasta"]
+    vigEnd: ["vigenciafin", "fechafinal", "fin", "vigenciahasta"],
+    efectivoPct: ["descuentoefectivo", "dctoefectivo", "efectivopct", "descuento", "dcto"]
   };
 
   const requiredCols = [
@@ -185,8 +186,11 @@ function parseExcelRowsToProducts(rows) {
     p.nombre = (cellBy(map, row, K.nombre) ?? "").toString().trim();
 
     p.ahora = parseNumberCell(cellBy(map, row, K.ahora));
+    // % de descuento personalizado (opcional, vacío = usar default 10%)
+    const efectivoPctRaw = parseInt(String(cellBy(map, row, K.efectivoPct) ?? "").replace(/[^\d]/g, ""), 10);
+    p.efectivoPct = (Number.isFinite(efectivoPctRaw) && efectivoPctRaw > 0 && efectivoPctRaw < 100) ? efectivoPctRaw : null;
     // efectivo, antes y cuota se calculan automáticamente a partir del precio normal
-    p.efectivo = computePrecioEfectivo(p.ahora);
+    p.efectivo = computePrecioEfectivo(p.ahora, p.efectivoPct);
     p.antes    = computePrecioAntes(p.ahora);
     p.cuota    = computeCuotaDesdeNormal(p.ahora);
 
@@ -453,20 +457,20 @@ export async function downloadExcelTemplate() {
   const enabledTemplates = TEMPLATES.filter(t => t.enabled);
   const templateLabels   = enabledTemplates.map(t => t.label);
 
-  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin"];
+  const headers = ["Plantilla", "Tamaño", "Nombre", "Precio", "Cantidad", "AgregarVigencia", "VigenciaInicio", "VigenciaFin", "Dto. Efectivo (%)"];
   const examples = [
-    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS BLUETOOTH [DAF4561546401]",      "136",   "4",  "NO", "",           ""],
-    ["Promoción",    "Media hoja horizontal (2 por hoja)",   "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","8181",  "2",  "SI", "01/01/2026", "31/01/2026"],
-    ["Liquidación",  "1/4 (4 por hoja)",                    "TENIS NIKE AIR MAX [DAF4561546403]",        "909",   "4",  "SI", "05/02/2026", "20/02/2026"],
-    ["Super Oferta", "Carta completa (1 por hoja)",          "SMART TV 55 PULGADAS [DAF4561546404]",     "11818", "1",  "SI", "01/03/2026", "15/03/2026"],
-    ["Pequeño",      "Mini (28 por hoja)",                   "PILA DURACELL AA x4 [DAF4561546405]",       "45",   "28", "NO", "",           ""],
-    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS GAMER RGB [DAF4561546406]",       "545",  "4",  "SI", "01/04/2026", "30/04/2026"]
+    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS BLUETOOTH [DAF4561546401]",      "136",   "4",  "NO", "",           "",           ""],
+    ["Promoción",    "Media hoja horizontal (2 por hoja)",   "LAPTOP DELL I5 8GB 256SSD [DAF4561546402]","8181",  "2",  "SI", "01/01/2026", "31/01/2026", "7"],
+    ["Liquidación",  "1/4 (4 por hoja)",                    "TENIS NIKE AIR MAX [DAF4561546403]",        "909",   "4",  "SI", "05/02/2026", "20/02/2026", ""],
+    ["Super Oferta", "Carta completa (1 por hoja)",          "SMART TV 55 PULGADAS [DAF4561546404]",     "11818", "1",  "SI", "01/03/2026", "15/03/2026", ""],
+    ["Pequeño",      "Mini (28 por hoja)",                   "PILA DURACELL AA x4 [DAF4561546405]",       "45",   "28", "NO", "",           "",           ""],
+    ["Normal",       "1/4 (4 por hoja)",                    "AUDÍFONOS GAMER RGB [DAF4561546406]",       "545",  "4",  "SI", "01/04/2026", "30/04/2026", ""]
   ];
 
   const wsImportar = XLSX.utils.aoa_to_sheet([headers, ...examples]);
   wsImportar["!cols"] = [
     { wch: 14 }, { wch: 18 }, { wch: 44 }, { wch: 14 },
-    { wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 16 }
+    { wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 12 }
   ];
 
   // Forzar columnas Plantilla (A) y Tamaño (B) como texto para evitar auto-conversión de Excel
@@ -485,7 +489,8 @@ export async function downloadExcelTemplate() {
     ["Objetivo:", "Rellenar la hoja 'Importar' y luego usar el botón 'Importar Excel' en el sistema."],
     [""],
     ["Columnas requeridas:", "Plantilla, Tamaño, Nombre, Precio, Cantidad"],
-    ["Columnas automáticas:", "Precio Antes (+10%), Precio Efectivo (−10%) y Cuota Semanal se calculan automáticamente."],
+    ["Columnas automáticas:", "Precio Antes (+10%), Precio Efectivo y Cuota Semanal se calculan automáticamente."],
+    ["Dto. Efectivo (%):", "OPCIONAL. Porcentaje de descuento para Precio Efectivo (1-99). Si se deja vacío, usa 10% por defecto. Ej: 7 para laptops."],
     [""],
     ["PLANTILLA:", "Selecciona del desplegable. Ej: Normal, Promoción, Liquidación"],
     ["Plantillas disponibles en este sistema:", allowedLabels || "Normal | Promoción | Liquidación | Super Oferta | Pequeño"],

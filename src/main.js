@@ -519,7 +519,7 @@ function wireNumericInputs() {
 }
 
 function wireGeneralInputs() {
-  ["fTemplate", "fSize", "fNombre", "fQty", "fUseVig", "fVigStart", "fVigEnd"].forEach(id => {
+  ["fTemplate", "fSize", "fNombre", "fQty", "fUseVig", "fVigStart", "fVigEnd", "fEfectivoPct"].forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener("input", () => { validateDraft(); scheduleRebuild(); });
     el.addEventListener("change", () => { validateDraft(); scheduleRebuild(); });

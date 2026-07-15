@@ -52,8 +52,13 @@ export function syncDraftFromForm() {
   st.draft.ahora = sanitizeIntStr($("fAhora").value);
   $("fAhora").value = st.draft.ahora;
 
+  // Porcentaje de descuento personalizado (vacío = usar default 10%)
+  const efectivoPctRaw = parseInt($("fEfectivoPct").value, 10);
+  st.draft.efectivoPct = (Number.isFinite(efectivoPctRaw) && efectivoPctRaw > 0 && efectivoPctRaw < 100)
+    ? efectivoPctRaw : null;
+
   st.draft.antes    = computePrecioAntes(st.draft.ahora);
-  st.draft.efectivo = computePrecioEfectivo(st.draft.ahora);
+  st.draft.efectivo = computePrecioEfectivo(st.draft.ahora, st.draft.efectivoPct);
   st.draft.cuota    = computeCuotaDesdeNormal(st.draft.ahora);
   $("fAntes").value    = st.draft.antes;
   $("fEfectivo").value = st.draft.efectivo;
@@ -124,6 +129,7 @@ export function fillFormFromProduct(p) {
   $("fSize").value = p.size || "";
   $("fNombre").value = p.nombre || "";
   $("fAhora").value = p.ahora || "";
+  $("fEfectivoPct").value = (typeof p.efectivoPct === "number" && p.efectivoPct > 0) ? p.efectivoPct : "";
   // antes, efectivo y cuota se recalculan en syncDraftFromForm
   $("fQty").value = String(p.qty || 1);
 

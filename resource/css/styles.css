@@ -237,6 +237,17 @@ option{color:#111827}
 .calcBadge{font-size:10px;font-weight:600;background:#dcfce7;color:#166534;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
 .cuotaPlanInfo{font-size:11px;color:#2563eb;margin-top:3px;min-height:14px;}
 
+/* Override % de descuento para Precio Efectivo */
+.efectivoPctRow{display:flex;align-items:center;gap:6px;margin-top:6px}
+.efectivoPctLabel{font-size:11px;font-weight:600;color:#64748b;white-space:nowrap}
+.efectivoPctInput{width:52px;padding:4px 6px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;text-align:center;-moz-appearance:textfield}
+.efectivoPctInput::-webkit-inner-spin-button,
+.efectivoPctInput::-webkit-outer-spin-button{opacity:1}
+.efectivoPctHint{font-size:10px;color:#94a3b8}
+
+/* Badge de % personalizado en la lista */
+.pctBadge{font-size:10px;font-weight:600;background:#dbeafe;color:#1e40af;border-radius:4px;padding:0 4px;margin-left:4px}
+
 /* Chevron dual (CSS toggle, no JS innerHTML update needed) */
 .item .chev-open{display:none;align-items:center}
 .item .chev-close{display:inline-flex;align-items:center}

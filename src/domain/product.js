@@ -9,6 +9,7 @@ export function emptyProduct() {
     antes: "",
     ahora: "",
     efectivo: "",
+    efectivoPct: null,
     cuota: "",
     qty: 1,
     useVig: false,
@@ -35,13 +36,19 @@ export function computePrecioAntes(precioNormal) {
 }
 
 /**
- * Calcula el Precio Efectivo = round(precioNormal * (1 - downPaymentPct/100)).
+ * Calcula el Precio Efectivo = round(precioNormal * (1 - pct/100)).
+ * Si overridePct es un número válido (1-99), se usa ese %.
+ * Si no, se usa PRICING.downPaymentPct (10% por defecto).
  * Ejemplo: precioNormal=6290 → efectivo=round(6290*0.90)=5661
  */
-export function computePrecioEfectivo(precioNormal) {
+export function computePrecioEfectivo(precioNormal, overridePct = null) {
   const n = parseInt(precioNormal, 10);
   if (!Number.isFinite(n) || n <= 0) return "";
-  const monto = Math.round(n * (1 - PRICING.downPaymentPct / 100));
+  const pctNum = parseInt(overridePct, 10);
+  const pct = (Number.isFinite(pctNum) && pctNum > 0 && pctNum < 100)
+    ? pctNum
+    : PRICING.downPaymentPct;
+  const monto = Math.round(n * (1 - pct / 100));
   return monto > 0 ? String(monto) : "";
 }
 
@@ -98,7 +105,9 @@ export function sanitizeLoadedProduct(raw) {
 
   // ahora es el campo canónico que ingresa el usuario; los demás se derivan
   out.ahora    = sanitizeIntStr(raw?.ahora);
-  out.efectivo = computePrecioEfectivo(out.ahora);
+  const pctRaw = parseInt(raw?.efectivoPct, 10);
+  out.efectivoPct = (Number.isFinite(pctRaw) && pctRaw > 0 && pctRaw < 100) ? pctRaw : null;
+  out.efectivo = computePrecioEfectivo(out.ahora, out.efectivoPct);
   out.antes    = computePrecioAntes(out.ahora);
   out.cuota    = computeCuotaDesdeNormal(out.ahora);
 

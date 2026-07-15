@@ -182,6 +182,13 @@
               <label>Precio Efectivo <span class="calcBadge">automático</span></label>
               <input id="fEfectivo" readonly class="calcField" placeholder="Se calcula solo" autocomplete="off" tabindex="-1">
               <div class="fieldError" id="eEfectivo"></div>
+              <div class="efectivoPctRow">
+                <label for="fEfectivoPct" class="efectivoPctLabel">Dto. %</label>
+                <input id="fEfectivoPct" type="number" min="1" max="99" step="1"
+                       placeholder="10" class="efectivoPctInput"
+                       title="Vacío = usar 10% por defecto">
+                <span class="efectivoPctHint">Vacío = 10%</span>
+              </div>
             </div>
 
             <div class="field">
