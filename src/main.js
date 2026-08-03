@@ -14,6 +14,7 @@ import { loadState, normalizeExistingState, hasWork, requestSave } from "./infra
 import { handleImportFile, downloadExcelTemplate } from "./infrastructure/excel.js";
 import { exportPdfWithLoading, printViaPdf } from "./infrastructure/pdf.js";
 import { startTour } from "./presentation/tour.js";
+import { initDeprecationNotice } from "./presentation/deprecation.js";
 
 // Genera las opciones del select #fTemplate desde TEMPLATES en config.js.
 // El HTML solo necesita el <option> placeholder — todo lo demás viene de aquí.
@@ -784,10 +785,16 @@ function init() {
 
   // Tour automático en primera visita (se omite si vinieron parámetros de URL)
   const TOUR_KEY = "preciadoresintecsa_tour_done";
-  if (!hadUrlParams && !localStorage.getItem(TOUR_KEY)) {
+  const maybeAutoTour = () => {
+    if (hadUrlParams || localStorage.getItem(TOUR_KEY)) return;
     localStorage.setItem(TOUR_KEY, "1");
     setTimeout(() => confirmTour(), 800);
-  }
+  };
+
+  // Aviso de fin de soporte / migración al nuevo preciador.
+  // Si queda abierto, el tour espera a que el usuario lo cierre.
+  const noticeOpen = initDeprecationNotice({ onDismiss: maybeAutoTour });
+  if (!noticeOpen) maybeAutoTour();
 
   wireBeforeUnloadGuard(hasWork);
 }

@@ -30,6 +30,27 @@ export const CONFIG = Object.freeze({
   })
 });
 
+/**
+ * ─── AVISO DE MIGRACIÓN AL NUEVO PRECIADOR (Odoo) ────────────────────────────
+ *
+ * Todo lo del aviso de "sin soporte" se configura aquí:
+ *
+ *   enabled     → false = desactiva el aviso por completo.
+ *   docsUrl     → enlace a la documentación del nuevo preciador.
+ *   whatsapp    → número (con código de país, sin +) al que se pide ayuda.
+ *   helpText    → mensaje que se pre-llena en WhatsApp.
+ *   sessionKey  → llave de sessionStorage; cámbiala para volver a mostrar el
+ *                 aviso a todos aunque ya lo hayan visto en su sesión.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+export const MIGRATION = Object.freeze({
+  enabled: true,
+  docsUrl: "https://drive.google.com/file/d/127ny_-Ed_m2yu4tfe5feV1oMQ02_mNbW/view?usp=sharing",
+  whatsapp: "50256355181",
+  helpText: "Hola 👋 No he podido usar el nuevo preciador de Odoo y necesito ayuda para acceder.",
+  sessionKey: "preciadoresintecsa_aviso_migracion_v1"
+});
+
 export const SVG_IDS = Object.freeze({
   nombre: "nombre_producto",
   antes: "precio_antes",
